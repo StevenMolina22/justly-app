@@ -1,45 +1,30 @@
-import { baseSepolia, base } from "wagmi/chains";
-import type { Chain } from "viem";
+import { http } from "wagmi";
+import { base, baseSepolia } from "wagmi/chains";
 
-export type ChainConfig = {
-  chain: Chain;
-  contracts: {
-    slice: string;
-    usdc: string;
-  };
-};
-
-// 1. Define configurations
-const SEPOLIA_CONFIG: ChainConfig = {
-  chain: baseSepolia,
-  contracts: {
-    slice: process.env.NEXT_PUBLIC_BASE_SEPOLIA_SLICE_CONTRACT!,
-    usdc: process.env.NEXT_PUBLIC_BASE_SEPOLIA_USDC_CONTRACT!,
-  },
-};
-
-const MAINNET_CONFIG: ChainConfig = {
-  chain: base,
-  contracts: {
-    slice: process.env.NEXT_PUBLIC_BASE_SLICE_CONTRACT!,
-    usdc: process.env.NEXT_PUBLIC_BASE_USDC_CONTRACT!,
-  },
-};
-
-// 2. Determine Environment
+// 1. Determine Strategy
 const isProd = process.env.NEXT_PUBLIC_APP_ENV === "production";
 
-// 3. Dynamic Export: Target chain is ALWAYS first
-export const SUPPORTED_CHAINS: ChainConfig[] = isProd
-  ? [MAINNET_CONFIG, SEPOLIA_CONFIG] // Prod: Base First
-  : [SEPOLIA_CONFIG, MAINNET_CONFIG]; // Dev: Sepolia First
+// 2. Active Configuration (Contracts & Logic)
+export const appConfig = {
+  chain: isProd ? base : baseSepolia,
+  contracts: {
+    slice: isProd
+      ? process.env.NEXT_PUBLIC_BASE_SLICE_CONTRACT!
+      : process.env.NEXT_PUBLIC_BASE_SEPOLIA_SLICE_CONTRACT!,
+  },
+} as const;
 
-export const DEFAULT_CHAIN_CONFIG = SUPPORTED_CHAINS[0];
-export const defaultChain = DEFAULT_CHAIN_CONFIG.chain;
-export const DEFAULT_CHAIN = DEFAULT_CHAIN_CONFIG;
+// 3. Wagmi Chains
+export const activeChains = isProd
+  ? ([base, baseSepolia] as const)
+  : ([baseSepolia, base] as const);
 
-// 4. Export plain chain objects for Wagmi
-export const activeChains = SUPPORTED_CHAINS.map((c) => c.chain) as [
-  Chain,
-  ...Chain[],
-];
+export const defaultChain = appConfig.chain;
+
+// 4. Transport Strategy (NEW)
+// Define connection methods explicitly here. This guarantees type safety
+// because we are using the chain IDs directly as keys.
+export const transports = {
+  [base.id]: http(),
+  [baseSepolia.id]: http(),
+} as const;

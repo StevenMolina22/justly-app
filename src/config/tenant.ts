@@ -1,19 +1,23 @@
 export enum Tenant {
-  WEB = "web", // PWA, Localhost (Privy + Base Sepolia)
-  BEEXO = "beexo", // Beexo MiniApp (Pure Wagmi + Base Mainnet)
+  WEB = "web", // Coinbase Strategy (Main App)
+  BEEXO = "beexo", // Beexo Strategy (MiniApp)
+  PRIVY = "privy", // Privy Strategy (Frames / Fallback)
 }
 
 export const getTenantFromHost = (host: string | null): Tenant => {
-  if (!host) return Tenant.WEB; // Default to Web for safety
+  if (!host) return Tenant.WEB;
 
-  // Handle localhost (remove port)
   const hostname = host.split(":")[0];
 
-  // Strategy Mapping
   if (hostname.startsWith("beexo.") || hostname.startsWith("mini.")) {
     return Tenant.BEEXO;
   }
 
-  // Default Catch-all (app.slicehub.xyz, localhost, etc.)
+  // Example: Use Privy for specific subdomains
+  if (hostname.startsWith("frame.")) {
+    return Tenant.PRIVY;
+  }
+
+  // Default remains WEB (Coinbase)
   return Tenant.WEB;
 };

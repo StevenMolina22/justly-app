@@ -8,11 +8,10 @@ export function useContracts() {
   const chainId = useChainId();
 
   // 2. Resolve the correct address dynamically
-  const { sliceContract, usdcToken } = getContractsForChain(chainId);
+  const { sliceContract } = getContractsForChain(chainId);
 
   return {
     sliceContract,
-    usdcToken,
     chainId,
   };
 }

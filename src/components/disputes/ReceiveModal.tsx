@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useSliceAccount } from "@/hooks/core/useSliceAccount";
-import { DEFAULT_CHAIN } from "@/config/chains"; // Import settings to get the Chain ID
+import { defaultChain } from "@/config/chains";
 import { toast } from "sonner";
 import { X, Copy, Check } from "lucide-react";
 
@@ -22,7 +22,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({
 
   // Append the Chain ID (e.g., @8453).
   // This tells the wallet specifically to look at Base, not Ethereum Mainnet.
-  const chainId = DEFAULT_CHAIN.chain.id;
+  const chainId = defaultChain.id;
   const paymentUri = `ethereum:${address}@${chainId}`;
 
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentUri)}&bgcolor=ffffff`;
@@ -36,7 +36,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-xl relative animate-in zoom-in-95 duration-200 flex flex-col items-center">
+      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-xl relative animate-in zoom-in-95 duration-200 flex flex-col items-center">
         {/* Header */}
         <div className="w-full flex justify-between items-center mb-6">
           <h2 className="text-xl font-extrabold text-[#1b1c23] font-manrope">
@@ -89,9 +89,8 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({
             <div className="w-1.5 h-1.5 bg-[#8c8fff] rounded-full" />
           </div>
           <p className="text-[11px] font-bold text-[#1b1c23] leading-tight">
-            This QR code works on the{" "}
-            <strong>{DEFAULT_CHAIN.chain.name}</strong> network (Chain ID:{" "}
-            {chainId}).
+            This QR code works on the <strong>{defaultChain.name}</strong>{" "}
+            network (Chain ID: {chainId}).
           </p>
         </div>
       </div>

@@ -7,9 +7,8 @@ import { Geist } from "next/font/google";
 import localFont from "next/font/local";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import { ConsoleOverlay } from "@/components/debug/ConsoleOverlay";
-import { getTenantFromHost, Tenant } from "@/config/tenant";
-import { beexoConfig } from "@/adapters/beexo";
-import { webConfig } from "@/adapters/web";
+import { getTenantFromHost } from "@/config/tenant";
+import { getStrategy } from "@/config/strategies";
 import { cookieToInitialState } from "wagmi";
 
 export const metadata: Metadata = {
@@ -41,29 +40,27 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 1. Server-Side Detection
+  // 1. Resolve Tenant
   const headersList = await headers();
-  const host = headersList.get("host"); // e.g. "beexo.slicehub.xyz"
+  const host = headersList.get("host");
   const tenant = getTenantFromHost(host);
 
-  // Use headersList, not headersData
-  const cookies = headersList.get("cookie");
+  // 2. Resolve Strategy
+  const { config } = getStrategy(tenant);
 
-  // Ensure Tenant is imported so Tenant.BEEXO works
-  const initialState = cookieToInitialState(
-    tenant === Tenant.BEEXO ? beexoConfig : webConfig,
-    cookies,
-  );
+  // 3. Hydrate State
+  const cookies = headersList.get("cookie");
+  const initialState = cookieToInitialState(config, cookies);
 
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex justify-center min-h-screen bg-gray-100`}
       >
-        {/* Pass initialState, NOT cookies */}
+        {/* Pass tenant so Client Components know which Strategy to load */}
         <ContextProvider tenant={tenant} initialState={initialState}>
-          <div className="w-full max-w-[430px] min-h-screen bg-white shadow-2xl relative flex flex-col">
-            <div className="flex-1 flex flex-col pb-[70px]">{children}</div>
+          <div className="w-full max-w-108 min-h-screen bg-white shadow-2xl relative flex flex-col">
+            <div className="flex-1 flex flex-col pb-18">{children}</div>
 
             <BottomNavigation />
             <ConsoleOverlay />

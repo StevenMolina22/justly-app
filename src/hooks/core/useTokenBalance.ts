@@ -22,7 +22,7 @@ export function useTokenBalance() {
 
   return {
     value: balance, // BigInt
-    formatted: balance ? formatUnits(balance, decimals) : "0", // Assuming USDC (6 decimals)
+    formatted: balance ? formatUnits(balance, decimals) : "0",
     loading: isLoading,
     refetch,
   };

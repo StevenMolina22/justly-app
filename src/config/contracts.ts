@@ -1,21 +1,18 @@
-import { SUPPORTED_CHAINS, DEFAULT_CHAIN } from "./chains";
+import { appConfig } from "./chains";
+import { sliceAbi } from "@/contracts/slice-abi";
+
+export const SLICE_ABI = sliceAbi;
 
 export const getContractsForChain = (chainId: number) => {
-  const config = SUPPORTED_CHAINS.find((c) => c.chain.id === chainId);
-
-  if (!config) {
-    console.warn(`Chain ID ${chainId} not found in config, using default.`);
-    return {
-      sliceContract: DEFAULT_CHAIN.contracts.slice as `0x${string}`,
-      usdcToken: DEFAULT_CHAIN.contracts.usdc as `0x${string}`,
-    };
+  // Safety check: Warn if we are trying to use contracts on the wrong chain
+  if (chainId !== appConfig.chain.id) {
+    console.warn(
+      `Chain ID mismatch! Current env is ${appConfig.chain.name} (${appConfig.chain.id}), but requested ${chainId}`,
+    );
   }
 
+  // Return the single source of truth for the current environment
   return {
-    sliceContract: config.contracts.slice as `0x${string}`,
-    usdcToken: config.contracts.usdc as `0x${string}`,
+    sliceContract: appConfig.contracts.slice as `0x${string}`,
   };
 };
-
-import { sliceAbi } from "@/contracts/slice-abi";
-export const SLICE_ABI = sliceAbi;
