@@ -7,6 +7,7 @@ import {
   Filter,
   Check,
   XCircle,
+  Sparkles,
 } from "lucide-react";
 import {
   Popover,
@@ -55,7 +56,7 @@ export const DisputeListView: React.FC<Props> = ({
   }, [disputes, activeTab, selectedCategory]);
 
   return (
-    <div className="px-5 mt-8 w-full box-border pb-32 relative">
+    <div className="px-5 w-full box-border pb-4 relative">
       {/* Tabs */}
       <div className="flex gap-6 border-b border-gray-100 mb-6">
         {["active", "history"].map((tab) => (
@@ -93,13 +94,13 @@ export const DisputeListView: React.FC<Props> = ({
                 "flex items-center gap-2 font-extrabold text-[11px] px-3 py-1.5 rounded-full transition-all border",
                 selectedCategory
                   ? "bg-[#8c8fff] text-white border-[#8c8fff]"
-                  : "bg-white text-gray-500 border-transparent hover:bg-gray-50",
+                  : "bg-white text-gray-800 border-transparent hover:bg-gray-50",
               )}
             >
               <Filter
                 size={12}
                 className={cn(
-                  selectedCategory ? "text-white" : "text-gray-400",
+                  selectedCategory ? "text-white" : "text-gray-700",
                 )}
               />
               {selectedCategory ? (
@@ -112,10 +113,10 @@ export const DisputeListView: React.FC<Props> = ({
 
           <PopoverContent
             align="end"
-            className="w-[200px] p-2 rounded-2xl shadow-xl border-gray-100"
+            className="w-50 p-4 rounded-2xl shadow-xl border-gray-100"
           >
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 py-1">
+              <span className="text-[12px] font-bold text-gray-800 uppercase tracking-wider px-2 py-1">
                 Filter by Category
               </span>
 
@@ -195,9 +196,32 @@ export const DisputeListView: React.FC<Props> = ({
 
       <button
         onClick={onEarnClick}
-        className="fixed bottom-[90px] left-1/2 -translate-x-1/2 z-40 w-[241px] h-10 bg-white border-2 border-[#8c8fff] rounded-[14px] font-bold shadow-lg hover:scale-105 active:scale-95 transition-all text-[#1b1c23]"
+        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 group"
       >
-        Start Voting
+        <div
+          className="
+          relative flex items-center gap-3 px-6 py-3.5
+          bg-[#1b1c23] rounded-full
+          border border-white/10
+          shadow-[0_10px_40px_-10px_rgba(27,28,35,0.4)]
+          hover:shadow-[0_20px_40px_-10px_rgba(140,143,255,0.3)]
+          hover:-translate-y-1 active:scale-95
+          transition-all duration-300 ease-out
+        "
+        >
+          {/* Animated Gradient Background Effect (Optional subtle shine) */}
+          <div className="absolute inset-0 rounded-full overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          </div>
+
+          {/* Icon - Switched to Brand Purple or Money Green based on preference */}
+          <Sparkles className="w-4 h-4 text-[#8c8fff] fill-[#8c8fff]/20" />
+
+          {/* Text - Single Line, Bold, Clean */}
+          <span className="text-white font-manrope font-semibold tracking-wide pr-1">
+            Start Earning
+          </span>
+        </div>
       </button>
     </div>
   );

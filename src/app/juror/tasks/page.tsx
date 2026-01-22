@@ -40,7 +40,7 @@ export default function JurorTasksPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F9FC] font-manrope pb-32 relative overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-[#F8F9FC] font-manrope pb-4 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#8c8fff]/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="pt-10 px-6 pb-6 bg-[#F8F9FC]/90 backdrop-blur-md z-20 sticky top-0 border-b border-gray-100/50">

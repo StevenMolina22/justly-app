@@ -12,10 +12,10 @@ export const SessionModal = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
-  const { address, userId } = useSliceAccount();
+  const { address } = useSliceAccount();
   const { disconnect } = useSliceConnect();
 
-  if (!isOpen || !userId) return null;
+  if (!isOpen || !address) return null;
 
   // Get the display address (embedded wallet or connected external wallet)
   const displayAddress = address || "";
@@ -53,7 +53,7 @@ export const SessionModal = ({
             Session Info
           </h2>
           <span className="text-xs text-gray-500 font-medium">
-            Connected via Privy
+            Connected Wallet
           </span>
         </div>
 
@@ -75,10 +75,10 @@ export const SessionModal = ({
           </button>
         </div>
 
-        {/* User ID (Optional) */}
+        {/* User Address Info */}
         <div className="mb-6 px-2">
           <p className="text-xs text-gray-400 truncate">
-            <span className="font-bold">Privy ID:</span> {userId}
+            <span className="font-bold">Full Address:</span> {displayAddress}
           </p>
         </div>
 

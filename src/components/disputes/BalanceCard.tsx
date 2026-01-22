@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
-import { RefreshCw, ArrowDownCircle, Send, QrCode } from "lucide-react";
+import { RefreshCw, Send, ArrowDownCircle } from "lucide-react";
 import { useTokenBalance } from "@/hooks/core/useTokenBalance";
 import { SendModal } from "./SendModal";
 import { ReceiveModal } from "./ReceiveModal";
@@ -29,12 +29,12 @@ export const BalanceCard: React.FC = () => {
   const actionBtnClass =
     "flex flex-col items-center gap-1 bg-none border-none text-white cursor-pointer p-0 hover:opacity-80 transition-opacity group";
   const iconClass =
-    "shrink-0 block w-[40px] h-[40px] group-hover:opacity-80 transition-opacity stroke-1";
+    "shrink-0 block w-[42px] h-[42px] group-hover:opacity-80 transition-opacity stroke-1";
 
   return (
     <>
       {/* Added 'relative' here to position the refresh button */}
-      <div className="relative bg-[#1b1c23] rounded-[21px] pt-6 px-6 pb-6 mt-12 mx-5 w-auto min-h-28 flex flex-row justify-between items-end text-white box-border">
+      <div className="relative bg-[#1b1c23] rounded-[21px] p-6 my-6 mx-4 w-auto min-h-28 flex flex-row justify-between items-end text-white box-border">
         {/* Top Right Refresh Button */}
         <button
           onClick={() => refetch()}
@@ -82,7 +82,7 @@ export const BalanceCard: React.FC = () => {
         </div>
 
         {/* Action Buttons (Right Side) */}
-        <div className="flex gap-3 items-center shrink-0 self-end">
+        <div className="flex gap-4 items-center shrink-0 self-end">
           <button
             className={actionBtnClass}
             onClick={() => setIsReceiveOpen(true)}
@@ -91,18 +91,7 @@ export const BalanceCard: React.FC = () => {
             <span className="font-manrope font-semibold text-xs tracking-[-0.12px] leading-none">
               Deposit
             </span>
-          </button>
-
-          <button
-            className={actionBtnClass}
-            onClick={() => setIsReceiveOpen(true)}
-          >
-            <QrCode className={iconClass} />
-            <span className="font-manrope font-semibold text-xs tracking-[-0.12px] leading-none">
-              Receive
-            </span>
-          </button>
-
+          </button>{" "}
           <button
             className={actionBtnClass}
             onClick={() => setIsSendOpen(true)}

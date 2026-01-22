@@ -58,7 +58,7 @@ export default function VotePage() {
       </div>
 
       {/* 2. Content */}
-      <div className="flex-1 overflow-y-auto px-5 pb-40 pt-2 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2 scrollbar-hide">
         <div className="flex flex-col gap-6 max-w-sm mx-auto h-full">
           {/* Title Area */}
           <div className="flex justify-between items-end px-1 mt-2">

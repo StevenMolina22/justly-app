@@ -43,7 +43,7 @@ export default function DisputeManagerPage() {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-32 pt-6">
+      <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6">
         {/* Intro */}
         <div className="flex items-center justify-between mb-6">
           <div>

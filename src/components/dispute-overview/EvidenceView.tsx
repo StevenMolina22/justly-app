@@ -80,7 +80,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
       </div>
 
       {/* --- 2. SCROLLABLE CONTENT AREA --- */}
-      <div className="flex-1 overflow-y-auto px-6 pb-32 pt-2 flex flex-col gap-6 z-10 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-6 pb-4 pt-2 flex flex-col gap-6 z-10 scrollbar-hide">
         {/* Identity Card */}
         <div className="relative bg-white rounded-[24px] p-1 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
           <div

@@ -114,7 +114,7 @@ export default function DisputeOverviewPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-32 flex flex-col gap-6 z-10 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col gap-6 z-10 scrollbar-hide">
         {/* 2. Versus Card */}
         <div className="mt-2">
           <div className="flex justify-between items-center mb-3 px-1">

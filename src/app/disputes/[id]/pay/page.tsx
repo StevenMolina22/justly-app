@@ -62,7 +62,7 @@ export default function PayDisputePage() {
       </div>
 
       {/* Main Centered Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 pb-40 z-10 animate-in fade-in zoom-in-95 duration-500">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 pb-4 z-10 animate-in fade-in zoom-in-95 duration-500">
         <div className="w-full max-w-sm bg-white rounded-[32px] p-8 shadow-[0_20px_60px_-15px_rgba(27,28,35,0.08)] border border-white relative text-center">
           {/* Hero Animation */}
           <div className="flex justify-center mb-6">

@@ -1,8 +1,12 @@
 "use client";
 
 import { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TimerProvider } from "@/contexts/TimerContext";
 import { Tenant } from "@/config/tenant";
-import { getStrategy } from "@/config/strategies";
+import * as Privy from "@/config/adapters/privy";
+import * as Beexo from "@/config/adapters/beexo";
+import * as Coinbase from "@/config/adapters/coinbase";
 
 interface Props {
   children: ReactNode;
@@ -10,17 +14,52 @@ interface Props {
   initialState?: any;
 }
 
+// Shared providers used across all tenants
+function SharedProviders({ children }: { children: ReactNode }) {
+  const queryClient = new QueryClient();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TimerProvider>{children}</TimerProvider>
+    </QueryClientProvider>
+  );
+}
+
 export default function ContextProvider({
   children,
   tenant,
   initialState,
 }: Props) {
-  // 1. Dynamically select the correct Provider component
-  // We rename 'Provider' to 'StrategyProvider' to make it valid JSX
-  const { Provider: StrategyProvider } = getStrategy(tenant);
+  // Select adapter based on tenant
+  let tenantProvider: ReactNode;
 
-  // 2. Render it with the hydrated state
-  return (
-    <StrategyProvider initialState={initialState}>{children}</StrategyProvider>
-  );
+  switch (tenant) {
+    case Tenant.PRIVY:
+      tenantProvider = (
+        <Privy.PrivyProviderTree initialState={initialState}>
+          <Privy.PrivyAuthAdapter>{children}</Privy.PrivyAuthAdapter>
+        </Privy.PrivyProviderTree>
+      );
+      break;
+
+    case Tenant.BEEXO:
+      tenantProvider = (
+        <Beexo.BeexoProviderTree initialState={initialState}>
+          <Beexo.BeexoAuthAdapter>{children}</Beexo.BeexoAuthAdapter>
+        </Beexo.BeexoProviderTree>
+      );
+      break;
+
+    case Tenant.WEB:
+    default:
+      tenantProvider = (
+        <Coinbase.CoinbaseProviderTree initialState={initialState}>
+          <Coinbase.CoinbaseAuthAdapter>
+            {children}
+          </Coinbase.CoinbaseAuthAdapter>
+        </Coinbase.CoinbaseProviderTree>
+      );
+  }
+
+  return <SharedProviders>{tenantProvider}</SharedProviders>;
 }

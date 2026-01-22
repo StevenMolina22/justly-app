@@ -1,4 +1,4 @@
-import { useAuthStrategy } from "@/config/strategies/AuthStrategyContext";
+import { useAuthStrategy } from "@/contexts/AuthStrategyContext";
 
 export const useSliceConnect = () => {
   const { connect, disconnect, isAuthenticated } = useAuthStrategy();

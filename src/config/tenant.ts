@@ -6,7 +6,6 @@ export enum Tenant {
 
 const BEEXO_SUBDOMAINS = ["beexo.", "mini."];
 const PRIVY_SUBDOMAINS = ["frame.", "privy."];
-const WEB_SUBDOMAINS: string[] = [];
 
 export const getTenantFromHost = (host: string | null): Tenant => {
   if (!host) return Tenant.WEB;
