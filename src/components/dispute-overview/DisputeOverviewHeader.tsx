@@ -43,7 +43,7 @@ export const DisputeOverviewHeader: React.FC<DisputeOverviewHeaderProps> = ({
         )}
 
         <button
-          onClick={() => router.push("/disputes")}
+          onClick={() => router.push("/")}
           className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm text-[#1b1c23]"
         >
           <Home className="w-5 h-5" />

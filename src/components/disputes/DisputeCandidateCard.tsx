@@ -1,6 +1,7 @@
 import React from "react";
 import { CheckCircle2, Lock, Key } from "lucide-react";
 import { shortenAddress } from "@/util/wallet";
+import { cn } from "@/lib/utils";
 
 interface DisputeCandidateCardProps {
   type: "vote" | "reveal";
@@ -14,6 +15,7 @@ interface DisputeCandidateCardProps {
   isDimmed?: boolean; // For the reveal page (unselected items)
   isDisabled?: boolean; // For the vote page (already committed)
   onClick?: () => void;
+  className?: string; // Added className prop
 }
 
 export function DisputeCandidateCard({
@@ -23,6 +25,7 @@ export function DisputeCandidateCard({
   isDimmed = false,
   isDisabled = false,
   onClick,
+  className,
 }: DisputeCandidateCardProps) {
   // Common Styles
   const baseStyles =
@@ -43,7 +46,13 @@ export function DisputeCandidateCard({
     <button
       onClick={onClick}
       disabled={isDisabled || type === "reveal"} // Reveal cards usually aren't clickable
-      className={`${baseStyles} ${activeStyles} ${dimStyles} ${disabledStyles}`}
+      className={cn(
+        baseStyles,
+        activeStyles,
+        dimStyles,
+        disabledStyles,
+        className, // Allow external overrides
+      )}
     >
       {/* 1. Avatar */}
       <div className="relative shrink-0">
@@ -65,7 +74,9 @@ export function DisputeCandidateCard({
       {/* 2. Text */}
       <div className="flex-1 text-left">
         <span
-          className={`block text-[10px] font-bold uppercase tracking-widest mb-0.5 ${isSelected ? "text-[#1b1c23]" : "text-gray-400"}`}
+          className={`block text-[10px] font-bold uppercase tracking-widest mb-0.5 ${
+            isSelected ? "text-[#1b1c23]" : "text-gray-400"
+          }`}
         >
           {type === "vote"
             ? "Vote For"
@@ -74,7 +85,9 @@ export function DisputeCandidateCard({
               : "Opponent"}
         </span>
         <h3
-          className={`text-lg font-extrabold leading-tight ${isSelected ? "text-[#1b1c23]" : "text-gray-700"}`}
+          className={`text-lg font-extrabold leading-tight ${
+            isSelected ? "text-[#1b1c23]" : "text-gray-700"
+          }`}
         >
           {shortenAddress(partyInfo.name)}
         </h3>
@@ -82,11 +95,15 @@ export function DisputeCandidateCard({
 
       {/* 3. Icon Logic */}
       <div
-        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "bg-[#1b1c23] border-[#1b1c23]" : "border-gray-100"}`}
+        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+          isSelected ? "bg-[#1b1c23] border-[#1b1c23]" : "border-gray-100"
+        }`}
       >
         {type === "vote" && (
           <CheckCircle2
-            className={`w-4 h-4 text-white transition-opacity ${isSelected ? "opacity-100" : "opacity-0"}`}
+            className={`w-4 h-4 text-white transition-opacity ${
+              isSelected ? "opacity-100" : "opacity-0"
+            }`}
           />
         )}
         {type === "reveal" &&

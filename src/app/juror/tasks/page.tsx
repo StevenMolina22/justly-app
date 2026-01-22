@@ -34,7 +34,8 @@ export default function JurorTasksPage() {
 
   const handleAction = (task: any) => {
     if (task.phase === "VOTE") router.push(`/disputes/${task.id}/vote`);
-    else if (task.phase === "REVEAL") router.push(`/disputes/${task.id}/reveal`);
+    else if (task.phase === "REVEAL")
+      router.push(`/disputes/${task.id}/reveal`);
     else if (task.phase === "WITHDRAW")
       router.push(`/disputes/${task.id}/execute`);
   };
@@ -89,17 +90,17 @@ export default function JurorTasksPage() {
           </div>
         ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-28 h-28 bg-gradient-to-tr from-white to-[#F0F2F5] rounded-full flex items-center justify-center mb-6 border-[6px] border-[#F8F9FC] shadow-xl">
+            <div className="w-28 h-28 bg-linear-to-tr from-white to-[#F0F2F5] rounded-full flex items-center justify-center mb-6 border-[6px] border-[#F8F9FC] shadow-xl">
               <CheckCircle2 className="w-12 h-12 text-[#8c8fff]" />
             </div>
             <h3 className="text-2xl font-black text-[#1b1c23] tracking-tight">
               All Clear!
             </h3>
-            <p className="text-base text-gray-500 mt-2 max-w-[240px] mx-auto font-medium">
+            <p className="text-base text-gray-500 mt-2 max-w-60 mx-auto font-medium">
               Great job. You have no pending actions at the moment.
             </p>
             <button
-              onClick={() => router.push("/disputes")}
+              onClick={() => router.push("/")}
               className="mt-8 px-6 py-3.5 bg-white border border-gray-100 text-[#1b1c23] rounded-2xl font-bold text-sm hover:bg-gray-50 transition-all shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]"
             >
               Browse Active Cases

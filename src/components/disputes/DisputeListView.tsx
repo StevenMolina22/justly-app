@@ -82,7 +82,7 @@ export const DisputeListView: React.FC<Props> = ({
             <BarChart3 size={12} className="text-white" />
           </div>
           <h2 className="font-extrabold text-[15px]">
-            {activeTab === "active" ? "Current Portfolio" : "Resolved Cases"}
+            {activeTab === "active" ? "Open Disputes" : "Resolved Cases"}
           </h2>
         </div>
 

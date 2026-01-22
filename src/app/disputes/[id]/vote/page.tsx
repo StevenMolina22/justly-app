@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { RefreshCw, Scale, Home, Eye, ArrowRight, Lock } from "lucide-react";
 import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
-import { TimerCard } from "@/components/dispute-overview/TimerCard";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { DisputeCandidateCard } from "@/components/disputes/DisputeCandidateCard";
@@ -34,7 +33,8 @@ export default function VotePage() {
   const parties = useDisputeParties(dispute);
 
   const bindSwipe = usePageSwipe({
-    onSwipeRight: () => router.push(`/disputes/${disputeId}/evidence/defendant`),
+    onSwipeRight: () =>
+      router.push(`/disputes/${disputeId}/evidence/defendant`),
   });
 
   const onCommitClick = async () => {
@@ -54,26 +54,30 @@ export default function VotePage() {
       {/* 1. Header */}
       <div className="flex-none z-10 bg-[#F8F9FC]/80 backdrop-blur-md">
         <DisputeOverviewHeader onBack={() => router.back()} />
-        <TimerCard />
       </div>
 
       {/* 2. Content */}
-      <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2 scrollbar-hide">
-        <div className="flex flex-col gap-6 max-w-sm mx-auto h-full">
-          {/* Title Area */}
-          <div className="flex justify-between items-end px-1 mt-2">
-            <div>
-              <h2 className="text-2xl font-extrabold text-[#1b1c23] leading-tight">
-                Make your judgement
-              </h2>
-              <p className="text-xs font-bold text-gray-400 mt-1">
-                Review evidence and select a winner.
-              </p>
-            </div>
+      <div className="flex-1 flex flex-col px-6 overflow-y-auto scrollbar-hide relative z-0">
+        {/* - Removed min-h-[500px] to prevent top-alignment on small screens
+          - Added py-10 to ensure breathing room on short screens
+        */}
+        <div className="flex-1 flex flex-col justify-center w-full max-w-sm mx-auto pb-24 pt-4">
+          {/* Title Section - Centered & Cohesive */}
+          <div className="relative mb-8 text-center">
+            <h2 className="text-3xl font-black text-[#1b1c23] leading-tight tracking-tight">
+              Make your <br />
+              <span className="text-[#8c8fff]">judgement</span>
+            </h2>
+            <p className="text-sm font-semibold text-gray-500 mt-2">
+              Review evidence and select a winner.
+            </p>
+
+            {/* Refresh Button - Absolute positioned to not break center alignment */}
             <button
               onClick={() => void handleRefresh()}
               disabled={isRefreshing || isProcessing}
-              className="p-2.5 rounded-full bg-white border border-gray-100 shadow-sm text-[#8c8fff] active:scale-90 transition-transform hover:bg-gray-50"
+              className="absolute top-1 right-0 p-2.5 rounded-2xl bg-white border border-gray-100 shadow-sm text-[#8c8fff] active:scale-90 transition-all hover:bg-gray-50"
+              title="Refresh Status"
             >
               <RefreshCw
                 className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
@@ -81,59 +85,67 @@ export default function VotePage() {
             </button>
           </div>
 
-          {/* Voting Cards */}
-          <div className="flex flex-col gap-5 relative flex-1 min-h-[320px]">
+          {/* Cards Section */}
+          <div className="flex flex-col gap-6 relative">
             <div className="relative z-10">
-              <DisputeCandidateCard
-                type="vote"
-                partyInfo={parties.claimer}
-                isSelected={selectedVote === 1}
-                isDisabled={hasCommittedLocally}
-                onClick={() => handleVoteSelect(1)}
-              />
+              <div className="transform transition-transform active:scale-[0.98]">
+                <DisputeCandidateCard
+                  type="vote"
+                  partyInfo={parties.claimer}
+                  isSelected={selectedVote === 1}
+                  isDisabled={hasCommittedLocally}
+                  onClick={() => handleVoteSelect(1)}
+                  className="w-full h-32" // Ensuring larger size
+                />
+              </div>
               <VsBadge />
             </div>
 
-            <DisputeCandidateCard
-              type="vote"
-              partyInfo={parties.defender}
-              isSelected={selectedVote === 0}
-              isDisabled={hasCommittedLocally}
-              onClick={() => handleVoteSelect(0)}
-            />
+            <div className="transform transition-transform active:scale-[0.98]">
+              <DisputeCandidateCard
+                type="vote"
+                partyInfo={parties.defender}
+                isSelected={selectedVote === 0}
+                isDisabled={hasCommittedLocally}
+                onClick={() => handleVoteSelect(0)}
+                className="w-full h-32" // Ensuring larger size
+              />
+            </div>
           </div>
 
-          {/* Notifications */}
-          {isProcessing && (
-            <div className="mx-auto flex items-center gap-2 text-[10px] font-bold text-[#8c8fff] animate-pulse bg-white px-4 py-2 rounded-full shadow-sm border border-[#8c8fff]/20">
-              <RefreshCw className="w-3 h-3 animate-spin" />
-              <span>SECURING VOTE ON-CHAIN...</span>
-            </div>
-          )}
+          {/* Status Notifications */}
+          <div className="mt-8 min-h-[24px]">
+            {isProcessing && (
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-[#8c8fff] animate-pulse bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mx-auto w-fit shadow-sm">
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                <span>SECURING VOTE ON-CHAIN...</span>
+              </div>
+            )}
 
-          {hasCommittedLocally && (
-            <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4 shadow-sm animate-in fade-in slide-in-from-bottom-2 mx-auto w-full">
-              <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 border border-indigo-100">
-                <Lock className="w-5 h-5" />
+            {hasCommittedLocally && (
+              <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4 shadow-xl shadow-gray-200/50 animate-in fade-in slide-in-from-bottom-2">
+                <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 border border-indigo-100">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-[#1b1c23]">
+                    Vote Secured
+                  </h4>
+                  <p className="text-xs text-gray-500 font-medium leading-tight">
+                    Your decision is encrypted. You must reveal it in the next
+                    phase.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-extrabold text-sm text-[#1b1c23]">
-                  Vote Secured
-                </h4>
-                <p className="text-xs text-gray-500 font-medium leading-tight">
-                  Your decision is encrypted. You must reveal it in the next
-                  phase.
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       {/* 3. Footer Action */}
-      <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
-        <div className="w-full max-w-sm flex flex-col gap-4">
-          <div className="mb-2">
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
+        <div className="w-full max-w-sm flex flex-col gap-5">
+          <div className="mb-1">
             <PaginationDots currentIndex={3} total={4} />
           </div>
 
@@ -141,18 +153,23 @@ export default function VotePage() {
             <button
               onClick={() => void onCommitClick()}
               disabled={isCommitDisabled}
-              className={`w-full py-4 px-6 rounded-2xl font-manrope font-semibold tracking-wide transition-all duration-300 shadow-[0_8px_20px_-6px_rgba(27,28,35,0.2)] flex items-center justify-center gap-2 ${isCommitDisabled ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none" : "bg-[#1b1c23] text-white hover:scale-[1.02] active:scale-[0.98]"}`}
+              className={`
+                w-full py-4 px-6 rounded-[20px] font-manrope font-semibold text-lg tracking-wide transition-all duration-300 shadow-xl flex items-center justify-center gap-3
+                ${
+                  isCommitDisabled
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
+                    : "bg-[#1b1c23] text-white hover:scale-[1.02] active:scale-[0.98] shadow-gray-200"
+                }
+              `}
             >
               {isProcessing ? (
                 <>
-                  {" "}
-                  <RefreshCw className="w-4 h-4 animate-spin" />{" "}
-                  <span>COMMITTING...</span>{" "}
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>COMMITTING...</span>
                 </>
               ) : (
                 <>
-                  {" "}
-                  <Scale className="w-4 h-4" /> <span>VOTE</span>{" "}
+                  <Scale className="w-4 h-4" /> <span>CAST VOTE</span>
                 </>
               )}
             </button>
@@ -163,18 +180,23 @@ export default function VotePage() {
                   ? router.push("/disputes")
                   : router.push(`/disputes/${disputeId}/reveal`)
               }
-              className={`w-full py-4 px-6 rounded-2xl font-manrope font-semibold tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${isRevealDisabled ? "bg-white text-[#1b1c23] border border-gray-200 shadow-sm hover:bg-gray-50" : "bg-[#1b1c23] text-white shadow-[0_8px_20px_-6px_rgba(27,28,35,0.2)] hover:scale-[1.02]"}`}
+              className={`
+                w-full py-5 px-6 rounded-[20px] font-manrope font-bold text-lg tracking-wide transition-all duration-300 flex items-center justify-center gap-3
+                ${
+                  isRevealDisabled
+                    ? "bg-white text-[#1b1c23] border border-gray-200 shadow-lg hover:bg-gray-50"
+                    : "bg-[#1b1c23] text-white shadow-xl shadow-gray-200 hover:scale-[1.02]"
+                }
+              `}
             >
               {isRevealDisabled ? (
                 <>
-                  {" "}
-                  <Home className="w-4 h-4" /> <span>RETURN HOME</span>{" "}
+                  <Home className="w-5 h-5" /> <span>RETURN HOME</span>
                 </>
               ) : (
                 <>
-                  {" "}
-                  <Eye className="w-4 h-4" /> <span>GO TO REVEAL</span>{" "}
-                  <ArrowRight className="w-4 h-4" />{" "}
+                  <Eye className="w-5 h-5" /> <span>GO TO REVEAL</span>
+                  <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>

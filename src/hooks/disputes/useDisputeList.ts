@@ -137,12 +137,16 @@ export function useDisputeList(
 
       let finalDisputes = processed.filter((d): d is DisputeUI => d !== null);
 
-      // --- Filter out Finished disputes if activeOnly is true ---
+      // --- Filter out Finished AND Unpaid disputes if activeOnly is true ---
       if (options?.activeOnly) {
-        // Status 3 = Finished/Resolved
-        finalDisputes = finalDisputes.filter(
-          (d) => d.status !== DISPUTE_STATUS.RESOLVED,
-        );
+        finalDisputes = finalDisputes.filter((d) => {
+          // Exclude Resolved (3) AND Created/Unpaid (0)
+          // We only want Active phases: Commit (1) and Reveal (2)
+          return (
+            d.status !== DISPUTE_STATUS.RESOLVED &&
+            d.status !== DISPUTE_STATUS.CREATED
+          );
+        });
       }
 
       setDisputes(finalDisputes);

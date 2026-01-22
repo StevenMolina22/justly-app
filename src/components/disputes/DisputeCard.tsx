@@ -56,7 +56,7 @@ export const DisputeCard = ({ dispute }: { dispute: DisputeUI }) => {
 
   const handleReadDispute = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/disputes/${dispute.id}`);
+    router.push(`/disputes/${dispute.id}/file`);
   };
 
   const handleWithdraw = (e: React.MouseEvent) => {
