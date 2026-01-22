@@ -141,8 +141,11 @@ contract Slice {
         userDisputes[_config.claimer].push(id);
         userDisputes[_config.defender].push(id);
 
-        // Add to Draft Queue so jurors can be assigned
-        _addToQueue(id);
+        if (d.claimerPaid && d.defenderPaid) {
+            d.status = DisputeStatus.Commit;
+            _addToQueue(id);
+            emit StatusChanged(id, DisputeStatus.Commit);
+        }
 
         emit DisputeCreated(id, _config.claimer, _config.defender);
         return id;
@@ -171,6 +174,8 @@ contract Slice {
         // Advance to Commit phase only when both sides have paid
         if (d.claimerPaid && d.defenderPaid) {
             d.status = DisputeStatus.Commit;
+            _addToQueue(_id);
+
             emit StatusChanged(_id, DisputeStatus.Commit);
         }
     }

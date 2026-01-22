@@ -4,17 +4,21 @@ export enum Tenant {
   PRIVY = "privy", // Privy Strategy (Frames / Fallback)
 }
 
+const BEEXO_SUBDOMAINS = ["beexo.", "mini."];
+const PRIVY_SUBDOMAINS = ["frame.", "privy."];
+const WEB_SUBDOMAINS: string[] = [];
+
 export const getTenantFromHost = (host: string | null): Tenant => {
   if (!host) return Tenant.WEB;
 
   const hostname = host.split(":")[0];
 
-  if (hostname.startsWith("beexo.") || hostname.startsWith("mini.")) {
+  if (BEEXO_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
     return Tenant.BEEXO;
   }
 
   // Example: Use Privy for specific subdomains
-  if (hostname.startsWith("frame.")) {
+  if (PRIVY_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
     return Tenant.PRIVY;
   }
 

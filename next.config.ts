@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 
-const isDev = process.env.NODE_ENV === "development";
-
 const withPWA = withPWAInit({
   dest: "public",
-  disable: isDev,
+  disable: process.env.ENABLE_PWA === "false",
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
