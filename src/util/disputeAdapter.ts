@@ -20,6 +20,11 @@ export interface DisputeUI {
   defender: string;
   winner?: string;
 
+  // Voting Progress Fields
+  commitsCount: number;
+  revealsCount: number;
+  userHasRevealed: boolean;
+
   // Payment Status Fields
   claimerPaid: boolean;
   defenderPaid: boolean;
@@ -69,6 +74,7 @@ function getField<T>(
 export async function transformDisputeData(
   contractData: any,
   decimals: number = 6,
+  userHasRevealed: boolean = false,
 ): Promise<DisputeUI> {
   // Extract fields using safe accessor with fallbacks
   // Struct field order based on Solidity Dispute struct:
@@ -103,6 +109,12 @@ export async function transformDisputeData(
     getField<bigint>(contractData, "jurorsRequired", 5, BigInt(3)),
   );
   const ipfsHash = getField<string>(contractData, "ipfsHash", 6, "");
+  const commitsCount = Number(
+    getField<bigint>(contractData, "commitsCount", 7, BigInt(0)),
+  );
+  const revealsCount = Number(
+    getField<bigint>(contractData, "revealsCount", 8, BigInt(0)),
+  );
   const status = Number(getField<number>(contractData, "status", 9, 0));
   const claimerPaid = getField<boolean>(contractData, "claimerPaid", 10, false);
   const defenderPaid = getField<boolean>(
@@ -216,6 +228,13 @@ export async function transformDisputeData(
     claimer,
     defender,
     winner,
+
+    // Voting Progress Fields
+    commitsCount,
+    revealsCount,
+    userHasRevealed,
+
+    // Payment Status Fields
     claimerPaid,
     defenderPaid,
 
