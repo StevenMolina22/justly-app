@@ -2,14 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  RefreshCw,
-  Clock,
-  Lock,
-  Gavel,
-  CheckCircle2,
-  HelpCircle,
-} from "lucide-react";
+import { RefreshCw, Clock, Lock, Gavel, CheckCircle2 } from "lucide-react";
 import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
@@ -44,7 +37,6 @@ export default function RevealPage() {
 
   // Helper to get the party we voted for
   const votedParty = localVote === 1 ? parties.claimer : parties.defender;
-  const hasVoteToReveal = localVote !== null;
 
   return (
     <div className="flex flex-col h-screen bg-[#F8F9FC]" {...bindSwipe()}>
@@ -92,29 +84,20 @@ export default function RevealPage() {
 
               {/* The "Chosen One" Card */}
               <div className="relative pt-3">
-                {hasVoteToReveal ? (
-                  <div className="transform transition-all duration-500 hover:scale-[1.02]">
-                    <DisputeCandidateCard
-                      type="reveal"
-                      partyInfo={votedParty}
-                      isSelected={true}
-                      className="w-full h-32 border-[#1b1c23] ring-1 ring-[#1b1c23]/10 shadow-xl"
-                    />
+                <div className="transform transition-all duration-500 hover:scale-[1.02]">
+                  <DisputeCandidateCard
+                    type="reveal"
+                    partyInfo={votedParty}
+                    isSelected={true}
+                    className="w-full h-32 border-[#1b1c23] ring-1 ring-[#1b1c23]/10 shadow-xl"
+                  />
 
-                    {/* FIX: Added z-20 to ensure it sits ON TOP of the card (which is z-10) */}
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#1b1c23] text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5 z-20 border-2 border-white">
-                      <CheckCircle2 className="w-3 h-3 text-[#8c8fff]" />
-                      Your Choice
-                    </div>
+                  {/* Added z-20 to ensure it sits ON TOP of the card (which is z-10) */}
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#1b1c23] text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5 z-20 border-2 border-white">
+                    <CheckCircle2 className="w-3 h-3 text-[#8c8fff]" />
+                    Your Choice
                   </div>
-                ) : (
-                  <div className="w-full h-32 bg-gray-50 border border-dashed border-gray-300 rounded-[24px] flex flex-col items-center justify-center text-center p-4 gap-2">
-                    <HelpCircle className="w-6 h-6 text-gray-400" />
-                    <p className="text-xs font-bold text-gray-400">
-                      Vote data syncing...
-                    </p>
-                  </div>
-                )}
+                </div>
               </div>
 
               {/* Processing Status */}
@@ -163,11 +146,11 @@ export default function RevealPage() {
 
             <button
               onClick={() => void handleRevealClick()}
-              disabled={isProcessing || !hasVoteToReveal}
+              disabled={isProcessing}
               className={`
                 w-full py-4 px-6 rounded-[20px] font-manrope font-semibold text-lg tracking-wide transition-all duration-300 shadow-xl flex items-center justify-center gap-3
                 ${
-                  isProcessing || !hasVoteToReveal
+                  isProcessing
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none border border-gray-200"
                     : "bg-[#1b1c23] text-white hover:scale-[1.02] active:scale-[0.98] shadow-gray-200"
                 }
