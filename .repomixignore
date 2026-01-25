@@ -59,3 +59,11 @@ src/components/icons/
 docs/
 CONTRIBUTING.md
 LICENSE
+
+#
+.agent/
+.agents/
+.codex/
+.gemini/
+.opencode
+.husky/

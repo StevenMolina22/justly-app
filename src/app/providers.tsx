@@ -14,10 +14,18 @@ interface Props {
   initialState?: any;
 }
 
+// Create QueryClient singleton outside component to persist cache across renders
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes - data stays fresh
+      gcTime: 1000 * 60 * 30, // 30 minutes - garbage collection time
+    },
+  },
+});
+
 // Shared providers used across all tenants
 function SharedProviders({ children }: { children: ReactNode }) {
-  const queryClient = new QueryClient();
-
   return (
     <QueryClientProvider client={queryClient}>
       <TimerProvider>{children}</TimerProvider>
