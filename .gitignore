@@ -51,3 +51,10 @@ artifacts/
 cache/
 
 notes.txt
+
+.agent/skills
+.agents/skills
+.codex/skills
+.gemini/skills
+.opencode/
+REPO.md
