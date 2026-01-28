@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, usePublicClient } from "wagmi";
 import { SLICE_ABI } from "@/config/contracts";
 import { useContracts } from "@/hooks/core/useContracts";
@@ -19,6 +19,7 @@ export function useDisputeFinancials(disputeId: string) {
   const { sliceContract } = useContracts();
   const { decimals, symbol } = useStakingToken();
   const publicClient = usePublicClient();
+  const isMountedRef = useRef(true);
 
   const [data, setData] = useState<FinancialData>({
     principal: "0",
@@ -44,7 +45,9 @@ export function useDisputeFinancials(disputeId: string) {
       })) as bigint;
 
       if (myStake === 0n) {
-        setData((prev) => ({ ...prev, isLoading: false }));
+        if (isMountedRef.current) {
+          setData((prev) => ({ ...prev, isLoading: false }));
+        }
         return;
       }
 
@@ -149,23 +152,31 @@ export function useDisputeFinancials(disputeId: string) {
 
       const totalReturn = isWinner ? (myStake + calculatedReward) : 0n;
 
-      setData({
-          principal: formatUnits(myStake, decimals),
-          reward: formatUnits(calculatedReward, decimals),
-          total: formatUnits(totalReturn, decimals),
-          currency: symbol || "USDC",
-          isWinner,
-          isLoading: false
-      });
+      if (isMountedRef.current) {
+        setData({
+            principal: formatUnits(myStake, decimals),
+            reward: formatUnits(calculatedReward, decimals),
+            total: formatUnits(totalReturn, decimals),
+            currency: symbol || "USDC",
+            isWinner,
+            isLoading: false
+        });
+      }
 
     } catch (e) {
       console.error("Failed to calc financials", e);
-      setData(prev => ({...prev, isLoading: false}));
+      if (isMountedRef.current) {
+        setData(prev => ({...prev, isLoading: false}));
+      }
     }
   }, [publicClient, address, disputeId, sliceContract, decimals, symbol]);
 
   useEffect(() => {
     calculateRewards();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [calculateRewards]);
 
   return data;
