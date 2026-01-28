@@ -4,9 +4,10 @@ import React, { useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useGetDispute } from "@/hooks/disputes/useGetDispute";
 import { useExecuteRuling } from "@/hooks/actions/useExecuteRuling";
+import { useDisputeFinancials } from "@/hooks/disputes/useDisputeFinancials";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
-import { Loader2, Wallet, Trophy, Coins, Gavel } from "lucide-react";
+import { Loader2, Wallet, Trophy, Coins, Gavel, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
@@ -18,6 +19,13 @@ export default function ExecuteRulingPage() {
 
   const { dispute, refetch } = useGetDispute(disputeId);
   const { executeRuling, isExecuting } = useExecuteRuling();
+  
+  // Determine if ruling has been executed (status === 3)
+  const isFinished = dispute?.status === 3;
+  
+  // Fetch Real Financials (only after ruling is executed)
+  const { principal, reward, total, currency, isWinner, isLoading: isFinanceLoading } = useDisputeFinancials(disputeId, isFinished);
+  
   const [showSuccess, setShowSuccess] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -40,19 +48,9 @@ export default function ExecuteRulingPage() {
 
   const handleAnimationComplete = () => {
     setShowSuccess(false);
-    // Redirect to profile where the Withdraw button lives
-    toast.info(
-      "Ruling executed! You can now withdraw your funds from your Profile.",
-    );
+    toast.info("Ruling executed. You can review any balance updates in your Profile.");
     router.push("/profile");
   };
-
-  // --- Logic: Mock Reward Calculation ---
-  // TODO! you would fetch the potential reward from the contract view function
-  const stakedAmount = "50 USDC";
-  const rewardAmount = "+25 USDC"; // The "Gain"
-  const totalValue = "75 USDC"; // Total Return
-  const isFinished = dispute?.status === 3;
 
   return (
     <div
@@ -71,8 +69,26 @@ export default function ExecuteRulingPage() {
         {/* 2. Hero Section: The "Bag" */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-6">
-            <div className="w-24 h-24 rounded-[32px] bg-[#8c8fff]/10 flex items-center justify-center rotate-3">
-              <Wallet className="w-10 h-10 text-[#8c8fff]" />
+            <div
+              className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${
+                isFinanceLoading 
+                  ? "bg-gray-100" 
+                  : !isFinished
+                    ? "bg-gray-100"
+                    : isWinner
+                      ? "bg-[#8c8fff]/10"
+                      : "bg-red-50"
+              }`}
+            >
+              {isFinanceLoading ? (
+                <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+              ) : !isFinished ? (
+                 <Gavel className="w-10 h-10 text-gray-400" />
+              ) : isWinner ? (
+                <Wallet className="w-10 h-10 text-[#8c8fff]" />
+              ) : (
+                <AlertCircle className="w-10 h-10 text-red-400" />
+              )}
             </div>
             <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#1b1c23] rounded-full border-[3px] border-white flex items-center justify-center shadow-lg">
               <Coins className="w-5 h-5 text-white" />
@@ -83,9 +99,13 @@ export default function ExecuteRulingPage() {
             {isFinished ? "Ruling Executed" : "Finalize Ruling"}
           </h1>
           <p className="text-sm text-gray-500 font-medium max-w-[260px]">
-            {isFinished
-              ? "The ruling has been executed. Go to your Profile to withdraw your funds."
-              : "Finalize the ruling to unlock funds for withdrawal."}
+             {!isFinished
+                ? "Execute the ruling to finalize the dispute and see your results."
+                : isFinanceLoading
+                  ? "Calculating results..."
+                  : isWinner
+                    ? "You voted with the majority. Your rewards have been added to your profile."
+                    : "The majority voted differently. You will not receive a reward for this dispute."}
           </p>
         </div>
 
@@ -108,22 +128,29 @@ export default function ExecuteRulingPage() {
           </div>
 
           {/* Financial Breakdown */}
-          <div className="flex flex-col gap-3">
-            {/* Row 1: The Principal (Neutral) */}
-            <RewardRow
-              label="Returned Stake"
-              value={stakedAmount}
-              icon={<div className="w-1.5 h-1.5 rounded-full bg-gray-300" />}
-            />
+          {!isFinished ? (
+             <div className="flex justify-center py-4 text-sm text-gray-400">
+               Execute the ruling to see financial breakdown
+             </div>
+          ) : isFinanceLoading ? (
+             <div className="flex justify-center py-4"><Loader2 className="animate-spin text-gray-300" /></div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <RewardRow
+                label="Staked Principal"
+                value={`${principal} ${currency}`}
+                icon={<div className={`w-1.5 h-1.5 rounded-full ${isWinner ? "bg-gray-300" : "bg-red-300"}`} />}
+                strikethrough={!isWinner}
+              />
 
-            {/* Row 2: The Profit (Justice Purple Pop) */}
-            <RewardRow
-              label="Arbitration Fees Earned"
-              value={rewardAmount}
-              isHighlight // This triggers the purple styling
-              icon={<div className="w-1.5 h-1.5 rounded-full bg-[#8c8fff]" />}
-            />
-          </div>
+              <RewardRow
+                label="Arbitration Reward"
+                value={`${isWinner ? "+" : ""}${reward} ${currency}`}
+                isHighlight={isWinner}
+                icon={<div className={`w-1.5 h-1.5 rounded-full ${isWinner ? "bg-[#8c8fff]" : "bg-gray-200"}`} />}
+              />
+            </div>
+          )}
 
           {/* Total Section */}
           <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
@@ -135,8 +162,8 @@ export default function ExecuteRulingPage() {
                 Principal + Rewards
               </span>
             </div>
-            <span className="text-xl font-extrabold text-[#1b1c23]">
-              {totalValue}
+            <span className={`text-xl font-extrabold ${!isFinished ? "text-gray-300" : isWinner ? "text-[#1b1c23]" : "text-gray-300"}`}>
+              {!isFinished ? "—" : isFinanceLoading ? "..." : `${total} ${currency}`}
             </span>
           </div>
         </div>
@@ -156,7 +183,7 @@ export default function ExecuteRulingPage() {
               className="w-full py-4 px-6 bg-[#1b1c23] border border-gray-200 text-white rounded-2xl font-bold text-sm shadow-xl hover:bg-[#2c2d33] transition-all flex items-center justify-center gap-2"
             >
               <Wallet className="w-4 h-4" />
-              <span>Go to Profile to Withdraw</span>
+              <span>Go to Profile</span>
             </button>
           ) : (
             <button
@@ -199,11 +226,13 @@ const RewardRow = ({
   value,
   icon,
   isHighlight = false,
+  strikethrough = false,
 }: {
   label: string;
   value: string;
   icon: React.ReactNode;
   isHighlight?: boolean;
+  strikethrough?: boolean;
 }) => (
   <div className="flex items-center justify-between group">
     <div className="flex items-center gap-2.5">
@@ -213,7 +242,7 @@ const RewardRow = ({
       </span>
     </div>
     <span
-      className={`font-semibold ${isHighlight ? "text-[#8c8fff]" : "text-[#1b1c23]"}`}
+      className={`font-semibold ${isHighlight ? "text-[#8c8fff]" : "text-[#1b1c23]"} ${strikethrough ? "line-through text-gray-300" : ""}`}
     >
       {value}
     </span>

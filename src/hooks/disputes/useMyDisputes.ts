@@ -1,7 +1,11 @@
 import { useReadContract, useReadContracts, useAccount } from "wagmi";
 import { SLICE_ABI } from "@/config/contracts";
 import { useContracts } from "@/hooks/core/useContracts";
-import { transformDisputeData, type DisputeUI } from "@/util/disputeAdapter";
+import {
+  transformDisputeData,
+  batchFetchIPFSMetadata,
+  type DisputeUI,
+} from "@/util/disputeAdapter";
 import { useMemo, useState, useEffect } from "react";
 import { useStakingToken } from "../core/useStakingToken";
 
@@ -88,12 +92,26 @@ export function useMyDisputes() {
     const currentRevealResults = revealResults;
 
     async function process() {
+      // Extract all IPFS hashes from successful results
+      const ipfsHashes = currentResults
+        .filter((r) => r.status === "success")
+        .map((r) => {
+          const data = r.result as any;
+          return data?.ipfsHash || data?.[6] || "";
+        });
+
+      // Batch fetch all IPFS metadata in parallel (eliminates waterfall)
+      const ipfsDataMap = await batchFetchIPFSMetadata(ipfsHashes);
+
+      // Transform disputes with pre-fetched metadata
       const processed = await Promise.all(
         currentResults.map(async (res, idx) => {
           if (res.status !== "success") return null;
 
           // Inject ID manually to be safe
           const id = sortedIds[idx].toString();
+          const data = res.result as any;
+          const ipfsHash = data?.ipfsHash || data?.[6] || "";
 
           // Get reveal status for this dispute
           const userHasRevealed =
@@ -101,12 +119,15 @@ export function useMyDisputes() {
               ? Boolean(currentRevealResults[idx].result)
               : false;
 
+          const prefetchedMeta = ipfsHash ? ipfsDataMap.get(ipfsHash) : undefined;
+
           return await transformDisputeData(
             { ...(res.result as any), id },
             decimals,
             userHasRevealed,
+            prefetchedMeta
           );
-        }),
+        })
       );
       setDisputes(processed.filter((d): d is DisputeUI => d !== null));
     }

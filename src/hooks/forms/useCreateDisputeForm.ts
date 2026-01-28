@@ -53,71 +53,121 @@ export const useCreateDisputeForm = () => {
         try {
             setIsUploading(true);
 
-            // 1. Upload Claimant Assets
-            let audioUrl = "";
+            // Collect all upload tasks with type identifiers
+            type UploadTask = { type: string; file: File; index?: number };
+            const uploadTasks: UploadTask[] = [];
+
             if (files.audio) {
-                toast.info("Uploading claimant audio...");
-                const hash = await uploadFileToIPFS(files.audio);
-                if (hash) audioUrl = `https://gateway.pinata.cloud/ipfs/${hash}`;
+                uploadTasks.push({ type: "audio", file: files.audio });
             }
 
-            let carouselUrls: string[] = [];
-            if (files.carousel.length > 0) {
-                toast.info("Uploading claimant photos...");
-                const uploadPromises = files.carousel.map((f) => uploadFileToIPFS(f));
-                const hashes = await Promise.all(uploadPromises);
-                carouselUrls = hashes
-                    .filter((h) => h)
-                    .map((h) => `https://gateway.pinata.cloud/ipfs/${h}`);
-            }
+            files.carousel.forEach((f, i) => {
+                uploadTasks.push({ type: "carousel", file: f, index: i });
+            });
 
-            // 2. Upload Defender Assets
-            let defAudioUrl: string | null = null;
             if (files.defAudio) {
-                const hash = await uploadFileToIPFS(files.defAudio);
-                if (hash) defAudioUrl = `https://gateway.pinata.cloud/ipfs/${hash}`;
+                uploadTasks.push({ type: "defAudio", file: files.defAudio });
             }
 
-            let defCarouselUrls: string[] = [];
-            if (files.defCarousel.length > 0) {
-                const hashes = await Promise.all(
-                    files.defCarousel.map((f) => uploadFileToIPFS(f)),
+            files.defCarousel.forEach((f, i) => {
+                uploadTasks.push({ type: "defCarousel", file: f, index: i });
+            });
+
+            // Execute all uploads in parallel (eliminates sequential waterfall)
+            if (uploadTasks.length > 0) {
+                toast.info(`Uploading ${uploadTasks.length} file${uploadTasks.length > 1 ? "s" : ""}...`);
+                
+                const uploadResults = await Promise.all(
+                    uploadTasks.map(async (task) => ({
+                        ...task,
+                        hash: await uploadFileToIPFS(task.file),
+                    }))
                 );
-                defCarouselUrls = hashes
-                    .filter((h) => h)
-                    .map((h) => `https://gateway.pinata.cloud/ipfs/${h}`);
-            }
 
-            // 3. Construct Payload
-            const disputePayload = {
-                title: formData.title,
-                description: formData.description,
-                category: formData.category,
-                evidence: formData.evidenceLink ? [formData.evidenceLink] : [],
-                aliases: {
-                    claimer: formData.claimerName || "Anonymous Claimant",
-                    defender: formData.defenderName || "Anonymous Defendant",
-                },
-                audioEvidence: audioUrl || null,
-                carouselEvidence: carouselUrls,
-                defenderDescription: formData.defDescription || null,
-                defenderAudioEvidence: defAudioUrl,
-                defenderCarouselEvidence: defCarouselUrls,
-                created_at: new Date().toISOString(),
-            };
+                // Process results by type
+                const audioResult = uploadResults.find((r) => r.type === "audio");
+                const audioUrl = audioResult?.hash
+                    ? `https://gateway.pinata.cloud/ipfs/${audioResult.hash}`
+                    : "";
 
-            const success = await createDispute(
-                formData.defenderAddress,
-                formData.claimerAddress || undefined,
-                formData.category,
-                disputePayload,
-                formData.jurorsRequired,
-                formData.deadlineHours,
-            );
+                const carouselUrls = uploadResults
+                    .filter((r) => r.type === "carousel" && r.hash)
+                    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+                    .map((r) => `https://gateway.pinata.cloud/ipfs/${r.hash}`);
 
-            if (success) {
-                await queryClient.invalidateQueries({ queryKey: ["disputeCount"] });
-                router.push("/profile");
+                const defAudioResult = uploadResults.find((r) => r.type === "defAudio");
+                const defAudioUrl = defAudioResult?.hash
+                    ? `https://gateway.pinata.cloud/ipfs/${defAudioResult.hash}`
+                    : null;
+
+                const defCarouselUrls = uploadResults
+                    .filter((r) => r.type === "defCarousel" && r.hash)
+                    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+                    .map((r) => `https://gateway.pinata.cloud/ipfs/${r.hash}`);
+
+                // 3. Construct Payload
+                const disputePayload = {
+                    title: formData.title,
+                    description: formData.description,
+                    category: formData.category,
+                    evidence: formData.evidenceLink ? [formData.evidenceLink] : [],
+                    aliases: {
+                        claimer: formData.claimerName || "Anonymous Claimant",
+                        defender: formData.defenderName || "Anonymous Defendant",
+                    },
+                    audioEvidence: audioUrl || null,
+                    carouselEvidence: carouselUrls,
+                    defenderDescription: formData.defDescription || null,
+                    defenderAudioEvidence: defAudioUrl,
+                    defenderCarouselEvidence: defCarouselUrls,
+                    created_at: new Date().toISOString(),
+                };
+
+                const success = await createDispute(
+                    formData.defenderAddress,
+                    formData.claimerAddress || undefined,
+                    formData.category,
+                    disputePayload,
+                    formData.jurorsRequired,
+                    formData.deadlineHours,
+                );
+
+                if (success) {
+                    await queryClient.invalidateQueries({ queryKey: ["disputeCount"] });
+                    router.push("/profile");
+                }
+            } else {
+                // No files to upload, proceed directly
+                const disputePayload = {
+                    title: formData.title,
+                    description: formData.description,
+                    category: formData.category,
+                    evidence: formData.evidenceLink ? [formData.evidenceLink] : [],
+                    aliases: {
+                        claimer: formData.claimerName || "Anonymous Claimant",
+                        defender: formData.defenderName || "Anonymous Defendant",
+                    },
+                    audioEvidence: null,
+                    carouselEvidence: [],
+                    defenderDescription: formData.defDescription || null,
+                    defenderAudioEvidence: null,
+                    defenderCarouselEvidence: [],
+                    created_at: new Date().toISOString(),
+                };
+
+                const success = await createDispute(
+                    formData.defenderAddress,
+                    formData.claimerAddress || undefined,
+                    formData.category,
+                    disputePayload,
+                    formData.jurorsRequired,
+                    formData.deadlineHours,
+                );
+
+                if (success) {
+                    await queryClient.invalidateQueries({ queryKey: ["disputeCount"] });
+                    router.push("/profile");
+                }
             }
         } catch (err) {
             console.error(err);

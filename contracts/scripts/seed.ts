@@ -1,8 +1,69 @@
 import hre from "hardhat";
 import "@nomicfoundation/hardhat-ethers";
 import { Slice, MockUSDC } from "../types";
+import { MaxUint256, parseUnits } from "ethers";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function waitForIndex(checkFn: () => Promise<boolean>, errorMessage: string, maxRetries = 20, step = 2000) {
+  process.stdout.write("    ⏳ Waiting for index...");
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      if (await checkFn()) {
+        process.stdout.write(" Ready! 🚀\n");
+        return;
+      }
+    } catch (e) {
+      // Ignore transient errors
+    }
+    process.stdout.write(".");
+    await sleep(step);
+  }
+  throw new Error(`\n❌ Timeout: ${errorMessage}`);
+}
+
+async function ensureFunds(ethers: any, usdc: MockUSDC, funder: any, recipient: any) {
+  // 1. ETH Check
+  const ethBal = await ethers.provider.getBalance(recipient.address);
+  // Fund if less than 0.01 ETH
+  if (ethBal < parseUnits("0.01", 18)) {
+    console.log(`    ⛽ Funding ${recipient.address.slice(0, 6)} with ETH...`);
+    await (await funder.sendTransaction({ to: recipient.address, value: parseUnits("0.02", 18) })).wait();
+  }
+
+  // 2. USDC Check
+  const usdcBal = await usdc.balanceOf(recipient.address);
+  const REQUIRED_USDC = parseUnits("100", 6);
+
+  if (usdcBal < REQUIRED_USDC) {
+    console.log(`    💰 Funding ${recipient.address.slice(0, 6)} with USDC...`);
+    // Try minting first (if funder is owner)
+    try {
+      await (await usdc.connect(funder).mint(recipient.address, parseUnits("1000", 6))).wait();
+    } catch (e) {
+      // Fallback: Transfer if minting fails (e.g. funder has tokens but isn't minter)
+      await (await usdc.connect(funder).transfer(recipient.address, parseUnits("500", 6))).wait();
+    }
+
+    await waitForIndex(async () => (await usdc.balanceOf(recipient.address)) >= REQUIRED_USDC, "USDC Funding");
+  }
+}
+
+async function ensureApproval(token: MockUSDC, owner: any, spender: any, amount: bigint) {
+  let allowance = await token.allowance(owner.address, spender);
+  if (allowance < amount) {
+    console.log(`    🔓 Approving Slice for ${owner.address.slice(0, 6)}...`);
+    const tx = await token.connect(owner).approve(spender, MaxUint256);
+    await tx.wait();
+
+    await waitForIndex(async () => {
+      const newAllowance = await token.allowance(owner.address, spender);
+      return newAllowance >= amount;
+    }, `Approval for ${owner.address}`);
+  }
+}
+
+// --- MAIN SCRIPT ---
 
 const ADDRESSES = {
   base: {
@@ -21,72 +82,57 @@ async function main() {
 
   console.log(`\n🥑 Seeding Slice disputes on network: ${networkName}`);
 
-  if (!ADDRESSES[networkName]) {
-    throw new Error(`❌ Unsupported network: "${networkName}"`);
-  }
+  const SLICE_ADDRESS = ADDRESSES[networkName]?.SLICE;
+  let USDC_ADDRESS = ADDRESSES[networkName]?.USDC;
 
-  const SLICE_ADDRESS = ADDRESSES[networkName].SLICE;
-  const USDC_ADDRESS = ADDRESSES[networkName].USDC;
+  if (!SLICE_ADDRESS) {
+    throw new Error(`❌ Unsupported network or missing address for: "${networkName}"`);
+  }
 
   const signers = await ethers.getSigners();
   const deployer = signers[0]; // Claimer
   const defenderWallet = signers[1]; // Defender
 
   const slice = (await ethers.getContractAt("Slice", SLICE_ADDRESS)) as unknown as Slice;
+
+  // VERIFY TOKEN ADDRESS
+  const onChainToken = await slice.stakingToken();
+  if (onChainToken.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
+    console.warn(`\n⚠️  MISMATCH DETECTED! Switching to Contract's USDC: ${onChainToken}`);
+    USDC_ADDRESS = onChainToken;
+  }
+
   const usdc = (await ethers.getContractAt("MockUSDC", USDC_ADDRESS)) as unknown as MockUSDC;
 
-  // ----------------------------------------------------
-  // 1. BALANCES & MINTING (The Fix)
-  // ----------------------------------------------------
-  console.log("\n💰 Checking Balances...");
+  // 1. FUNDING (ETH + USDC)
+  console.log("\n💰 Checking Funds...");
+  await ensureFunds(ethers, usdc, deployer, deployer); // Ensure deployer has USDC
+  await ensureFunds(ethers, usdc, deployer, defenderWallet); // Ensure defender has ETH + USDC
 
-  // Only mint if on Testnet (Mainnet USDC cannot be minted)
-  const isTestnet = networkName === "baseSepolia";
-  const NEEDED_AMOUNT = ethers.parseUnits("100", 6); // 100 USDC
-
-  const users = [deployer, defenderWallet];
-
-  for (const user of users) {
-    const bal = await usdc.balanceOf(user.address);
-    if (bal < NEEDED_AMOUNT) {
-      if (isTestnet) {
-        console.log(`   -> Minting 1000 USDC for ${user.address.slice(0, 6)}...`);
-        const tx = await usdc.connect(user).mint(user.address, ethers.parseUnits("1000", 6));
-        await tx.wait();
-      } else {
-        console.warn(`   ⚠️ User ${user.address.slice(0, 6)} has low balance on Mainnet! Transaction may fail.`);
-      }
-    }
-  }
-
-  // ----------------------------------------------------
-  // 2. APPROVALS
-  // ----------------------------------------------------
-  console.log("\n🔓 Checking Approvals...");
-
-  for (const user of users) {
-    const allowance = await usdc.allowance(user.address, slice.target);
-    if (allowance < ethers.parseUnits("1000", 6)) {
-      console.log(`   -> Approving Slice for ${user.address.slice(0, 6)}...`);
-      const tx = await usdc.connect(user).approve(slice.target, ethers.MaxUint256);
-      await tx.wait();
-      await sleep(1000);
-    }
-  }
-
-  // ----------------------------------------------------
-  // 3. SEEDING LOOP
-  // ----------------------------------------------------
-  const ONE_WEEK = 604800;
+  // 2. DEFINE DISPUTES (6 TOTAL)
   const ROOT_CID = "bafybeifa6gsnklvyvepp45ilf4ngc5o3ndydq7zxcdgrfybxs6flts6mdi";
+  const ONE_WEEK = 604800n;
 
-  const disputes = [
+  // The 3 base templates
+  const templates = [
     { title: "Freelance Dispute", category: "Freelance", ipfsHash: `${ROOT_CID}/freelance.json` },
     { title: "P2P Escrow", category: "P2P Trade", ipfsHash: `${ROOT_CID}/p2p.json` },
+    { title: "Marketplace Issue", category: "Marketplace", ipfsHash: `${ROOT_CID}/marketplace.json` },
   ];
 
-  for (const d of disputes) {
-    console.log(`\n🌱 Processing: "${d.title}"`);
+  // Duplicate to make 6
+  const disputes = [...templates, ...templates];
+
+  // 3. APPROVALS
+  const TOTAL_STAKE_NEEDED = parseUnits("1", 6) * BigInt(disputes.length); // 1 USDC * 6
+  console.log("\n🔓 Verifying Approvals...");
+  await ensureApproval(usdc, deployer, slice.target, TOTAL_STAKE_NEEDED);
+  await ensureApproval(usdc, defenderWallet, slice.target, TOTAL_STAKE_NEEDED);
+
+  // 4. SEEDING LOOP
+  for (let i = 0; i < disputes.length; i++) {
+    const d = disputes[i];
+    console.log(`\n🌱 [${i + 1}/6] Processing: "${d.title}"`);
 
     const createTx = await slice.connect(deployer).createDispute({
       claimer: deployer.address,
@@ -94,26 +140,23 @@ async function main() {
       category: d.category,
       ipfsHash: d.ipfsHash,
       jurorsRequired: 1n,
-      paySeconds: BigInt(ONE_WEEK),
-      evidenceSeconds: BigInt(ONE_WEEK),
-      commitSeconds: BigInt(ONE_WEEK),
-      revealSeconds: BigInt(ONE_WEEK),
+      paySeconds: ONE_WEEK,
+      evidenceSeconds: ONE_WEEK,
+      commitSeconds: ONE_WEEK,
+      revealSeconds: ONE_WEEK,
     });
     const receipt = await createTx.wait();
 
-    // Find ID from logs
     let disputeId = null;
     if (receipt) {
       for (const log of receipt.logs) {
-        if (log.address.toLowerCase() === slice.target.toString().toLowerCase()) {
-          try {
-            const parsed = slice.interface.parseLog(log);
-            if (parsed?.name === "DisputeCreated") {
-              disputeId = parsed.args[0];
-              break;
-            }
-          } catch (e) {}
-        }
+        try {
+          const parsed = slice.interface.parseLog(log as any);
+          if (parsed?.name === "DisputeCreated") {
+            disputeId = parsed.args[0];
+            break;
+          }
+        } catch (e) {}
       }
     }
 
@@ -121,23 +164,14 @@ async function main() {
       console.log("   ⚠️ ID not found. Skipping.");
       continue;
     }
-    console.log(`   ✅ Created Dispute #${disputeId}`);
 
-    // Wait for indexing
-    process.stdout.write("   ⏳ Waiting for RPC index...");
-    let retries = 0;
-    while (retries < 15) {
-      try {
-        const disputeData = await slice.disputes(disputeId);
-        if (disputeData.payDeadline > 0n) {
-          process.stdout.write(" Ready!\n");
-          break;
-        }
-      } catch (e) {}
-      await sleep(2000);
-      process.stdout.write(".");
-      retries++;
-    }
+    // Wait for indexing (critical for payDispute to not revert on 'Created' check)
+    await waitForIndex(async () => {
+      const data = await slice.disputes(disputeId);
+      return data.payDeadline > 0n;
+    }, `Dispute #${disputeId} Creation`);
+
+    console.log(`   ✅ Created Dispute #${disputeId}`);
 
     console.log("   ... Claimer Paying");
     await (await slice.connect(deployer).payDispute(disputeId)).wait();

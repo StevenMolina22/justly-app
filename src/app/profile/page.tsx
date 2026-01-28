@@ -1,10 +1,31 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Users, Settings } from "lucide-react";
+import dynamic from "next/dynamic";
+import { ArrowLeft, User, Users, Settings, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {ContactsView} from "@/components/profile/ContactsView";
-import {SettingsView} from "@/components/profile/SettingsView";
-import {ProfileOverview} from "@/components/profile/ProfileOverview";
+
+// Loading skeleton for tab content
+const TabLoadingSkeleton = () => (
+  <div className="flex items-center justify-center py-12">
+    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+  </div>
+);
+
+// Dynamic imports for tab content (only load when tab is active)
+const ProfileOverview = dynamic(
+  () => import("@/components/profile/ProfileOverview").then((m) => ({ default: m.ProfileOverview })),
+  { loading: () => <TabLoadingSkeleton /> }
+);
+
+const ContactsView = dynamic(
+  () => import("@/components/profile/ContactsView").then((m) => ({ default: m.ContactsView })),
+  { loading: () => <TabLoadingSkeleton /> }
+);
+
+const SettingsView = dynamic(
+  () => import("@/components/profile/SettingsView").then((m) => ({ default: m.SettingsView })),
+  { loading: () => <TabLoadingSkeleton /> }
+);
 
 export default function ProfilePage() {
   const router = useRouter();

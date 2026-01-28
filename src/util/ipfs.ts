@@ -111,3 +111,27 @@ export const fetchJSONFromIPFS = async (ipfsHash: string) => {
     return null;
   }
 };
+
+/**
+ * Batch fetches multiple IPFS hashes in parallel for optimal performance.
+ * Eliminates waterfall patterns when loading multiple disputes.
+ * 
+ * @param ipfsHashes - Array of IPFS CIDs to fetch
+ * @returns Map of hash -> parsed JSON data (null for failed fetches)
+ */
+export const batchFetchIPFSMetadata = async (
+  ipfsHashes: string[]
+): Promise<Map<string, any>> => {
+  // Remove duplicates and empty strings
+  const uniqueHashes = [...new Set(ipfsHashes.filter(Boolean))];
+  
+  // Fetch all in parallel
+  const results = await Promise.all(
+    uniqueHashes.map(async (hash) => {
+      const data = await fetchJSONFromIPFS(hash);
+      return [hash, data] as const;
+    })
+  );
+  
+  return new Map(results);
+};

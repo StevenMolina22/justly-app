@@ -25,6 +25,7 @@ import {
 import { PendingPaymentsDialog } from "@/components/profile/PendingPaymentsDialog";
 import { PendingExecutionsDialog } from "@/components/profile/PendingExecutionsDialog";
 import { SelectAvatar } from "@/components/profile/SelectAvatar";
+import { SuccessAnimation } from "@/components/SuccessAnimation";
 
 export const ProfileOverview = () => {
   const router = useRouter();
@@ -37,6 +38,9 @@ export const ProfileOverview = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingName, setEditingName] = useState("");
   const [pendingAvatar, setPendingAvatar] = useState(avatar);
+  
+  // Success Animation State
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Initialize editing states when dialog opens
   React.useEffect(() => {
@@ -45,6 +49,22 @@ export const ProfileOverview = () => {
       setPendingAvatar(avatar);
     }
   }, [isDialogOpen, name, avatar]);
+
+  // Handle withdrawal with success animation
+  // Note: Error notifications are handled by the useWithdraw hook via toast.error
+  const handleWithdraw = async () => {
+    if (!hasFunds || isWithdrawing) return;
+    
+    const success = await withdraw();
+    
+    if (success) {
+      setShowSuccess(true);
+    }
+  };
+
+  const handleAnimationComplete = () => {
+    setShowSuccess(false);
+  };
 
   return (
     <div className="flex flex-col gap-6 pb-20">
@@ -214,7 +234,7 @@ export const ProfileOverview = () => {
             </div>
           </div>
           <button
-            onClick={() => withdraw()}
+            onClick={handleWithdraw}
             disabled={isWithdrawing}
             className="w-full py-3.5 bg-white text-[#1b1c23] rounded-xl font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 relative z-10"
           >
@@ -246,6 +266,9 @@ export const ProfileOverview = () => {
           <ArrowRight className="w-4 h-4" />
         </div>
       </Button>
+      
+      {/* Success Animation Overlay */}
+      {showSuccess && <SuccessAnimation onComplete={handleAnimationComplete} />}
     </div>
   );
 };

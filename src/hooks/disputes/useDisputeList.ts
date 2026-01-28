@@ -2,7 +2,11 @@ import { useReadContract, useReadContracts } from "wagmi";
 import { DISPUTE_STATUS } from "@/config/app";
 import { SLICE_ABI } from "@/config/contracts";
 import { useContracts } from "@/hooks/core/useContracts";
-import { transformDisputeData, type DisputeUI } from "@/util/disputeAdapter";
+import {
+  transformDisputeData,
+  batchFetchIPFSMetadata,
+  type DisputeUI,
+} from "@/util/disputeAdapter";
 import { useMemo, useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useStakingToken } from "../core/useStakingToken";
@@ -128,11 +132,32 @@ export function useDisputeList(
       }
 
       setIsProcessing(true);
+
+      // Extract all IPFS hashes from successful results
+      const ipfsHashes = results
+        .filter((r) => r.status === "success")
+        .map((r) => {
+          const data = r.result as any;
+          return data?.ipfsHash || data?.[6] || ""; // ipfsHash field or index 6
+        });
+
+      // Batch fetch all IPFS metadata in parallel (eliminates waterfall)
+      const ipfsDataMap = await batchFetchIPFSMetadata(ipfsHashes);
+
+      // Transform disputes with pre-fetched metadata
       const processed = await Promise.all(
         results.map(async (result) => {
           if (result.status !== "success") return null;
-          return await transformDisputeData(result.result, decimals);
-        }),
+          const data = result.result as any;
+          const ipfsHash = data?.ipfsHash || data?.[6] || "";
+          const prefetchedMeta = ipfsHash ? ipfsDataMap.get(ipfsHash) : undefined;
+          return await transformDisputeData(
+            result.result,
+            decimals,
+            false,
+            prefetchedMeta
+          );
+        })
       );
 
       let finalDisputes = processed.filter((d): d is DisputeUI => d !== null);

@@ -128,6 +128,8 @@ Dispute metadata is stored on IPFS using **Pinata**.
    ```ts
    toast.error("Message")
    ```
+4. **Tailwind Classes** 
+   ALWAYS Use canonical classes, e.g. the class `min-w-[80px]` can be written as `min-w-20`
 
 ---
 

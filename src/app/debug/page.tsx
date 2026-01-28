@@ -42,9 +42,6 @@ export default function DebugPage() {
   const [myPartyDisputes, setMyPartyDisputes] = useState<string[]>([]);
   const [myJurorDisputes, setMyJurorDisputes] = useState<string[]>([]);
 
-  // Toggle for advanced/low-level tools
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
   // --- 1. Global & Context Fetching ---
   const refreshGlobalState = useCallback(async () => {
     if (!publicClient || !address || !sliceContract) return;
@@ -87,6 +84,7 @@ export default function DebugPage() {
     if (!publicClient || !targetId || !sliceContract) return;
     setIsLoadingData(true);
     try {
+      // 1. Fetch main struct
       const d = (await publicClient.readContract({
         address: sliceContract,
         abi: SLICE_ABI,
@@ -98,6 +96,7 @@ export default function DebugPage() {
       const isClaimer = d.claimer.toLowerCase() === address?.toLowerCase();
       const isDefender = d.defender.toLowerCase() === address?.toLowerCase();
 
+      // 2. Fetch specific mappings (Reveal status)
       let hasRevealed = false;
       try {
         if (address) {
@@ -110,38 +109,68 @@ export default function DebugPage() {
         }
       } catch (e) {
         console.error("hasRevealed check failed", e);
-        toast.warning?.(
-          "Unable to load on-chain reveal status. Displaying status as not revealed.",
+      }
+
+      // 3. Fetch Jurors List
+      let jurors: string[] = [];
+      try {
+        // Attempt to fetch jurors using the standard helper
+        const jurorsData = (await publicClient.readContract({
+          address: sliceContract,
+          abi: SLICE_ABI,
+          functionName: "getJurors", // Standard Slice getter
+          args: [BigInt(targetId)],
+        })) as string[];
+        jurors = jurorsData;
+      } catch (e) {
+        console.warn(
+          "Could not fetch jurors list (getJurors might be missing from ABI)",
+          e,
         );
       }
 
+      // 4. Format complete data object
       setRawDisputeData({
         id: targetId,
         statusIndex: Number(d.status),
         status: statusLabels[Number(d.status)] || "Unknown",
+        // Parties
         claimer: d.claimer,
         defender: d.defender,
+        winner:
+          d.winner === "0x0000000000000000000000000000000000000000"
+            ? "Pending/None"
+            : d.winner,
+        // Config
         category: d.category,
         jurorsRequired: d.jurorsRequired.toString(),
         requiredStake: formatUnits(d.requiredStake, 6) + " USDC",
+        ipfsHash: d.ipfsHash || "None",
+        // Progress (Voting)
+        commitsCount: Number(d.commitsCount),
+        revealsCount: Number(d.revealsCount),
+        // Payment Status
+        claimerPaid: d.claimerPaid,
+        defenderPaid: d.defenderPaid,
+        // Timelines
         payDeadline: new Date(Number(d.payDeadline) * 1000).toLocaleString(),
+        evidenceDeadline: new Date(
+          Number(d.evidenceDeadline) * 1000,
+        ).toLocaleString(),
         commitDeadline: new Date(
           Number(d.commitDeadline) * 1000,
         ).toLocaleString(),
         revealDeadline: new Date(
           Number(d.revealDeadline) * 1000,
         ).toLocaleString(),
-        ipfsHash: d.ipfsHash || "None",
-        winner:
-          d.winner === "0x0000000000000000000000000000000000000000"
-            ? "Pending/None"
-            : d.winner,
+        // Context
         userRole: isClaimer
           ? "Claimer"
           : isDefender
             ? "Defender"
             : "None/Juror",
         hasRevealedOnChain: hasRevealed,
+        jurors: jurors || [], // Pass jurors to UI
       });
 
       if (address && sliceContract) {
@@ -169,10 +198,9 @@ export default function DebugPage() {
         address: sliceContract,
         abi: SLICE_ABI,
         functionName: "createDispute",
-        account: address, // Explicitly pass the account
+        account: address,
         args: [
           {
-            // Use different addresses to ensure msg.sender != defender
             claimer: "0x3AE66a6DB20fCC27F3DB3DE5Fe74C108A52d6F29", // Bob
             defender: "0x58609c13942F56e17d36bcB926C413EBbD10e477", // Alice
             category: "General",

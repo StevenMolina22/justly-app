@@ -165,5 +165,5 @@ pnpm hardhat run scripts/deploy.ts --network baseSepolia
 * [x] Phase 1 – Foundation (Core Protocol, Web UI)
 * [x] Phase 2 – Architecture Overhaul (Strategy Pattern, Multi-Tenant SDKs)
 * [ ] Phase 3 – MiniApp Expansion (Live integration with Lemon, Beexo)
-* [ ] Phase 4 – **Slice V1.2 High-Stakes Lottery** (Global Passive Staking)
+* [ ] Phase 4 – Slice V1.5 Migration (Passive Global Staking)
 * [ ] Phase 5 – Specialized Courts & DAO Governance

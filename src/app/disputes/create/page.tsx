@@ -17,17 +17,13 @@ import {
 import { useCreateDisputeForm } from "@/hooks/forms/useCreateDisputeForm";
 import { Button } from "@/components/ui/button";
 
-// Import Modular Components
-import {
-  WizardProgress,
-  StepBasics,
-  StepParties,
-  StepEvidence,
-  StepReview,
-} from "@/components/create";
-import type {
-  StepDefinition,
-} from "@/components/create";
+// Direct imports instead of barrel file (better tree-shaking)
+import { WizardProgress } from "@/components/create/WizardProgress";
+import { StepBasics } from "@/components/create/StepBasics";
+import { StepParties } from "@/components/create/StepParties";
+import { StepEvidence } from "@/components/create/StepEvidence";
+import { StepReview } from "@/components/create/StepReview";
+import type { StepDefinition } from "@/components/create/index";
 
 // --- STEPS DEFINITION ---
 const STEPS: StepDefinition[] = [

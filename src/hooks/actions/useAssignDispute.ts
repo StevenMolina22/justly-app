@@ -12,7 +12,12 @@ import { useStakingToken } from "../core/useStakingToken";
 
 export function useAssignDispute() {
   const [isDrawing, setIsDrawing] = useState(false);
-  const { address: stakingToken, decimals, symbol } = useStakingToken();
+  const {
+    address: stakingToken,
+    decimals,
+    symbol,
+    isLoading: isTokenLoading,
+  } = useStakingToken();
   const { address } = useAccount();
   const chainId = useChainId();
 
@@ -100,6 +105,7 @@ export function useAssignDispute() {
   return {
     drawDispute,
     isLoading: isDrawing,
-    isReady: !!address,
+    // Only ready when wallet is connected AND staking token metadata is loaded
+    isReady: !!address && !isTokenLoading && !!stakingToken,
   };
 }

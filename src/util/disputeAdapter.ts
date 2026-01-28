@@ -1,6 +1,9 @@
 import { formatUnits } from "viem";
-import { fetchJSONFromIPFS } from "@/util/ipfs";
+import { fetchJSONFromIPFS, batchFetchIPFSMetadata } from "@/util/ipfs";
 import { DISPUTE_STATUS } from "@/config/app";
+
+// Re-export for convenience
+export { batchFetchIPFSMetadata } from "@/util/ipfs";
 
 export interface DisputeUI {
   id: string;
@@ -75,6 +78,7 @@ export async function transformDisputeData(
   contractData: any,
   decimals: number = 6,
   userHasRevealed: boolean = false,
+  prefetchedMetadata?: any,
 ): Promise<DisputeUI> {
   // Extract fields using safe accessor with fallbacks
   // Struct field order based on Solidity Dispute struct:
@@ -163,9 +167,9 @@ export async function transformDisputeData(
 
   let aliases = { claimer: null, defender: null };
 
-  // Fetch IPFS Metadata
+  // Fetch IPFS Metadata (use prefetched if available)
   if (ipfsHash) {
-    const meta = await fetchJSONFromIPFS(ipfsHash);
+    const meta = prefetchedMetadata ?? (await fetchJSONFromIPFS(ipfsHash));
     if (meta) {
       title = meta.title || title;
       description = meta.description || description;

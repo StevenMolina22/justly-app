@@ -94,6 +94,11 @@ const config: HardhatUserConfig = {
       accounts: [DEPLOYER_PRIVATE_KEY, DEFENDER_PRIVATE_KEY].filter(Boolean),
       chainId: 8453,
     },
+    zamaDevnet: {
+      url: "https://devnet.zama.ai",
+      chainId: 8009,
+      accounts: [DEPLOYER_PRIVATE_KEY].filter(Boolean),
+    },
   },
   paths: {
     artifacts: "./artifacts",
