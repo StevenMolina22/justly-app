@@ -26,7 +26,6 @@ interface IArbitrable {
 
 /**
  * @title Slice Protocol V1.5 (The Arbitrator)
- * @author Slice Coding Expert
  * @notice A neutral, scalable, on-chain dispute resolution protocol.
  *
  * ======================================================================================
@@ -283,8 +282,8 @@ contract SliceV1_5 is Ownable, ReentrancyGuard {
             _params.revealSeconds >= cc.minVoteDuration && _params.revealSeconds <= cc.maxVoteDuration,
             "Reveal duration OOB"
         );
-        require(_params.paySeconds >= 3600, "Pay time too short"); // Hard floor 1 hour
-        require(_params.evidenceSeconds >= 3600, "Evidence time too short"); // Hard floor 1 hour
+        require(_params.paySeconds >= 1 hours, "Pay time too short");
+        require(_params.evidenceSeconds >= 1 hours, "Evidence time too short");
 
         disputeCount++;
         uint256 id = disputeCount;
@@ -372,7 +371,7 @@ contract SliceV1_5 is Ownable, ReentrancyGuard {
             d.revealDeadline = d.commitDeadline + d.revealDuration;
 
             _addToCourtQueue(d.category, _id);
-            emit StatusChanged(_id, DisputeStatus.Commit);
+            emit StatusChanged(_id, DisputeStatus.Evidence);
         }
     }
 

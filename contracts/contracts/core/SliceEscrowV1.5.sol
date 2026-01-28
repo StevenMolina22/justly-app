@@ -122,11 +122,11 @@ contract SliceEscrow is IArbitrable, Ownable {
     using SafeERC20 for IERC20; // Usage
 
     enum Status {
-        Initial,
         Active,
         Disputed,
         Resolved
     }
+
     enum Side {
         None,
         Buyer,
