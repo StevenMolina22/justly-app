@@ -68,11 +68,21 @@ export default function ExecuteRulingPage() {
         {/* 2. Hero Section: The "Bag" */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-6">
-            <div className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${isWinner ? "bg-[#8c8fff]/10" : "bg-red-50"}`}>
-              {isWinner ? (
-                 <Wallet className="w-10 h-10 text-[#8c8fff]" />
+            <div
+              className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${
+                isFinanceLoading
+                  ? "bg-gray-100"
+                  : isWinner
+                    ? "bg-[#8c8fff]/10"
+                    : "bg-red-50"
+              }`}
+            >
+              {isFinanceLoading ? (
+                <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+              ) : isWinner ? (
+                <Wallet className="w-10 h-10 text-[#8c8fff]" />
               ) : (
-                 <AlertCircle className="w-10 h-10 text-red-400" />
+                <AlertCircle className="w-10 h-10 text-red-400" />
               )}
             </div>
             <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#1b1c23] rounded-full border-[3px] border-white flex items-center justify-center shadow-lg">
