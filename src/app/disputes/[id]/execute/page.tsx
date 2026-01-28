@@ -69,8 +69,12 @@ export default function ExecuteRulingPage() {
         {/* 2. Hero Section: The "Bag" */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-6">
-            <div className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${isWinner ? "bg-[#8c8fff]/10" : "bg-red-50"}`}>
-              {isWinner ? (
+            <div className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${
+              !isFinished ? "bg-gray-100" : isWinner ? "bg-[#8c8fff]/10" : "bg-red-50"
+            }`}>
+              {!isFinished ? (
+                 <Gavel className="w-10 h-10 text-gray-400" />
+              ) : isWinner ? (
                  <Wallet className="w-10 h-10 text-[#8c8fff]" />
               ) : (
                  <AlertCircle className="w-10 h-10 text-red-400" />
@@ -85,11 +89,13 @@ export default function ExecuteRulingPage() {
             {isFinished ? "Ruling Executed" : "Finalize Ruling"}
           </h1>
           <p className="text-sm text-gray-500 font-medium max-w-[260px]">
-             {isFinanceLoading 
-                ? "Calculating results..." 
-                : isWinner 
-                  ? "You voted with the majority. Execute the ruling to claim your rewards."
-                  : "The majority voted differently. You will not receive a reward for this dispute."}
+             {!isFinished
+                ? "Execute the ruling to finalize the dispute and see your results."
+                : isFinanceLoading 
+                  ? "Calculating results..." 
+                  : isWinner 
+                    ? "You voted with the majority. Your rewards are shown below."
+                    : "The majority voted differently. You will not receive a reward for this dispute."}
           </p>
         </div>
 
@@ -112,7 +118,11 @@ export default function ExecuteRulingPage() {
           </div>
 
           {/* Financial Breakdown */}
-          {isFinanceLoading ? (
+          {!isFinished ? (
+             <div className="flex justify-center py-4 text-sm text-gray-400">
+               Execute the ruling to see financial breakdown
+             </div>
+          ) : isFinanceLoading ? (
              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-gray-300" /></div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -142,8 +152,8 @@ export default function ExecuteRulingPage() {
                 Principal + Rewards
               </span>
             </div>
-            <span className={`text-xl font-extrabold ${isWinner ? "text-[#1b1c23]" : "text-gray-300"}`}>
-              {isFinanceLoading ? "..." : `${total} ${currency}`}
+            <span className={`text-xl font-extrabold ${!isFinished ? "text-gray-300" : isWinner ? "text-[#1b1c23]" : "text-gray-300"}`}>
+              {!isFinished ? "—" : isFinanceLoading ? "..." : `${total} ${currency}`}
             </span>
           </div>
         </div>
