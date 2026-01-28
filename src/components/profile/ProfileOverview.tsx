@@ -51,6 +51,7 @@ export const ProfileOverview = () => {
   }, [isDialogOpen, name, avatar]);
 
   // Handle withdrawal with success animation
+  // Note: Error notifications are handled by the useWithdraw hook via toast.error
   const handleWithdraw = async () => {
     if (!hasFunds || isWithdrawing) return;
     
