@@ -10,37 +10,37 @@ import { FinancialProjection } from "@/components/juror/FinancialProjection";
 
 export default function JurorStakePage() {
   const router = useRouter();
-  // Default to 5 USDC (middle left option)
   const [selectedAmount, setSelectedAmount] = useState<number>(5);
 
   const handleSwipeComplete = () => {
-    // Pass the selected integer amount (e.g., "50") to the assign page.
-    // The useAssignDispute hook will parse this string into USDC units (6 decimals).
     router.push(`/juror/assign?amount=${selectedAmount.toString()}`);
   };
 
   return (
     <div className="flex flex-col h-screen bg-[#F8F9FC]">
-      <DisputeOverviewHeader onBack={() => router.back()} />
+      <div className="px-4 pt-4">
+        <DisputeOverviewHeader onBack={() => router.back()} />
+      </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col justify-center px-5 py-4 gap-4 overflow-y-auto">
-        {/* 2. Main Stake Card */}
-        <div className="w-full bg-white rounded-[32px] p-6 shadow-[0px_8px_30px_rgba(0,0,0,0.04)] border border-white flex flex-col items-center justify-center text-center relative overflow-visible">
-          {/* Ambient Background Glow */}
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
+      <div className="flex-1 flex flex-col justify-center px-5 py-4 overflow-y-auto">
+        {/* SINGLE UNIFIED CARD */}
+        <div className="w-full bg-white rounded-4xl p-6 shadow-[0px_20px_40px_-10px_rgba(27,28,35,0.05)] border border-white/50 relative overflow-hidden">
+          {/* Ambient Background Glow (Justice Purple) */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-75 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#8c8fff]/10 via-transparent to-transparent pointer-events-none opacity-60" />
 
+          {/* 1. Header & Animation */}
           <div className="relative z-10 w-full flex flex-col items-center">
-            {/* Animation */}
-            <div className="w-[100px] h-[100px] my-4 relative">
-              <div className="absolute inset-0 bg-[#8c8fff]/10 rounded-full blur-xl scale-90" />
+            {/* Animation Container */}
+            <div className="w-20 h-20 my-2 relative">
+              <div className="absolute inset-0 bg-[#8c8fff]/20 rounded-full blur-2xl scale-75" />
               <video
                 src="/animations/money.mp4"
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="w-full h-full object-contain relative z-10 drop-shadow-sm"
+                className="w-full h-full object-contain relative z-10"
               />
             </div>
 
@@ -48,38 +48,43 @@ export default function JurorStakePage() {
               Choose your stake
             </h1>
 
-            <p className="text-gray-400 text-sm font-medium mb-6 max-w-[260px] leading-relaxed">
-              Higher stakes allow you to join higher-value disputes.
+            <p className="text-gray-600 font-medium mb-8 max-w-65 text-center leading-relaxed">
+              Higher stakes unlock higher-value disputes.
             </p>
 
-            <div className="w-full">
+            {/* SLIDER SECTION */}
+            {/* Added px-4 here to ensure the labels ($1 / $20) don't get cut off by the card edges */}
+            <div className="w-full px-2 sm:px-4">
               <SelectAmount
                 selectedAmount={selectedAmount}
                 onAmountChange={setSelectedAmount}
               />
             </div>
           </div>
-        </div>
 
-        {/* 2. NEW: Financial Metrics Card */}
-        <FinancialProjection stakeAmount={selectedAmount} />
+          {/* 2. Financial Metrics (Integrated Block) */}
+          <FinancialProjection stakeAmount={selectedAmount} />
 
-        {/* 3. Warning / Info Card */}
-        <div className="bg-[#F5F6F9] rounded-[20px] p-4 flex items-start gap-3 border border-[#EAECEF]">
-          <div className="shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-[#8c8fff]">
-            <AlertCircle className="w-5 h-5" />
+          {/* 3. Risk Warning (Integrated Footer) */}
+          <div className="mt-6 pt-5 border-t border-dashed border-gray-200">
+            <div className="flex gap-3 items-start">
+              <div className="shrink-0 mt-0.5 text-gray-300">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <p className="text-[10px] font-medium text-gray-600 leading-relaxed">
+                <span className="text-[#1b1c23] font-bold">Risk Warning:</span>{" "}
+                Staked funds are locked during the dispute. Incoherent votes
+                result in slashing.
+              </p>
+            </div>
           </div>
-          <p className="text-[11px] font-bold text-gray-500 leading-[1.5] mt-0.5 text-left">
-            <span className="text-[#1b1c23]">Risk Warning:</span> Staked funds are locked during the dispute. 
-            Incoherent votes result in loss of stake.
-          </p>
         </div>
       </div>
 
       {/* Bottom Action Area */}
-      <div className="px-5 pb-8 flex justify-center shrink-0 z-20">
+      <div className="px-5 pb-8 pt-2 flex justify-center shrink-0 z-20">
         <SwipeButton onSwipeComplete={handleSwipeComplete}>
-          <span className="font-bold">Stake & Find Disputes</span>
+          <span className="font-bold text-[#1b1c23]">Join Jury</span>
         </SwipeButton>
       </div>
     </div>

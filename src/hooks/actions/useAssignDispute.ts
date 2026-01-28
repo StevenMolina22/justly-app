@@ -12,7 +12,12 @@ import { useStakingToken } from "../core/useStakingToken";
 
 export function useAssignDispute() {
   const [isDrawing, setIsDrawing] = useState(false);
-  const { address: stakingToken, decimals, symbol, isLoading: isTokenLoading } = useStakingToken();
+  const {
+    address: stakingToken,
+    decimals,
+    symbol,
+    isLoading: isTokenLoading,
+  } = useStakingToken();
   const { address } = useAccount();
   const chainId = useChainId();
 
