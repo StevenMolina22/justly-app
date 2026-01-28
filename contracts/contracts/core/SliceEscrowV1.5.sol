@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 // --- INTERFACES ---
 
@@ -118,7 +119,7 @@ interface IArbitrable {
  * 4. [Escrow] rule():
  * - Unlocks the Principal (1,000 USDC) to the Winner.
  */
-contract SliceEscrow is IArbitrable, Ownable {
+contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20; // Usage
 
     enum Status {
@@ -231,7 +232,7 @@ contract SliceEscrow is IArbitrable, Ownable {
     /**
      * @notice Buyer is happy and releases funds to Seller.
      */
-    function release(uint256 _txId) external {
+    function release(uint256 _txId) external nonReentrant {
         Transaction storage txn = transactions[_txId];
         require(msg.sender == txn.buyer, "Only buyer");
         require(txn.status == Status.Active, "Wrong status");
@@ -245,7 +246,7 @@ contract SliceEscrow is IArbitrable, Ownable {
     /**
      * @notice Seller refunds the Buyer.
      */
-    function refund(uint256 _txId) external {
+    function refund(uint256 _txId) external nonReentrant {
         Transaction storage txn = transactions[_txId];
         require(msg.sender == txn.seller, "Only seller");
         require(txn.status == Status.Active, "Wrong status");
@@ -371,7 +372,7 @@ contract SliceEscrow is IArbitrable, Ownable {
      * Solution: If one party pays and the other doesn't within FEE_TIMEOUT,
      * the paying party automatically wins.
      */
-    function timeoutOpponent(uint256 _txId) external {
+    function timeoutOpponent(uint256 _txId) external nonReentrant {
         Transaction storage txn = transactions[_txId];
         require(txn.status == Status.Disputed, "Not disputed");
         require(txn.firstFeePaymentTime > 0, "No fees paid yet");
@@ -442,7 +443,7 @@ contract SliceEscrow is IArbitrable, Ownable {
     // 4. CALLBACK (The Ruler)
     // ============================================
 
-    function rule(uint256 _disputeId, uint256 _ruling) external override {
+    function rule(uint256 _disputeId, uint256 _ruling) external override nonReentrant {
         require(msg.sender == address(slice), "Only Slice");
 
         uint256 txId = disputeToTx[_disputeId];
