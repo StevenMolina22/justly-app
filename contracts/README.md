@@ -10,23 +10,20 @@ This repository contains the **Hardhat** development environment for the Slice s
 
 ## Protocol Roadmap & Versioning
 
-We are currently on **Slice V1.1**. The codebase is evolving through strict architectural stages to ensure security and scalability.
+We are currently operating on **Slice V1.1**. While V1.5 and FHE files exist in the repository for development purposes, they are **not yet deployed to production**.
 
-### Current: Slice V1.1 ("The Active Draft")
-* **Mechanism:** Jurors manually "draw" disputes from an open queue.
-* **Matchmaking:** `prevrandao`-based random assignment.
+### Active: Slice V1.1 (`Slice.sol`)
+* **Status:** **LIVE** on Base Mainnet & Sepolia.
+* **Mechanism:** Active Drafting. Jurors manually "draw" disputes from an open queue.
 * **Staking:** Per-dispute staking (Jurors lock funds only when they join a specific case).
-* **Tech:** Solidity, Open Queue (Swap-and-Pop), Commit-Reveal.
+* **Randomness:** `prevrandao` + Blockhash (Simple implementation).
 
-### Next Up: Slice V1.2 ("The High-Stakes Lottery")
-* **Mechanism:** Passive Global Staking. Jurors stake into a global pool once.
-* **Economic Security:** **High Assurance Model.** If selected, the juror's *entire* staked balance moves to the dispute to maximize skin-in-the-game.
-* **Probability:** Linear weighting (Higher stake = Higher selection chance).
-* **Exit:** Rapid exit mechanism with short cooldowns (e.g., 4 hours).
-
-### Future: Slice V1.3 ("True Randomness")
-* **Entropy:** Integration of **Chainlink VRF** to replace `prevrandao`.
-* **UX:** Event-driven architecture. Jurors are notified off-chain when selected.
+### Development: Slice V1.5 (`SliceV1.5.sol`)
+* **Status:** **DRAFT / EXPERIMENTAL**. Do not use in production yet.
+* **Mechanism:** Passive Global Staking & Push Architecture.
+* **Economic Security:** High Assurance Model. If selected, the juror's *entire* staked balance moves to the dispute.
+* **Escrow Wrapper:** Includes `SliceEscrowV1.5.sol` for secure P2P payments.
+* **Planned Rollout:** Phase 3/4.
 
 ### Long-Term: FHE Privacy (Zama Integration)
 * **Goal:** Fully private voting and evidence handling using Fully Homomorphic Encryption (FHE).
@@ -104,14 +101,17 @@ pnpm hardhat verify --network sepolia <CONTRACT_ADDRESS>
 ## 📁 Project Structure
 
 ```
-slice-protocol/
-├── contracts/           # Core Protocol Logic
-│   ├── Slice.sol        # Main V1.1 Contract (Draft/Queue System)
-│   └── interfaces/      # Shared interfaces
-├── deploy/              # Hardhat deploy scripts
-├── test/                # Mocha/Chai tests
-├── tasks/               # Custom Hardhat tasks
-└── hardhat.config.ts    # Network & Compiler config
+contracts/
+├── contracts/
+│   ├── core/
+│   │   ├── Slice.sol            # 🟢 LIVE: V1.1 Logic (Active Draft System)
+│   │   ├── SliceV1.5.sol        # 🚧 BETA: V1.5 Logic (Passive Staking - DO NOT DEPLOY)
+│   │   └── SliceEscrowV1.5.sol  # 🚧 BETA: Escrow Wrapper for V1.5
+│   ├── fhe/                     # FHE Privacy Experiments (Future V2)
+│   └── interfaces/              # Shared interfaces
+├── deploy/                      # Hardhat deploy scripts
+├── test/                        # Mocha/Chai tests
+└── hardhat.config.ts            # Network & Compiler config
 ```
 
 ---
