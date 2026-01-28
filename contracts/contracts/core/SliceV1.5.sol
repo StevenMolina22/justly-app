@@ -19,6 +19,11 @@ interface IArbitrable {
     function rule(uint256 _disputeId, uint256 _ruling) external;
 }
 
+// TODO:
+// - Change from a Pull Model (drawDispute: Juror selects active dispute)
+// to a Push Model (drawJurors: Dispute selects passive jurors)
+// - Implement chainlink VRF
+
 /**
  * @title Slice Protocol V1.5 (The Arbitrator)
  * @author Slice Coding Expert
@@ -85,7 +90,7 @@ interface IArbitrable {
  *
  * Juror Payout = Principal + (ExternalPot * Share) + (TotalPenalties * Share)
  */
-contract Slice is Ownable, ReentrancyGuard {
+contract SliceV1_5 is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ============================================
@@ -93,10 +98,11 @@ contract Slice is Ownable, ReentrancyGuard {
     // ============================================
 
     enum DisputeStatus {
-        Created,
-        Commit,
-        Reveal,
-        Finished
+        Created, // Waiting for payment
+        Evidence, // Paid. Evidence can be uploaded. NO VOTING.
+        Commit, // Evidence closed. Jurors commit hashes.
+        Reveal, // Commits closed. Jurors reveal votes.
+        Finished // Ruling executed.
     }
 
     struct CourtConfig {
@@ -159,7 +165,7 @@ contract Slice is Ownable, ReentrancyGuard {
 
     uint256 public disputeCount;
     IERC20 public immutable stakingToken;
-    address public treasury; // Governance treasury for "Reward Black Hole" edge case
+    address public treasury;
 
     // Court Configuration & Queues
     mapping(string => CourtConfig) public courtConfigs;
@@ -191,6 +197,7 @@ contract Slice is Ownable, ReentrancyGuard {
     event DisputeCreated(uint256 indexed id, address indexed arbitrated, address claimer, address defender);
     event CourtUpdated(string category, uint256 feePerJuror, uint256 alpha);
     event FundsDeposited(uint256 indexed id, address role, uint256 amount);
+    event EvidenceSubmitted(uint256 indexed id, address indexed party, string ipfsHash);
     event JurorJoined(uint256 indexed id, address juror, string category);
     event StatusChanged(uint256 indexed id, DisputeStatus newStatus);
     event VoteCommitted(uint256 indexed id, address juror);
@@ -268,8 +275,14 @@ contract Slice is Ownable, ReentrancyGuard {
         require(_params.jurorsRequired > 0 && _params.jurorsRequired <= MAX_JURORS, "Invalid juror count");
 
         // Validate Timelines against Court Guardrails
-        require(_params.commitSeconds >= cc.minVoteDuration && _params.commitSeconds <= cc.maxVoteDuration, "Commit duration OOB");
-        require(_params.revealSeconds >= cc.minVoteDuration && _params.revealSeconds <= cc.maxVoteDuration, "Reveal duration OOB");
+        require(
+            _params.commitSeconds >= cc.minVoteDuration && _params.commitSeconds <= cc.maxVoteDuration,
+            "Commit duration OOB"
+        );
+        require(
+            _params.revealSeconds >= cc.minVoteDuration && _params.revealSeconds <= cc.maxVoteDuration,
+            "Reveal duration OOB"
+        );
         require(_params.paySeconds >= 3600, "Pay time too short"); // Hard floor 1 hour
         require(_params.evidenceSeconds >= 3600, "Evidence time too short"); // Hard floor 1 hour
 
@@ -297,7 +310,7 @@ contract Slice is Ownable, ReentrancyGuard {
         d.evidenceDuration = _params.evidenceSeconds;
         d.commitDuration = _params.commitSeconds;
         d.revealDuration = _params.revealSeconds;
-        
+
         // Only set pay deadline at creation (the only deadline that matters before activation)
         d.payDeadline = block.timestamp + _params.paySeconds;
 
@@ -325,6 +338,7 @@ contract Slice is Ownable, ReentrancyGuard {
         require(isClaimer || isDefender || isArbitrated, "Not authorized");
 
         uint256 cost = getDisputeCost(_id);
+        uint256 amountToPay = cost; // Default to single party cost
 
         // Update payment status
         if (isClaimer) {
@@ -337,34 +351,59 @@ contract Slice is Ownable, ReentrancyGuard {
             // Escrow/Contract pays for both sides logic
             d.claimerPaid = true;
             d.defenderPaid = true;
+
+            amountToPay = cost * 2;
         }
 
         // Use SafeERC20 to prevent reverts with USDT
-        stakingToken.safeTransferFrom(msg.sender, address(this), cost);
+        stakingToken.safeTransferFrom(msg.sender, address(this), amountToPay);
 
-        emit FundsDeposited(_id, msg.sender, cost);
+        emit FundsDeposited(_id, msg.sender, amountToPay);
 
         // Advance state when both parties have paid
         if (d.claimerPaid && d.defenderPaid) {
-            d.status = DisputeStatus.Commit;
-            
-            // FIX: Calculate deadlines relative to NOW (Activation Time)
+            d.status = DisputeStatus.Evidence;
+
+            // Calculate deadlines relative to NOW (Activation Time)
             // This prevents "Expired on Arrival" disputes where phases have
             // effectively zero time if payment happens late in the pay window
             d.evidenceDeadline = block.timestamp + d.evidenceDuration;
             d.commitDeadline = d.evidenceDeadline + d.commitDuration;
             d.revealDeadline = d.commitDeadline + d.revealDuration;
-            
+
             _addToCourtQueue(d.category, _id);
             emit StatusChanged(_id, DisputeStatus.Commit);
         }
+    }
+
+    /**
+     * @notice Allow parties to submit additional evidence during the evidence phase.
+     */
+    function submitEvidence(uint256 _id, string calldata _ipfsHash) external {
+        Dispute storage d = disputeStore[_id];
+
+        // Check Status
+        require(d.status == DisputeStatus.Evidence || d.status == DisputeStatus.Created, "Evidence closed");
+
+        // Check Timestamps (Evidence Phase is a sub-phase of Commit in V1.5 logic)
+        if (d.status == DisputeStatus.Evidence) {
+            require(block.timestamp <= d.evidenceDeadline, "Deadline passed");
+        }
+
+        // Access Control
+        require(msg.sender == d.claimer || msg.sender == d.defender, "Only parties can submit");
+
+        // We do not overwrite the original ipfsHash (the "root" case file).
+        // Instead, we emit an event that the Indexer/Subgraph will pick up
+        // to build the timeline of evidence.
+        emit EvidenceSubmitted(_id, msg.sender, _ipfsHash);
     }
 
     // ============================================
     // 2. MATCHMAKING & JUROR SELECTION
     // ============================================
 
-    function drawDispute(uint256 _amount, string calldata _category) external {
+    function drawDispute(uint256 _amount, string calldata _category) external nonReentrant {
         CourtConfig memory cc = courtConfigs[_category];
         require(cc.active, "Court inactive");
         require(_amount >= cc.minJurorStake, "Stake too low");
@@ -404,6 +443,14 @@ contract Slice is Ownable, ReentrancyGuard {
 
     function commitVote(uint256 _id, bytes32 _commitment) external {
         Dispute storage d = disputeStore[_id];
+
+        // LAZY TRANSITION: Evidence -> Commit
+        // If we are in Evidence phase but time has passed, effectively move to Commit
+        if (d.status == DisputeStatus.Evidence && block.timestamp > d.evidenceDeadline) {
+            d.status = DisputeStatus.Commit;
+            emit StatusChanged(_id, DisputeStatus.Commit);
+        }
+
         require(d.status == DisputeStatus.Commit, "Wrong phase");
         require(block.timestamp <= d.commitDeadline, "Voting ended");
         require(_isJuror(_id, msg.sender), "Not juror");
@@ -447,26 +494,49 @@ contract Slice is Ownable, ReentrancyGuard {
     function executeRuling(uint256 _id) external nonReentrant {
         Dispute storage d = disputeStore[_id];
 
+        // Lazy Phase Transitions
         if (d.status == DisputeStatus.Commit && block.timestamp > d.commitDeadline) {
             d.status = DisputeStatus.Reveal;
         }
 
         bool timePassed = block.timestamp > d.revealDeadline;
         bool allRevealed = (d.commitsCount > 0 && d.commitsCount == d.revealsCount);
+
         require(d.status == DisputeStatus.Reveal, "Wrong phase");
         require(timePassed || allRevealed, "Cannot execute");
 
-        // 1. Determine Winner
-        uint256 winningChoice = _determineWinner(_id);
-        address winnerAddr = winningChoice == 1 ? d.claimer : d.defender;
+        // Determine Winner (Handle No Jurors)
+        uint256 winningChoice;
+        address winnerAddr;
+
+        if (disputeJurors[_id].length == 0) {
+            // NO JURORS: Default to Defender (Presumption of Innocence)
+            winningChoice = 0;
+            winnerAddr = d.defender;
+        } else {
+            // NORMAL: Count votes
+            winningChoice = _determineWinner(_id);
+            winnerAddr = winningChoice == 1 ? d.claimer : d.defender;
+        }
 
         d.winner = winnerAddr;
         d.status = DisputeStatus.Finished;
 
-        // 2. Financial Settlement (Internal)
+        // Remove from Court Queue if incomplete
+        // (If it was full, it was already removed in drawDispute)
+        if (disputeJurors[_id].length < d.jurorsRequired) {
+            uint256 idx = idToQueueIndex[_id];
+            uint256[] storage queue = courtQueues[d.category];
+
+            // 1. Ensure queue has elements (length > idx)
+            // 2. Ensure the ID at that index is actually THIS dispute
+            if (queue.length > idx && queue[idx] == _id) {
+                _removeFromCourtQueue(d.category, idx);
+            }
+        }
         _settleFinances(_id, winningChoice, winnerAddr);
 
-        // 3. Callback (External)
+        // Callback (External)
         if (d.arbitrated != address(0)) {
             try IArbitrable(d.arbitrated).rule(_id, winningChoice) {
                 emit RulingSent(d.arbitrated, _id, winningChoice);
@@ -481,19 +551,31 @@ contract Slice is Ownable, ReentrancyGuard {
     function _settleFinances(uint256 _id, uint256 _winningChoice, address _winnerAddr) internal {
         Dispute storage d = disputeStore[_id];
 
-        // A. Parties Settlement
+        // Calculate Surplus (Unused Wages)
+        uint256 actualJurors = disputeJurors[_id].length;
+        uint256 budgetPerJuror = d.feePerJuror; // e.g. 5 USDC
+
+        uint256 totalBudgetedFees = budgetPerJuror * d.jurorsRequired;
+        uint256 actualFeesNeeded = budgetPerJuror * actualJurors;
+        uint256 unusedFees = totalBudgetedFees - actualFeesNeeded;
+
+        // Parties Settlement
         uint256 totalDeposit = (d.feePerJuror * d.jurorsRequired) + d.partyStake;
         uint256 loserStakeBonus = (d.partyStake * (10000 - d.jurorRewardShare)) / 10000;
 
-        balances[_winnerAddr] += totalDeposit + loserStakeBonus;
+        balances[_winnerAddr] += totalDeposit + loserStakeBonus + unusedFees;
 
-        // B. Juror Pot Calculation
-        uint256 totalArbitrationFees = d.feePerJuror * d.jurorsRequired;
+        // Juror Pot Calculation
         uint256 jurorStakeBonus = d.partyStake - loserStakeBonus;
-        uint256 externalPot = totalArbitrationFees + jurorStakeBonus;
+        uint256 externalPot = actualFeesNeeded + jurorStakeBonus;
 
-        // C. Distribute to Jurors (with Alpha logic)
-        _distributeJurorRewards(_id, _winningChoice, externalPot);
+        // Distribute to Jurors (with Alpha logic)
+        if (actualJurors > 0) {
+            _distributeJurorRewards(_id, _winningChoice, externalPot);
+        } else {
+            // If 0 jurors, the externalPot goes to winner (no one else to pay)
+            balances[_winnerAddr] += externalPot;
+        }
     }
 
     function _distributeJurorRewards(uint256 _id, uint256 winningChoice, uint256 _externalPot) internal {
@@ -547,12 +629,10 @@ contract Slice is Ownable, ReentrancyGuard {
             }
         } else {
             // "Reward Black Hole" Edge Case: All jurors voted incoherently
-            // FIX: Do NOT give penalties to the default winner (incentivizes "lazy winner" attacks).
-            // Instead, send external pot to winner but penalties go to treasury.
+            // External pot to winner; penalties to treasury (not to default winner)
             balances[d.winner] += _externalPot;
-            
+
             // Penalties collected from incoherent jurors go to governance treasury
-            // This funds protocol development rather than rewarding confusion
             if (totalPenaltyCollected > 0 && treasury != address(0)) {
                 balances[treasury] += totalPenaltyCollected;
             }
@@ -617,5 +697,17 @@ contract Slice is Ownable, ReentrancyGuard {
     // View Helpers
     function disputes(uint256 _id) external view returns (Dispute memory) {
         return disputeStore[_id];
+    }
+
+    function getJurorDisputes(address _user) external view returns (uint256[] memory) {
+        return jurorDisputes[_user];
+    }
+
+    function getUserDisputes(address _user) external view returns (uint256[] memory) {
+        return userDisputes[_user];
+    }
+
+    function disputeCountView() external view returns (uint256) {
+        return disputeCount;
     }
 }

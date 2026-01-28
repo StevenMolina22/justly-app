@@ -37,8 +37,13 @@ interface ISlice {
     function payDispute(uint256 _id) external;
 
     function courtConfigs(string memory _category) external view returns (CourtConfig memory);
-    
+
     function stakingToken() external view returns (IERC20);
+
+    function getDisputeCost(uint256 _id) external view returns (uint256);
+
+    // Getters
+    function MAX_JURORS() external view returns (uint256);
 }
 
 interface IArbitrable {
@@ -147,10 +152,10 @@ contract SliceEscrow is IArbitrable, Ownable {
     }
 
     ISlice public immutable slice;
-    
+
     // Fee timeout constant (24 hours)
     uint256 public constant FEE_TIMEOUT = 1 days;
-    
+
     // Dispute timeline constants (used when creating disputes in Slice)
     uint256 public constant PAY_DURATION = 1 days;
     uint256 public constant EVIDENCE_DURATION = 1 days;
@@ -189,6 +194,10 @@ contract SliceEscrow is IArbitrable, Ownable {
     ) external returns (uint256) {
         require(_amount > 0, "Amount must be > 0");
         require(_seller != msg.sender, "Cannot pay self");
+
+        ISlice.CourtConfig memory config = slice.courtConfigs(_category);
+        require(config.active, "Court is not active");
+        require(_jurors > 0 && _jurors <= slice.MAX_JURORS(), "Invalid number of jurors");
 
         // 1. Pull the Principal (The Payment)
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -276,7 +285,7 @@ contract SliceEscrow is IArbitrable, Ownable {
             commitSeconds: COMMIT_DURATION,
             revealSeconds: REVEAL_DURATION
         });
-        
+
         uint256 sliceId = slice.createDispute(params);
 
         txn.sliceDisputeId = sliceId;
@@ -287,7 +296,7 @@ contract SliceEscrow is IArbitrable, Ownable {
 
     /**
      * @notice Parties pay the Arbitration Fee + Stake to this contract.
-     * @dev FIX: Uses Slice's staking token (not the principal token) for fees.
+     * @dev Uses Slice's staking token (not the principal token) for fees.
      * This allows trades in any token while paying arbitration in USDC.
      */
     function payArbitrationFee(uint256 _txId) external {
@@ -296,10 +305,9 @@ contract SliceEscrow is IArbitrable, Ownable {
         require(txn.sliceDisputeId != 0, "Dispute not initialized");
 
         // Calculate Cost using court config
-        ISlice.CourtConfig memory config = slice.courtConfigs(txn.category);
-        uint256 cost = (config.feePerJuror * txn.jurors) + config.partyStake;
-        
-        // FIX: Get Slice's staking token (e.g., USDC) - separate from principal token
+        uint256 cost = slice.getDisputeCost(txn.sliceDisputeId);
+
+        // Get Slice's staking token (e.g., USDC) - separate from principal token
         IERC20 stakingToken = slice.stakingToken();
 
         // Determine who is paying
@@ -313,12 +321,12 @@ contract SliceEscrow is IArbitrable, Ownable {
             revert("Not party");
         }
 
-        // FIX: Start timeout timer if this is the first fee payment
+        // Start timeout timer if this is the first fee payment
         if (txn.firstFeePaymentTime == 0) {
             txn.firstFeePaymentTime = block.timestamp;
         }
 
-        // FIX: Pull tokens using Slice's staking token (not txn.token)
+        // Pull tokens using Slice's staking token (not txn.token)
         stakingToken.safeTransferFrom(msg.sender, address(this), cost);
         txn.feesCollected += cost;
 
@@ -332,8 +340,8 @@ contract SliceEscrow is IArbitrable, Ownable {
 
     function _activateSliceDispute(uint256 _txId, uint256 _totalFees) internal {
         Transaction storage txn = transactions[_txId];
-        
-        // FIX: Use Slice's staking token for approval (not txn.token)
+
+        // Use Slice's staking token for approval (not txn.token)
         IERC20 stakingToken = slice.stakingToken();
 
         // Approve Slice to pull the fees
@@ -352,14 +360,14 @@ contract SliceEscrow is IArbitrable, Ownable {
 
     /**
      * @notice Claim victory if the opponent failed to pay arbitration fees in time.
-     * @dev CRITICAL FIX: Prevents the "Fee Standoff" attack where one party refuses
+     * @dev CRITICAL Prevents the "Fee Standoff" attack where one party refuses
      * to pay fees, locking funds indefinitely.
-     * 
+     *
      * Attack Vector (Before Fix):
      * 1. Buyer flags dispute and pays fee
      * 2. Seller refuses to pay fee
      * 3. Dispute never activates, funds locked forever
-     * 
+     *
      * Solution: If one party pays and the other doesn't within FEE_TIMEOUT,
      * the paying party automatically wins.
      */
@@ -368,12 +376,12 @@ contract SliceEscrow is IArbitrable, Ownable {
         require(txn.status == Status.Disputed, "Not disputed");
         require(txn.firstFeePaymentTime > 0, "No fees paid yet");
         require(block.timestamp > txn.firstFeePaymentTime + FEE_TIMEOUT, "Timeout not reached");
-        
+
         // Exactly one party must have paid (XOR condition)
         require(txn.buyerFeePaid != txn.sellerFeePaid, "Both paid or neither paid");
-        
+
         IERC20 stakingToken = slice.stakingToken();
-        
+
         txn.status = Status.Resolved;
 
         // Case 1: Buyer paid, Seller didn't -> Buyer wins
@@ -382,7 +390,7 @@ contract SliceEscrow is IArbitrable, Ownable {
             stakingToken.safeTransfer(txn.buyer, txn.feesCollected);
             // Release Principal to Buyer (in principal token)
             IERC20(txn.token).safeTransfer(txn.buyer, txn.amount);
-            
+
             emit FeeTimeoutClaimed(_txId, txn.buyer);
             emit FundsReleased(_txId, txn.buyer);
         }
@@ -392,7 +400,7 @@ contract SliceEscrow is IArbitrable, Ownable {
             stakingToken.safeTransfer(txn.seller, txn.feesCollected);
             // Release Principal to Seller (in principal token)
             IERC20(txn.token).safeTransfer(txn.seller, txn.amount);
-            
+
             emit FeeTimeoutClaimed(_txId, txn.seller);
             emit FundsReleased(_txId, txn.seller);
         }
@@ -405,24 +413,22 @@ contract SliceEscrow is IArbitrable, Ownable {
      * @return timeRemaining Seconds until timeout (0 if already claimable).
      * @return potentialWinner Address that would win if timeout is claimed.
      */
-    function getFeeTimeoutStatus(uint256 _txId) external view returns (
-        bool canTimeout,
-        uint256 timeRemaining,
-        address potentialWinner
-    ) {
+    function getFeeTimeoutStatus(
+        uint256 _txId
+    ) external view returns (bool canTimeout, uint256 timeRemaining, address potentialWinner) {
         Transaction storage txn = transactions[_txId];
-        
+
         if (txn.status != Status.Disputed || txn.firstFeePaymentTime == 0) {
             return (false, 0, address(0));
         }
-        
+
         // Both paid or neither paid - no timeout possible
         if (txn.buyerFeePaid == txn.sellerFeePaid) {
             return (false, 0, address(0));
         }
-        
+
         uint256 timeoutDeadline = txn.firstFeePaymentTime + FEE_TIMEOUT;
-        
+
         if (block.timestamp > timeoutDeadline) {
             potentialWinner = txn.buyerFeePaid ? txn.buyer : txn.seller;
             return (true, 0, potentialWinner);
