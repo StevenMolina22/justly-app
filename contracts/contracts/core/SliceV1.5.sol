@@ -274,6 +274,7 @@ contract SliceV1_5 is Ownable, ReentrancyGuard {
         // Validate addresses
         require(_params.claimer != address(0), "Claimer cannot be zero address");
         require(_params.defender != address(0), "Defender cannot be zero address");
+        require(msg.sender != _params.defender, "Self-dispute not allowed");
         require(_params.claimer != _params.defender, "Claimer cannot be Defender");
         
         CourtConfig memory cc = courtConfigs[_params.category];
