@@ -24,7 +24,7 @@ export function useDisputeFinancials(disputeId: string) {
     principal: "0",
     reward: "0",
     total: "0",
-    currency: symbol || "USDC",
+    currency: symbol,
     isWinner: false,
     isLoading: true,
   });
