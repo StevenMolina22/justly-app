@@ -1,119 +1,94 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { useAccount } from "wagmi";
-import { useRouter } from "next/navigation";
-import { RefreshCw, Send, ArrowDownCircle } from "lucide-react";
+import React from "react";
 import { useTokenBalance } from "@/hooks/core/useTokenBalance";
-import { SendModal } from "./SendModal";
-import { ReceiveModal } from "./ReceiveModal";
-import { FaucetButton } from "./FaucetButton";
+import { useNativeBalance } from "@/hooks/core/useNativeBalance";
+import { useStakingToken } from "@/hooks/core/useStakingToken";
+import { Wallet, Fuel, AlertTriangle, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { useFaucet } from "@/hooks/actions/useFaucet";
 
-export const BalanceCard: React.FC = () => {
-  const router = useRouter();
-  const { address } = useAccount();
-  const { formatted, loading: isLoading, refetch } = useTokenBalance();
+export const BalanceCard = () => {
+  const { formatted: usdcBalance, loading: loadingUSDC } = useTokenBalance();
+  const { symbol: usdcSymbol } = useStakingToken();
+  const { formatted: ethBalance, isLowGas, isZeroGas, symbol: ethSymbol } = useNativeBalance();
+  
+  const { mint } = useFaucet(); 
 
-  const [isSendOpen, setIsSendOpen] = useState(false);
-  const [isReceiveOpen, setIsReceiveOpen] = useState(false);
-
-  const displayBalance = useMemo(() => {
-    if (isLoading) return "Loading...";
-    if (!address) return "---";
-    if (formatted === undefined || formatted === null) return "N/A";
-
-    const balance = parseFloat(formatted).toFixed(2);
-    return `${balance} USDC`;
-  }, [address, isLoading, formatted]);
-
-  const actionBtnClass =
-    "flex flex-col items-center gap-1 bg-none border-none text-white cursor-pointer p-0 hover:opacity-80 transition-opacity group";
-  const iconClass =
-    "shrink-0 block w-[42px] h-[42px] group-hover:opacity-80 transition-opacity stroke-1";
+  const handleGasClick = () => {
+    if (isLowGas || isZeroGas) {
+      toast.warning(`Low Gas Warning: You have ${ethBalance} ${ethSymbol}. You need ETH to pay for transaction fees.`);
+    } else {
+      toast.info(`Gas Level Good: ${ethBalance} ${ethSymbol} available for fees.`);
+    }
+  };
 
   return (
-    <>
-      {/* Added 'relative' here to position the refresh button */}
-      <div className="relative bg-[#1b1c23] rounded-[21px] p-6 my-6 mx-4 w-auto min-h-28 flex flex-row justify-between items-end text-white box-border">
-        {/* Top Right Refresh Button */}
-        <button
-          onClick={() => refetch()}
-          className="absolute top-3 right-4 p-2 text-white/80 hover:text-white transition-colors"
-          title="Refresh Balance"
-        >
-          <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
-        </button>
+    <div className="px-5 py-4">
+      <div className="w-full bg-[#1b1c23] rounded-[24px] p-6 text-white shadow-xl shadow-gray-200 relative overflow-hidden group">
+        
+        {/* Decorative Background Blur */}
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#8c8fff] rounded-full blur-[60px] opacity-20 group-hover:opacity-30 transition-opacity" />
 
-        {/* Left Section */}
-        <div className="flex flex-col gap-2.5 items-start flex-1 justify-start">
-          <div className="flex flex-col gap-2 w-auto mb-0">
-            <div className="font-manrope font-semibold text-[13px] leading-none opacity-70 tracking-[-0.26px] text-white">
-              Balance
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="font-manrope font-bold text-2xl leading-none tracking-[-0.48px] text-white">
-                {displayBalance}
+        <div className="relative z-10 flex flex-col gap-6">
+          
+          {/* Row 1: Main Staking Balance (USDC) */}
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-1 text-gray-400">
+                <Wallet className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">Available Stake</span>
               </div>
-
-              {/* Conditional Retry Button (kept for fallback) */}
-              {displayBalance === "N/A" && !isLoading && (
-                <button
-                  onClick={() => refetch()}
-                  className="p-1.5 hover:bg-white/10 rounded-full transition-colors group"
-                  title="Retry fetch"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-white/70 group-hover:text-white" />
-                </button>
-              )}
+              <div className="flex items-baseline gap-1">
+                <h2 className="text-3xl font-manrope font-black tracking-tight">
+                  {loadingUSDC ? "..." : Math.floor(Number(usdcBalance))}
+                  <span className="text-lg text-gray-400 font-bold">.{(usdcBalance.split('.')[1] || '').slice(0, 2).padEnd(2, '0')}</span>
+                </h2>
+                <span className="text-sm font-bold text-[#8c8fff]">{usdcSymbol}</span>
+              </div>
             </div>
-          </div>
 
-          {/* Action Row: Details + Faucet */}
-          <div className="flex items-center gap-2 mt-0">
-            <button
-              onClick={() => router.push("/profile")}
-              className="bg-[#8c8fff] text-[#1b1c23] border-none rounded-[12.5px] px-4.5 py-2 h-7 flex items-center justify-center font-manrope font-extrabold text-xs tracking-[-0.36px] cursor-pointer hover:opacity-90 whitespace-nowrap shrink-0 transition-opacity"
+            {/* Quick Action: Mint/Add Funds */}
+            <button 
+              onClick={mint}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/5"
             >
-              Details
+              <Plus className="w-5 h-5 text-white" />
             </button>
-            <FaucetButton />
           </div>
-        </div>
 
-        {/* Action Buttons (Right Side) */}
-        <div className="flex gap-4 items-center shrink-0 self-end">
-          <button
-            className={actionBtnClass}
-            onClick={() => setIsReceiveOpen(true)}
+          {/* Row 2: Gas Indicator (The Non-Invasive Warning) */}
+          <div 
+            onClick={handleGasClick}
+            className={`
+              flex items-center gap-2 py-2 px-3 rounded-xl w-fit cursor-pointer transition-all border
+              ${(isLowGas || isZeroGas) 
+                ? "bg-orange-500/10 border-orange-500/30 text-orange-400 hover:bg-orange-500/20" 
+                : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+              }
+            `}
           >
-            <ArrowDownCircle className={iconClass} />
-            <span className="font-manrope font-semibold text-xs tracking-[-0.12px] leading-none">
-              Deposit
+            {/* Dynamic Icon */}
+            {(isLowGas || isZeroGas) ? (
+              <AlertTriangle className="w-3.5 h-3.5 animate-pulse" />
+            ) : (
+              <Fuel className="w-3.5 h-3.5" />
+            )}
+
+            <div className="flex flex-col leading-none">
+              <span className="text-[10px] font-bold uppercase tracking-wide opacity-80">
+                {(isLowGas || isZeroGas) ? "Low Gas" : "Gas Level"}
+              </span>
+            </div>
+
+            {/* Balance Value */}
+            <span className="text-xs font-mono font-medium ml-1">
+              {ethBalance} {ethSymbol}
             </span>
-          </button>{" "}
-          <button
-            className={actionBtnClass}
-            onClick={() => setIsSendOpen(true)}
-          >
-            <Send className={iconClass} />
-            <span className="font-manrope font-semibold text-xs tracking-[-0.12px] leading-none">
-              Send
-            </span>
-          </button>
+          </div>
+
         </div>
       </div>
-
-      {isSendOpen && (
-        <SendModal isOpen={isSendOpen} onClose={() => setIsSendOpen(false)} />
-      )}
-
-      {isReceiveOpen && (
-        <ReceiveModal
-          isOpen={isReceiveOpen}
-          onClose={() => setIsReceiveOpen(false)}
-        />
-      )}
-    </>
+    </div>
   );
 };

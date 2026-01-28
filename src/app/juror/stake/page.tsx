@@ -6,6 +6,7 @@ import { SelectAmount } from "@/components/category-amount/SelectAmount";
 import { SwipeButton } from "@/components/category-amount/SwipeButton";
 import { AlertCircle } from "lucide-react";
 import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
+import { FinancialProjection } from "@/components/juror/FinancialProjection";
 
 export default function JurorStakePage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function JurorStakePage() {
             </h1>
 
             <p className="text-gray-400 text-sm font-medium mb-6 max-w-[260px] leading-relaxed">
-              You&apos;ll be matched with disputes in the same reward range.
+              Higher stakes allow you to join higher-value disputes.
             </p>
 
             <div className="w-full">
@@ -60,15 +61,17 @@ export default function JurorStakePage() {
           </div>
         </div>
 
+        {/* 2. NEW: Financial Metrics Card */}
+        <FinancialProjection stakeAmount={selectedAmount} />
+
         {/* 3. Warning / Info Card */}
         <div className="bg-[#F5F6F9] rounded-[20px] p-4 flex items-start gap-3 border border-[#EAECEF]">
           <div className="shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-[#8c8fff]">
             <AlertCircle className="w-5 h-5" />
           </div>
           <p className="text-[11px] font-bold text-gray-500 leading-[1.5] mt-0.5 text-left">
-            <span className="text-[#1b1c23]">Heads up:</span> Once you start a
-            dispute, funds will be locked in the contract until a ruling is
-            executed.
+            <span className="text-[#1b1c23]">Risk Warning:</span> Staked funds are locked during the dispute. 
+            Incoherent votes result in loss of stake.
           </p>
         </div>
       </div>
@@ -76,7 +79,7 @@ export default function JurorStakePage() {
       {/* Bottom Action Area */}
       <div className="px-5 pb-8 flex justify-center shrink-0 z-20">
         <SwipeButton onSwipeComplete={handleSwipeComplete}>
-          <span className="font-bold">Find Disputes</span>
+          <span className="font-bold">Stake & Find Disputes</span>
         </SwipeButton>
       </div>
     </div>
