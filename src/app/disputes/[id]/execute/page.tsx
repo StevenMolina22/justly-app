@@ -20,8 +20,11 @@ export default function ExecuteRulingPage() {
   const { dispute, refetch } = useGetDispute(disputeId);
   const { executeRuling, isExecuting } = useExecuteRuling();
   
-  // NEW: Fetch Real Financials
-  const { principal, reward, total, currency, isWinner, isLoading: isFinanceLoading } = useDisputeFinancials(disputeId);
+  // Determine if ruling has been executed (status === 3)
+  const isFinished = dispute?.status === 3;
+  
+  // NEW: Fetch Real Financials (only after ruling is executed)
+  const { principal, reward, total, currency, isWinner, isLoading: isFinanceLoading } = useDisputeFinancials(disputeId, isFinished);
   
   const [showSuccess, setShowSuccess] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,8 +51,6 @@ export default function ExecuteRulingPage() {
     toast.info("Ruling executed! Funds added to your Profile balance.");
     router.push("/profile");
   };
-
-  const isFinished = dispute?.status === 3;
 
   return (
     <div

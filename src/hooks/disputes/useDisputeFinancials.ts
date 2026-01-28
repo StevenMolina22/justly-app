@@ -14,7 +14,7 @@ interface FinancialData {
   isLoading: boolean;
 }
 
-export function useDisputeFinancials(disputeId: string) {
+export function useDisputeFinancials(disputeId: string, enabled = true) {
   const { address } = useAccount();
   const { sliceContract } = useContracts();
   const { decimals, symbol } = useStakingToken();
@@ -31,7 +31,7 @@ export function useDisputeFinancials(disputeId: string) {
 
   useEffect(() => {
     async function calculateRewards() {
-      if (!publicClient || !address || !disputeId || !sliceContract) return;
+      if (!enabled || !publicClient || !address || !disputeId || !sliceContract) return;
 
       try {
         const dId = BigInt(disputeId);
@@ -166,7 +166,7 @@ export function useDisputeFinancials(disputeId: string) {
     }
 
     calculateRewards();
-  }, [publicClient, address, disputeId, sliceContract, decimals, symbol]);
+  }, [enabled, publicClient, address, disputeId, sliceContract, decimals, symbol]);
 
   return data;
 }
