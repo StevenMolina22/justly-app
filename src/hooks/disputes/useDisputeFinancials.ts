@@ -112,6 +112,8 @@ export function useDisputeFinancials(disputeId: string) {
              publicClient.multicall({ contracts: stakeCalls }),
         ]);
 
+        let userHasRevealed = false;
+        
         for (let i = 0; i < jurors.length; i++) {
             const jurorAddr = jurors[i];
             const revealResult = hasRevealedResults[i];
@@ -120,6 +122,7 @@ export function useDisputeFinancials(disputeId: string) {
             const stake = stakeResults[i].status === "success" ? (stakeResults[i].result as bigint) : 0n;
 
             if (jurorAddr.toLowerCase() === address.toLowerCase()) {
+                userHasRevealed = hasRevealed;
                 if (hasRevealed) myVote = vote;
             }
 
@@ -129,11 +132,24 @@ export function useDisputeFinancials(disputeId: string) {
             }
         }
 
-        // 5. Determine Winner
-        // Edge case: If no votes were revealed or all votes are invalid
+        // 5. Determine Winner and Calculate Rewards
+        // Edge case: User did not reveal their vote - they forfeit their stake
+        if (!userHasRevealed) {
+            setData({
+                principal: formatUnits(myStake, decimals),
+                reward: "0",
+                total: "0",  // User loses their stake
+                currency: symbol || "USDC",
+                isWinner: false,
+                isLoading: false
+            });
+            return;
+        }
+
+        // Edge case: No votes were revealed or all votes are invalid
+        // In this case, user gets their principal back (contract returns stake when totalWinningStake is 0)
         const totalVotes = votesFor0 + votesFor1;
         if (totalVotes === 0n) {
-            // No valid votes revealed - treat as no winner, no rewards
             setData({
                 principal: formatUnits(myStake, decimals),
                 reward: "0",
@@ -146,6 +162,7 @@ export function useDisputeFinancials(disputeId: string) {
         }
 
         // Slice.sol logic: return votesFor1 > votesFor0 ? 1 : 0;
+        // Note: In a tie (votesFor0 == votesFor1), choice 0 wins
         const winningChoice = votesFor1 > votesFor0 ? 1 : 0;
         const isWinner = (myVote === winningChoice);
 
@@ -156,23 +173,9 @@ export function useDisputeFinancials(disputeId: string) {
             const totalWinningStake = winningChoice === 1 ? votesFor1 : votesFor0;
             const totalLosingStake = winningChoice === 1 ? votesFor0 : votesFor1;
             
-            // Additional safety check: ensure totalWinningStake is non-zero
-            // This should not happen given the totalVotes check above, but provides defense in depth
-            if (totalWinningStake === 0n) {
-                console.warn("Unexpected state: winner determined but winning stake is zero");
-                setData({
-                    principal: formatUnits(myStake, decimals),
-                    reward: "0",
-                    total: formatUnits(myStake, decimals),
-                    currency: symbol || "USDC",
-                    isWinner: false,
-                    isLoading: false
-                });
-                return;
-            }
-            
             // Slice.sol: Reward = Stake + (Stake * LosingPool / WinningPool)
             // We only want the "Profit" part for the UI display
+            // Note: totalWinningStake is guaranteed to be > 0 here because totalVotes > 0
             calculatedReward = (myStake * totalLosingStake) / totalWinningStake;
         }
 
