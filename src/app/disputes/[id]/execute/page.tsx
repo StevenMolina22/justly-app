@@ -94,11 +94,13 @@ export default function ExecuteRulingPage() {
             {isFinished ? "Ruling Executed" : "Finalize Ruling"}
           </h1>
           <p className="text-sm text-gray-500 font-medium max-w-[260px]">
-             {isFinanceLoading 
-                ? "Calculating results..." 
-                : isWinner 
-                  ? "You voted with the majority. Execute the ruling to claim your rewards."
-                  : "The majority voted differently. You will not receive a reward for this dispute."}
+             {isFinished
+                ? "Ruling already executed. Your rewards have been added to your profile balance."
+                : isFinanceLoading
+                  ? "Calculating results..."
+                  : isWinner
+                    ? "You voted with the majority. Execute the ruling to claim your rewards."
+                    : "The majority voted differently. You will not receive a reward for this dispute."}
           </p>
         </div>
 
