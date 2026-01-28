@@ -271,6 +271,12 @@ contract SliceV1_5 is Ownable, ReentrancyGuard {
      * @param _params Struct containing all dispute creation parameters.
      */
     function createDispute(CreateDisputeParams calldata _params) external returns (uint256) {
+        // Validate addresses
+        require(_params.claimer != address(0), "Claimer cannot be zero address");
+        require(_params.defender != address(0), "Defender cannot be zero address");
+        require(msg.sender != _params.defender, "Self-dispute not allowed");
+        require(_params.claimer != _params.defender, "Claimer cannot be Defender");
+        
         CourtConfig memory cc = courtConfigs[_params.category];
         require(cc.active, "Court inactive");
         require(_params.jurorsRequired > 0 && _params.jurorsRequired <= MAX_JURORS, "Invalid juror count");
