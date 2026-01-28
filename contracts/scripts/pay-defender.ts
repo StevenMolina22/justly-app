@@ -13,7 +13,7 @@ const ADDRESSES = {
 };
 
 // Set the ID of the dispute you want to pay
-const DISPUTE_ID = 13;
+const DISPUTE_ID = 19;
 
 async function main() {
   const { network } = hre;
