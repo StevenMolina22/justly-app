@@ -266,7 +266,7 @@ contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
      * @dev This freezes the state to 'Disputed' but doesn't call Slice yet.
      * Both parties must pay fees first.
      */
-    function raiseDispute(uint256 _txId, string calldata _evidenceIpfs) external {
+    function raiseDispute(uint256 _txId, string calldata _evidenceIpfs) external nonReentrant {
         Transaction storage txn = transactions[_txId];
         require(txn.status == Status.Active, "Not active");
         require(msg.sender == txn.buyer || msg.sender == txn.seller, "Not party");
