@@ -172,6 +172,7 @@ export function useDisputeFinancials(disputeId: string) {
   }, [publicClient, address, disputeId, sliceContract, decimals, symbol]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     calculateRewards();
 
     return () => {
