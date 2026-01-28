@@ -175,6 +175,7 @@ contract SliceV1_5 is Ownable, ReentrancyGuard {
     // Core Data
     mapping(uint256 => Dispute) internal disputeStore;
     mapping(uint256 => address[]) public disputeJurors;
+    mapping(uint256 => mapping(address => bool)) internal isJurorInDispute;
 
     // Voting
     mapping(uint256 => mapping(address => bytes32)) public commitments;
@@ -427,6 +428,7 @@ contract SliceV1_5 is Ownable, ReentrancyGuard {
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         disputeJurors[id].push(msg.sender);
+        isJurorInDispute[id][msg.sender] = true;
         jurorStakes[id][msg.sender] = _amount;
         jurorDisputes[msg.sender].push(id);
 
@@ -677,11 +679,7 @@ contract SliceV1_5 is Ownable, ReentrancyGuard {
     }
 
     function _isJuror(uint256 _id, address _user) internal view returns (bool) {
-        address[] memory jurors = disputeJurors[_id];
-        for (uint i = 0; i < jurors.length; i++) {
-            if (jurors[i] == _user) return true;
-        }
-        return false;
+        return isJurorInDispute[_id][_user];
     }
 
     function withdraw(address _token) external nonReentrant {
