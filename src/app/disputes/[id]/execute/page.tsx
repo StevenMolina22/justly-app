@@ -45,7 +45,7 @@ export default function ExecuteRulingPage() {
 
   const handleAnimationComplete = () => {
     setShowSuccess(false);
-    toast.info("Ruling executed! Funds added to your Profile balance.");
+    toast.info("Ruling executed. You can review any balance updates in your Profile.");
     router.push("/profile");
   };
 
