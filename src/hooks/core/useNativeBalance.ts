@@ -5,7 +5,7 @@ export function useNativeBalance() {
   const { address } = useAccount();
   
   // Fetch native coin balance (ETH on Base)
-  const { data, isLoading } = useBalance({ address });
+  const { data, isLoading } = useBalance({ address, query: { enabled: !!address } });
 
   // Threshold: 0.001 ETH (~$2-3) is a safe buffer for Base
   const MIN_GAS_THRESHOLD = 0.001;
