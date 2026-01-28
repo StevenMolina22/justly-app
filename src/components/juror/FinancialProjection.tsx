@@ -15,8 +15,9 @@ export const FinancialProjection = ({ stakeAmount }: Props) => {
   // My Share of Winning Pool = 50% (since I am 1 of 2 winners)
   // Reward = 50% of Losing Pool = 0.5 * Stake
   // Total Payout = Principal + Reward = 1.5 * Stake
-  const roiPercentage = 50; 
-  const profit = stakeAmount * 0.5;
+  const REWARD_MULTIPLIER = 0.5;
+  const roiPercentage = REWARD_MULTIPLIER * 100;
+  const profit = stakeAmount * REWARD_MULTIPLIER;
   const totalPayout = stakeAmount + profit;
 
   if (stakeAmount <= 0) return null;

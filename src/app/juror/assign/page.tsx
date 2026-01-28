@@ -24,16 +24,23 @@ export default function JurorAssignPage() {
       initialized.current = true; // Prevent double-fire
       setDraftFailed(false);
 
-      const disputeId = await drawDispute(amount);
+      try {
+        const disputeId = await drawDispute(amount);
 
-      if (disputeId) {
-        setHasDrafted(true);
-        // Redirect to the success/details page for that specific dispute
-        router.replace(`/juror/assigned/${disputeId}`);
-      } else {
-        // Handle failure (stay on page to allow retry)
+        if (disputeId) {
+          setHasDrafted(true);
+          // Redirect to the success/details page for that specific dispute
+          router.replace(`/juror/assigned/${disputeId}`);
+        } else {
+          // Handle failure (stay on page to allow retry)
+          setDraftFailed(true);
+          initialized.current = false; // Unlock to allow retry if state changes
+        }
+      } catch (err) {
+        // Handle unexpected errors
+        console.error("[JurorAssign] Draft error:", err);
         setDraftFailed(true);
-        initialized.current = false;
+        initialized.current = false; // Unlock on crash
       }
     };
 

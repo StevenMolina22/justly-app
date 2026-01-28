@@ -20,8 +20,11 @@ export default function ExecuteRulingPage() {
   const { dispute, refetch } = useGetDispute(disputeId);
   const { executeRuling, isExecuting } = useExecuteRuling();
   
-  // NEW: Fetch Real Financials
-  const { principal, reward, total, currency, isWinner, isLoading: isFinanceLoading } = useDisputeFinancials(disputeId);
+  // Determine if ruling has been executed (status === 3)
+  const isFinished = dispute?.status === 3;
+  
+  // Fetch Real Financials (only after ruling is executed)
+  const { principal, reward, total, currency, isWinner, isLoading: isFinanceLoading } = useDisputeFinancials(disputeId, isFinished);
   
   const [showSuccess, setShowSuccess] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,8 +52,6 @@ export default function ExecuteRulingPage() {
     router.push("/profile");
   };
 
-  const isFinished = dispute?.status === 3;
-
   return (
     <div
       ref={containerRef}
@@ -70,15 +71,19 @@ export default function ExecuteRulingPage() {
           <div className="relative mb-6">
             <div
               className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${
-                isFinanceLoading
-                  ? "bg-gray-100"
-                  : isWinner
-                    ? "bg-[#8c8fff]/10"
-                    : "bg-red-50"
+                isFinanceLoading 
+                  ? "bg-gray-100" 
+                  : !isFinished
+                    ? "bg-gray-100"
+                    : isWinner
+                      ? "bg-[#8c8fff]/10"
+                      : "bg-red-50"
               }`}
             >
               {isFinanceLoading ? (
                 <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+              ) : !isFinished ? (
+                 <Gavel className="w-10 h-10 text-gray-400" />
               ) : isWinner ? (
                 <Wallet className="w-10 h-10 text-[#8c8fff]" />
               ) : (
@@ -94,12 +99,12 @@ export default function ExecuteRulingPage() {
             {isFinished ? "Ruling Executed" : "Finalize Ruling"}
           </h1>
           <p className="text-sm text-gray-500 font-medium max-w-[260px]">
-             {isFinished
-                ? "Ruling already executed. Your rewards have been added to your profile balance."
+             {!isFinished
+                ? "Execute the ruling to finalize the dispute and see your results."
                 : isFinanceLoading
                   ? "Calculating results..."
                   : isWinner
-                    ? "You voted with the majority. Execute the ruling to claim your rewards."
+                    ? "You voted with the majority. Your rewards have been added to your profile."
                     : "The majority voted differently. You will not receive a reward for this dispute."}
           </p>
         </div>
@@ -123,7 +128,11 @@ export default function ExecuteRulingPage() {
           </div>
 
           {/* Financial Breakdown */}
-          {isFinanceLoading ? (
+          {!isFinished ? (
+             <div className="flex justify-center py-4 text-sm text-gray-400">
+               Execute the ruling to see financial breakdown
+             </div>
+          ) : isFinanceLoading ? (
              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-gray-300" /></div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -153,8 +162,8 @@ export default function ExecuteRulingPage() {
                 Principal + Rewards
               </span>
             </div>
-            <span className={`text-xl font-extrabold ${isWinner ? "text-[#1b1c23]" : "text-gray-300"}`}>
-              {isFinanceLoading ? "..." : `${total} ${currency}`}
+            <span className={`text-xl font-extrabold ${!isFinished ? "text-gray-300" : isWinner ? "text-[#1b1c23]" : "text-gray-300"}`}>
+              {!isFinished ? "—" : isFinanceLoading ? "..." : `${total} ${currency}`}
             </span>
           </div>
         </div>

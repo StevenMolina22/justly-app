@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, usePublicClient } from "wagmi";
 import { SLICE_ABI } from "@/config/contracts";
 import { useContracts } from "@/hooks/core/useContracts";
@@ -21,162 +21,175 @@ interface JurorData {
   stake: bigint;
 }
 
-export function useDisputeFinancials(disputeId: string) {
+export function useDisputeFinancials(disputeId: string, enabled = true) {
   const { address } = useAccount();
   const { sliceContract } = useContracts();
   const { decimals, symbol } = useStakingToken();
   const publicClient = usePublicClient();
+  const isMountedRef = useRef(true);
 
   const [data, setData] = useState<FinancialData>({
     principal: "0",
     reward: "0",
     total: "0",
-    currency: symbol,
+    currency: symbol || "USDC",
     isWinner: false,
     isLoading: true,
   });
 
-  useEffect(() => {
-    async function calculateRewards() {
-      if (!publicClient || !address || !disputeId || !sliceContract) return;
+  const calculateRewards = useCallback(async () => {
+    // 1. Handle the "enabled" check (from develop)
+    if (!enabled) {
+      if (isMountedRef.current) {
+        setData(prev => ({ ...prev, isLoading: false }));
+      }
+      return;
+    }
 
-      try {
-        const dId = BigInt(disputeId);
+    if (!publicClient || !address || !disputeId || !sliceContract) return;
 
-        // 1. Get My Stake
-        const myStake = (await publicClient.readContract({
+    try {
+      const dId = BigInt(disputeId);
+
+      // --- FETCHING LOGIC ---
+      
+      // 1. Get My Stake
+      const myStake = (await publicClient.readContract({
+        address: sliceContract,
+        abi: SLICE_ABI,
+        functionName: "jurorStakes",
+        args: [dId, address],
+      })) as bigint;
+
+      if (myStake === 0n) {
+        if (isMountedRef.current) {
+          setData((prev) => ({ ...prev, isLoading: false }));
+        }
+        return;
+      }
+
+      // 2. Get Dispute Info
+      const disputeStruct = (await publicClient.readContract({
+        address: sliceContract,
+        abi: SLICE_ABI,
+        functionName: "disputes",
+        args: [dId],
+      })) as any;
+      
+      const required = Number(disputeStruct.jurorsRequired || 3);
+      const jurors: string[] = [];
+      
+      // 3. Fetch all jurors
+      const jurorCalls = [];
+      for (let i = 0; i < required; i++) {
+         jurorCalls.push({
+           address: sliceContract,
+           abi: SLICE_ABI,
+           functionName: "disputeJurors",
+           args: [dId, BigInt(i)],
+         });
+      }
+      
+      const jurorResults = await publicClient.multicall({ contracts: jurorCalls });
+      
+      jurorResults.forEach((r) => {
+          if (r.status === "success" && r.result) {
+            jurors.push(r.result as string);
+          }
+      });
+
+      // 4. Tally Votes & Stakes
+      let votesFor0 = 0n;
+      let votesFor1 = 0n;
+      let myVote = -1;
+      let myHasRevealed = false;
+
+      // Fetch vote data for all jurors
+      const voteCalls = jurors.map(juror => ({
+          address: sliceContract,
+          abi: SLICE_ABI,
+          functionName: "revealedVotes",
+          args: [dId, juror],
+      }));
+      
+      const revealedCalls = jurors.map(juror => ({
+          address: sliceContract,
+          abi: SLICE_ABI,
+          functionName: "hasRevealed",
+          args: [dId, juror],
+      }));
+      
+      const stakeCalls = jurors.map(juror => ({
           address: sliceContract,
           abi: SLICE_ABI,
           functionName: "jurorStakes",
-          args: [dId, address],
-        })) as bigint;
+          args: [dId, juror],
+      }));
 
-        if (myStake === 0n) {
-          setData((prev) => ({ ...prev, isLoading: false }));
-          return;
-        }
+      const [voteResults, hasRevealedResults, stakeResults] = await Promise.all([
+           publicClient.multicall({ contracts: voteCalls }),
+           publicClient.multicall({ contracts: revealedCalls }),
+           publicClient.multicall({ contracts: stakeCalls }),
+      ]);
 
-        // 2. Get Dispute Info to find number of jurors
-        const disputeStruct = (await publicClient.readContract({
-          address: sliceContract,
-          abi: SLICE_ABI,
-          functionName: "disputes",
-          args: [dId],
-        })) as any;
-        
-        const required = Number(disputeStruct.jurorsRequired || 3);
-        const jurors: string[] = [];
-        
-        // 3. Fetch all jurors using index-based access
-        const jurorCalls = [];
-        for (let i = 0; i < required; i++) {
-           jurorCalls.push({
-             address: sliceContract,
-             abi: SLICE_ABI,
-             functionName: "disputeJurors",
-             args: [dId, BigInt(i)],
-           });
-        }
-        
-        const jurorResults = await publicClient.multicall({ contracts: jurorCalls });
-        
-        jurorResults.forEach((r) => {
-            if (r.status === "success" && r.result) {
-              jurors.push(r.result as string);
-            }
-        });
+      // Store juror data for reward calculation (from feature/sli-40)
+      const jurorData: JurorData[] = [];
 
-        // 4. Tally Votes & Stakes
-        let votesFor0 = 0n;
-        let votesFor1 = 0n;
-        let myVote = -1;
-        let myHasRevealed = false;
+      for (let i = 0; i < jurors.length; i++) {
+          const jurorAddr = jurors[i];
+          const revealResult = hasRevealedResults[i];
+          const hasRevealed = revealResult.status === "success" ? Boolean(revealResult.result) : false;
+          const vote = voteResults[i].status === "success" ? Number(voteResults[i].result) : -1;
+          const stake = stakeResults[i].status === "success" ? (stakeResults[i].result as bigint) : 0n;
 
-        // Fetch vote data for all jurors
-        const voteCalls = jurors.map(juror => ({
-            address: sliceContract,
-            abi: SLICE_ABI,
-            functionName: "revealedVotes",
-            args: [dId, juror],
-        }));
-        
-        const revealedCalls = jurors.map(juror => ({
-            address: sliceContract,
-            abi: SLICE_ABI,
-            functionName: "hasRevealed",
-            args: [dId, juror],
-        }));
-        
-        const stakeCalls = jurors.map(juror => ({
-            address: sliceContract,
-            abi: SLICE_ABI,
-            functionName: "jurorStakes",
-            args: [dId, juror],
-        }));
+          jurorData.push({ address: jurorAddr, hasRevealed, vote, stake });
 
-        const [voteResults, hasRevealedResults, stakeResults] = await Promise.all([
-             publicClient.multicall({ contracts: voteCalls }),
-             publicClient.multicall({ contracts: revealedCalls }),
-             publicClient.multicall({ contracts: stakeCalls }),
-        ]);
+          if (jurorAddr.toLowerCase() === address.toLowerCase()) {
+              if (hasRevealed) {
+                  myVote = vote;
+                  myHasRevealed = true;
+              }
+          }
 
-        // Store juror data for reward calculation
-        const jurorData: JurorData[] = [];
+          if (hasRevealed && vote >= 0) {
+              if (vote === 0) votesFor0 += stake;
+              else if (vote === 1) votesFor1 += stake;
+          }
+      }
 
-        for (let i = 0; i < jurors.length; i++) {
-            const jurorAddr = jurors[i];
-            const revealResult = hasRevealedResults[i];
-            const hasRevealed = revealResult.status === "success" ? Boolean(revealResult.result) : false;
-            const vote = voteResults[i].status === "success" ? Number(voteResults[i].result) : -1;
-            const stake = stakeResults[i].status === "success" ? (stakeResults[i].result as bigint) : 0n;
+      // 5. Determine Winner
+      // Slice.sol logic: return votesFor1 > votesFor0 ? 1 : 0;
+      const winningChoice = votesFor1 > votesFor0 ? 1 : 0;
+      const isWinner = myHasRevealed && (myVote === winningChoice);
 
-            jurorData.push({ address: jurorAddr, hasRevealed, vote, stake });
+      // 6. Calculate Reward (Correct Logic from feature/sli-40)
+      let calculatedReward = 0n;
+      
+      if (isWinner) {
+          // Calculate pools exactly as in Slice.sol lines 406-415
+          let totalWinningStake = 0n;
+          let totalLosingStake = 0n;
 
-            if (jurorAddr.toLowerCase() === address.toLowerCase()) {
-                if (hasRevealed) {
-                    myVote = vote;
-                    myHasRevealed = true;
-                }
-            }
+          for (const juror of jurorData) {
+              const isJurorWinner = juror.hasRevealed && juror.vote === winningChoice;
+              if (isJurorWinner) {
+                  totalWinningStake += juror.stake;
+              } else {
+                  // Losing stake includes: non-revealed jurors + revealed jurors who voted for losing choice
+                  totalLosingStake += juror.stake;
+              }
+          }
+          
+          // Slice.sol: Reward = Stake + (Stake * LosingPool / WinningPool)
+          // We only want the "Profit" part for the UI display
+          if (totalWinningStake > 0n) {
+              calculatedReward = (myStake * totalLosingStake) / totalWinningStake;
+          }
+      }
 
-            if (hasRevealed && vote >= 0) {
-                if (vote === 0) votesFor0 += stake;
-                else if (vote === 1) votesFor1 += stake;
-            }
-        }
+      const totalReturn = isWinner ? (myStake + calculatedReward) : 0n;
 
-        // 5. Determine Winner
-        // Slice.sol logic: return votesFor1 > votesFor0 ? 1 : 0;
-        const winningChoice = votesFor1 > votesFor0 ? 1 : 0;
-        const isWinner = myHasRevealed && (myVote === winningChoice);
-
-        // 6. Calculate Reward (matching Slice.sol::_distributeRewards)
-        let calculatedReward = 0n;
-        
-        if (isWinner) {
-            // Calculate pools exactly as in Slice.sol lines 406-415
-            let totalWinningStake = 0n;
-            let totalLosingStake = 0n;
-
-            for (const juror of jurorData) {
-                const isJurorWinner = juror.hasRevealed && juror.vote === winningChoice;
-                if (isJurorWinner) {
-                    totalWinningStake += juror.stake;
-                } else {
-                    // Losing stake includes: non-revealed jurors + revealed jurors who voted for losing choice
-                    totalLosingStake += juror.stake;
-                }
-            }
-            
-            // Slice.sol: Reward = Stake + (Stake * LosingPool / WinningPool)
-            // We only want the "Profit" part for the UI display
-            if (totalWinningStake > 0n) {
-                calculatedReward = (myStake * totalLosingStake) / totalWinningStake;
-            }
-        }
-
-        const totalReturn = isWinner ? (myStake + calculatedReward) : 0n;
-
+      if (isMountedRef.current) {
         setData({
             principal: formatUnits(myStake, decimals),
             reward: formatUnits(calculatedReward, decimals),
@@ -185,15 +198,24 @@ export function useDisputeFinancials(disputeId: string) {
             isWinner,
             isLoading: false
         });
+      }
 
-      } catch (e) {
-        console.error("Failed to calc financials", e);
+    } catch (e) {
+      console.error("Failed to calc financials", e);
+      if (isMountedRef.current) {
         setData(prev => ({...prev, isLoading: false}));
       }
     }
+  }, [enabled, publicClient, address, disputeId, sliceContract, decimals, symbol]);
 
+  useEffect(() => {
+    isMountedRef.current = true;
     calculateRewards();
-  }, [publicClient, address, disputeId, sliceContract, decimals, symbol]);
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [calculateRewards]);
 
   return data;
 }

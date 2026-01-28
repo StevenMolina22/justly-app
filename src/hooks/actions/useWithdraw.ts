@@ -62,7 +62,7 @@ export function useWithdraw() {
         await publicClient.waitForTransactionReceipt({ hash });
       }
 
-      toast.success("Funds withdrawn successfully!");
+      // Success is handled by the animation overlay in the component
       refetch(); // Update balance UI
       return true;
     } catch (err: any) {
