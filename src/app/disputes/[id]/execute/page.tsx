@@ -23,7 +23,7 @@ export default function ExecuteRulingPage() {
   // Determine if ruling has been executed (status === 3)
   const isFinished = dispute?.status === 3;
   
-  // NEW: Fetch Real Financials (only after ruling is executed)
+  // Fetch Real Financials (only after ruling is executed)
   const { principal, reward, total, currency, isWinner, isLoading: isFinanceLoading } = useDisputeFinancials(disputeId, isFinished);
   
   const [showSuccess, setShowSuccess] = useState(false);
@@ -48,7 +48,7 @@ export default function ExecuteRulingPage() {
 
   const handleAnimationComplete = () => {
     setShowSuccess(false);
-    toast.info("Ruling executed! Funds added to your Profile balance.");
+    toast.info("Ruling executed. You can review any balance updates in your Profile.");
     router.push("/profile");
   };
 
@@ -69,15 +69,25 @@ export default function ExecuteRulingPage() {
         {/* 2. Hero Section: The "Bag" */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-6">
-            <div className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${
-              !isFinished ? "bg-gray-100" : isWinner ? "bg-[#8c8fff]/10" : "bg-red-50"
-            }`}>
-              {!isFinished ? (
+            <div
+              className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${
+                isFinanceLoading 
+                  ? "bg-gray-100" 
+                  : !isFinished
+                    ? "bg-gray-100"
+                    : isWinner
+                      ? "bg-[#8c8fff]/10"
+                      : "bg-red-50"
+              }`}
+            >
+              {isFinanceLoading ? (
+                <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+              ) : !isFinished ? (
                  <Gavel className="w-10 h-10 text-gray-400" />
               ) : isWinner ? (
-                 <Wallet className="w-10 h-10 text-[#8c8fff]" />
+                <Wallet className="w-10 h-10 text-[#8c8fff]" />
               ) : (
-                 <AlertCircle className="w-10 h-10 text-red-400" />
+                <AlertCircle className="w-10 h-10 text-red-400" />
               )}
             </div>
             <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#1b1c23] rounded-full border-[3px] border-white flex items-center justify-center shadow-lg">
@@ -91,10 +101,10 @@ export default function ExecuteRulingPage() {
           <p className="text-sm text-gray-500 font-medium max-w-[260px]">
              {!isFinished
                 ? "Execute the ruling to finalize the dispute and see your results."
-                : isFinanceLoading 
-                  ? "Calculating results..." 
-                  : isWinner 
-                    ? "You voted with the majority. Your rewards are shown below."
+                : isFinanceLoading
+                  ? "Calculating results..."
+                  : isWinner
+                    ? "You voted with the majority. Your rewards have been added to your profile."
                     : "The majority voted differently. You will not receive a reward for this dispute."}
           </p>
         </div>
@@ -128,7 +138,7 @@ export default function ExecuteRulingPage() {
             <div className="flex flex-col gap-3">
               <RewardRow
                 label="Staked Principal"
-                value={`${isWinner ? principal : "0"} ${currency}`}
+                value={`${principal} ${currency}`}
                 icon={<div className={`w-1.5 h-1.5 rounded-full ${isWinner ? "bg-gray-300" : "bg-red-300"}`} />}
                 strikethrough={!isWinner}
               />

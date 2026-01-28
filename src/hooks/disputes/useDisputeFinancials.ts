@@ -14,6 +14,13 @@ interface FinancialData {
   isLoading: boolean;
 }
 
+interface JurorData {
+  address: string;
+  hasRevealed: boolean;
+  vote: number;
+  stake: bigint;
+}
+
 export function useDisputeFinancials(disputeId: string, enabled = true) {
   const { address } = useAccount();
   const { sliceContract } = useContracts();
@@ -30,9 +37,8 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
     isLoading: true,
   });
 
-  // RESOLUTION: Use useCallback (better for performance/deps) but add the 'enabled' check
   const calculateRewards = useCallback(async () => {
-    // 1. Handle the "enabled" check
+    // 1. Handle the "enabled" check (from develop)
     if (!enabled) {
       if (isMountedRef.current) {
         setData(prev => ({ ...prev, isLoading: false }));
@@ -92,7 +98,13 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
           }
       });
 
-      // 4. Tally Votes
+      // 4. Tally Votes & Stakes
+      let votesFor0 = 0n;
+      let votesFor1 = 0n;
+      let myVote = -1;
+      let myHasRevealed = false;
+
+      // Fetch vote data for all jurors
       const voteCalls = jurors.map(juror => ({
           address: sliceContract,
           abi: SLICE_ABI,
@@ -120,20 +132,23 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
            publicClient.multicall({ contracts: stakeCalls }),
       ]);
 
-      let votesFor0 = 0n;
-      let votesFor1 = 0n;
-      let myVote = -1;
-      let userHasRevealed = false;
-      
+      // Store juror data for reward calculation (from feature/sli-40)
+      const jurorData: JurorData[] = [];
+
       for (let i = 0; i < jurors.length; i++) {
           const jurorAddr = jurors[i];
-          const hasRevealed = hasRevealedResults[i].status === "success" ? Boolean(hasRevealedResults[i].result) : false;
+          const revealResult = hasRevealedResults[i];
+          const hasRevealed = revealResult.status === "success" ? Boolean(revealResult.result) : false;
           const vote = voteResults[i].status === "success" ? Number(voteResults[i].result) : -1;
           const stake = stakeResults[i].status === "success" ? (stakeResults[i].result as bigint) : 0n;
 
+          jurorData.push({ address: jurorAddr, hasRevealed, vote, stake });
+
           if (jurorAddr.toLowerCase() === address.toLowerCase()) {
-              userHasRevealed = hasRevealed;
-              if (hasRevealed && vote >= 0 && vote <= 1) myVote = vote;
+              if (hasRevealed) {
+                  myVote = vote;
+                  myHasRevealed = true;
+              }
           }
 
           if (hasRevealed && vote >= 0) {
@@ -142,29 +157,31 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
           }
       }
 
-      // 5. Logic Checks
-      if (!userHasRevealed || myVote < 0) {
-          setData({
-              principal: formatUnits(myStake, decimals),
-              reward: "0",
-              total: "0",
-              currency: symbol || "USDC",
-              isWinner: false,
-              isLoading: false
-          });
-          return;
-      }
-
+      // 5. Determine Winner
+      // Slice.sol logic: return votesFor1 > votesFor0 ? 1 : 0;
       const winningChoice = votesFor1 > votesFor0 ? 1 : 0;
-      const isWinner = (myVote === winningChoice);
+      const isWinner = myHasRevealed && (myVote === winningChoice);
 
-      // 6. Calculate Rewards
+      // 6. Calculate Reward (Correct Logic from feature/sli-40)
       let calculatedReward = 0n;
       
       if (isWinner) {
-          const totalWinningStake = winningChoice === 1 ? votesFor1 : votesFor0;
-          const totalLosingStake = winningChoice === 1 ? votesFor0 : votesFor1;
+          // Calculate pools exactly as in Slice.sol lines 406-415
+          let totalWinningStake = 0n;
+          let totalLosingStake = 0n;
+
+          for (const juror of jurorData) {
+              const isJurorWinner = juror.hasRevealed && juror.vote === winningChoice;
+              if (isJurorWinner) {
+                  totalWinningStake += juror.stake;
+              } else {
+                  // Losing stake includes: non-revealed jurors + revealed jurors who voted for losing choice
+                  totalLosingStake += juror.stake;
+              }
+          }
           
+          // Slice.sol: Reward = Stake + (Stake * LosingPool / WinningPool)
+          // We only want the "Profit" part for the UI display
           if (totalWinningStake > 0n) {
               calculatedReward = (myStake * totalLosingStake) / totalWinningStake;
           }
@@ -189,7 +206,7 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
         setData(prev => ({...prev, isLoading: false}));
       }
     }
-  }, [enabled, publicClient, address, disputeId, sliceContract, decimals, symbol]); // Added 'enabled' to deps
+  }, [enabled, publicClient, address, disputeId, sliceContract, decimals, symbol]);
 
   useEffect(() => {
     isMountedRef.current = true;
