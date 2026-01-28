@@ -17,6 +17,8 @@ src/app/fonts/
 scripts/
 contracts/deploy/
 contracts/tasks/
+contracts/types/
+contracts/fhevmTemp/
 ignition/
 test/
 

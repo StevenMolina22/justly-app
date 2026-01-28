@@ -10,7 +10,7 @@ import { vars } from "hardhat/config";
 import "solidity-coverage";
 
 import "./tasks/accounts";
-// import "./tasks/FHECounter";
+import "./tasks/FHECounter";
 
 // Run 'pnpm hardhat vars setup' to see the list of variables that need to be set
 
@@ -93,6 +93,11 @@ const config: HardhatUserConfig = {
       url: BASE_MAINNET_RPC_URL,
       accounts: [DEPLOYER_PRIVATE_KEY, DEFENDER_PRIVATE_KEY].filter(Boolean),
       chainId: 8453,
+    },
+    zamaDevnet: {
+      url: "https://devnet.zama.ai",
+      chainId: 8009,
+      accounts: [DEPLOYER_PRIVATE_KEY].filter(Boolean),
     },
   },
   paths: {
