@@ -129,7 +129,7 @@ export default function ExecuteRulingPage() {
             <div className="flex flex-col gap-3">
               <RewardRow
                 label="Staked Principal"
-                value={`${isWinner ? principal : "0"} ${currency}`}
+                value={`${principal} ${currency}`}
                 icon={<div className={`w-1.5 h-1.5 rounded-full ${isWinner ? "bg-gray-300" : "bg-red-300"}`} />}
                 strikethrough={!isWinner}
               />
