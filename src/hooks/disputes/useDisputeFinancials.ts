@@ -123,7 +123,10 @@ export function useDisputeFinancials(disputeId: string) {
 
             if (jurorAddr.toLowerCase() === address.toLowerCase()) {
                 userHasRevealed = hasRevealed;
-                if (hasRevealed) myVote = vote;
+                // Only set myVote if it's a valid vote (0 or 1)
+                if (hasRevealed && vote >= 0 && vote <= 1) {
+                    myVote = vote;
+                }
             }
 
             if (hasRevealed && vote >= 0) {
@@ -146,14 +149,12 @@ export function useDisputeFinancials(disputeId: string) {
             return;
         }
 
-        // Edge case: No votes were revealed or all votes are invalid
-        // In this case, user gets their principal back (contract returns stake when totalWinningStake is 0)
-        const totalVotes = votesFor0 + votesFor1;
-        if (totalVotes === 0n) {
+        // Check if user's vote was invalid (revealed but vote is not 0 or 1)
+        if (myVote < 0) {
             setData({
                 principal: formatUnits(myStake, decimals),
                 reward: "0",
-                total: formatUnits(myStake, decimals),
+                total: "0",  // Invalid vote - user loses their stake
                 currency: symbol || "USDC",
                 isWinner: false,
                 isLoading: false
@@ -175,7 +176,8 @@ export function useDisputeFinancials(disputeId: string) {
             
             // Slice.sol: Reward = Stake + (Stake * LosingPool / WinningPool)
             // We only want the "Profit" part for the UI display
-            // Note: totalWinningStake is guaranteed to be > 0 here because totalVotes > 0
+            // Safety: Since we have at least one valid revealed vote (the user's), and we determined
+            // a winningChoice, the winning stake pool must be > 0 (it contains at least the user's stake)
             calculatedReward = (myStake * totalLosingStake) / totalWinningStake;
         }
 
