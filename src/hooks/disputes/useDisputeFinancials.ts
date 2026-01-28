@@ -14,6 +14,13 @@ interface FinancialData {
   isLoading: boolean;
 }
 
+interface JurorData {
+  address: string;
+  hasRevealed: boolean;
+  vote: number;
+  stake: bigint;
+}
+
 export function useDisputeFinancials(disputeId: string) {
   const { address } = useAccount();
   const { sliceContract } = useContracts();
@@ -114,12 +121,6 @@ export function useDisputeFinancials(disputeId: string) {
         ]);
 
         // Store juror data for reward calculation
-        interface JurorData {
-            address: string;
-            hasRevealed: boolean;
-            vote: number;
-            stake: bigint;
-        }
         const jurorData: JurorData[] = [];
 
         for (let i = 0; i < jurors.length; i++) {
