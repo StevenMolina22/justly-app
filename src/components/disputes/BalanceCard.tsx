@@ -42,7 +42,7 @@ export const BalanceCard = () => {
               <div className="flex items-baseline gap-1">
                 <h2 className="text-3xl font-manrope font-black tracking-tight">
                   {loadingUSDC ? "..." : Math.floor(Number(usdcBalance))}
-                  <span className="text-lg text-gray-400 font-bold">.{usdcBalance.split('.')[1]?.slice(0,2) || '00'}</span>
+                  <span className="text-lg text-gray-400 font-bold">.{(usdcBalance.split('.')[1] || '').slice(0, 2).padEnd(2, '0')}</span>
                 </h2>
                 <span className="text-sm font-bold text-[#8c8fff]">{usdcSymbol}</span>
               </div>
