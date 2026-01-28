@@ -58,6 +58,9 @@ export const ProfileOverview = () => {
     
     if (success) {
       setShowSuccess(true);
+    } else {
+      // Withdrawal failed - error notification already shown by useWithdraw hook
+      // No need for duplicate error message, user has been informed
     }
   };
 
