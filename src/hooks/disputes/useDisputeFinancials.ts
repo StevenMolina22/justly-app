@@ -31,7 +31,11 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
 
   useEffect(() => {
     async function calculateRewards() {
-      if (!enabled || !publicClient || !address || !disputeId || !sliceContract) return;
+      if (!enabled) {
+        setData(prev => ({ ...prev, isLoading: false }));
+        return;
+      }
+      if (!publicClient || !address || !disputeId || !sliceContract) return;
 
       try {
         const dId = BigInt(disputeId);
