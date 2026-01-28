@@ -83,6 +83,7 @@ export function useDisputeFinancials(disputeId: string) {
         let votesFor0 = 0n;
         let votesFor1 = 0n;
         let myVote = -1;
+        let myHasRevealed = false;
 
         // Fetch vote data for all jurors
         const voteCalls = jurors.map(juror => ({
@@ -112,6 +113,15 @@ export function useDisputeFinancials(disputeId: string) {
              publicClient.multicall({ contracts: stakeCalls }),
         ]);
 
+        // Store juror data for reward calculation
+        interface JurorData {
+            address: string;
+            hasRevealed: boolean;
+            vote: number;
+            stake: bigint;
+        }
+        const jurorData: JurorData[] = [];
+
         for (let i = 0; i < jurors.length; i++) {
             const jurorAddr = jurors[i];
             const revealResult = hasRevealedResults[i];
@@ -119,8 +129,13 @@ export function useDisputeFinancials(disputeId: string) {
             const vote = voteResults[i].status === "success" ? Number(voteResults[i].result) : -1;
             const stake = stakeResults[i].status === "success" ? (stakeResults[i].result as bigint) : 0n;
 
+            jurorData.push({ address: jurorAddr, hasRevealed, vote, stake });
+
             if (jurorAddr.toLowerCase() === address.toLowerCase()) {
-                if (hasRevealed) myVote = vote;
+                if (hasRevealed) {
+                    myVote = vote;
+                    myHasRevealed = true;
+                }
             }
 
             if (hasRevealed && vote >= 0) {
@@ -132,14 +147,25 @@ export function useDisputeFinancials(disputeId: string) {
         // 5. Determine Winner
         // Slice.sol logic: return votesFor1 > votesFor0 ? 1 : 0;
         const winningChoice = votesFor1 > votesFor0 ? 1 : 0;
-        const isWinner = (myVote === winningChoice);
+        const isWinner = myHasRevealed && (myVote === winningChoice);
 
-        // 6. Calculate Reward
+        // 6. Calculate Reward (matching Slice.sol::_distributeRewards)
         let calculatedReward = 0n;
         
         if (isWinner) {
-            const totalWinningStake = winningChoice === 1 ? votesFor1 : votesFor0;
-            const totalLosingStake = winningChoice === 1 ? votesFor0 : votesFor1;
+            // Calculate pools exactly as in Slice.sol lines 406-415
+            let totalWinningStake = 0n;
+            let totalLosingStake = 0n;
+
+            for (const juror of jurorData) {
+                const isJurorWinner = juror.hasRevealed && juror.vote === winningChoice;
+                if (isJurorWinner) {
+                    totalWinningStake += juror.stake;
+                } else {
+                    // Losing stake includes: non-revealed jurors + revealed jurors who voted for losing choice
+                    totalLosingStake += juror.stake;
+                }
+            }
             
             // Slice.sol: Reward = Stake + (Stake * LosingPool / WinningPool)
             // We only want the "Profit" part for the UI display
