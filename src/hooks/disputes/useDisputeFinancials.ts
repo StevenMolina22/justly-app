@@ -14,7 +14,7 @@ interface FinancialData {
   isLoading: boolean;
 }
 
-export function useDisputeFinancials(disputeId: string) {
+export function useDisputeFinancials(disputeId: string, enabled = true) {
   const { address } = useAccount();
   const { sliceContract } = useContracts();
   const { decimals, symbol } = useStakingToken();
@@ -30,12 +30,23 @@ export function useDisputeFinancials(disputeId: string) {
     isLoading: true,
   });
 
+  // RESOLUTION: Use useCallback (better for performance/deps) but add the 'enabled' check
   const calculateRewards = useCallback(async () => {
+    // 1. Handle the "enabled" check
+    if (!enabled) {
+      if (isMountedRef.current) {
+        setData(prev => ({ ...prev, isLoading: false }));
+      }
+      return;
+    }
+
     if (!publicClient || !address || !disputeId || !sliceContract) return;
 
     try {
       const dId = BigInt(disputeId);
 
+      // --- FETCHING LOGIC ---
+      
       // 1. Get My Stake
       const myStake = (await publicClient.readContract({
         address: sliceContract,
@@ -51,7 +62,7 @@ export function useDisputeFinancials(disputeId: string) {
         return;
       }
 
-      // 2. Get Dispute Info to find number of jurors
+      // 2. Get Dispute Info
       const disputeStruct = (await publicClient.readContract({
         address: sliceContract,
         abi: SLICE_ABI,
@@ -62,7 +73,7 @@ export function useDisputeFinancials(disputeId: string) {
       const required = Number(disputeStruct.jurorsRequired || 3);
       const jurors: string[] = [];
       
-      // 3. Fetch all jurors using index-based access
+      // 3. Fetch all jurors
       const jurorCalls = [];
       for (let i = 0; i < required; i++) {
          jurorCalls.push({
@@ -81,12 +92,7 @@ export function useDisputeFinancials(disputeId: string) {
           }
       });
 
-      // 4. Tally Votes & Stakes
-      let votesFor0 = 0n;
-      let votesFor1 = 0n;
-      let myVote = -1;
-
-      // Fetch vote data for all jurors
+      // 4. Tally Votes
       const voteCalls = jurors.map(juror => ({
           address: sliceContract,
           abi: SLICE_ABI,
@@ -114,21 +120,20 @@ export function useDisputeFinancials(disputeId: string) {
            publicClient.multicall({ contracts: stakeCalls }),
       ]);
 
+      let votesFor0 = 0n;
+      let votesFor1 = 0n;
+      let myVote = -1;
       let userHasRevealed = false;
       
       for (let i = 0; i < jurors.length; i++) {
           const jurorAddr = jurors[i];
-          const revealResult = hasRevealedResults[i];
-          const hasRevealed = revealResult.status === "success" ? Boolean(revealResult.result) : false;
+          const hasRevealed = hasRevealedResults[i].status === "success" ? Boolean(hasRevealedResults[i].result) : false;
           const vote = voteResults[i].status === "success" ? Number(voteResults[i].result) : -1;
           const stake = stakeResults[i].status === "success" ? (stakeResults[i].result as bigint) : 0n;
 
           if (jurorAddr.toLowerCase() === address.toLowerCase()) {
               userHasRevealed = hasRevealed;
-              // Only set myVote if it's a valid vote (0 or 1)
-              if (hasRevealed && vote >= 0 && vote <= 1) {
-                  myVote = vote;
-              }
+              if (hasRevealed && vote >= 0 && vote <= 1) myVote = vote;
           }
 
           if (hasRevealed && vote >= 0) {
@@ -137,13 +142,12 @@ export function useDisputeFinancials(disputeId: string) {
           }
       }
 
-      // 5. Determine Winner and Calculate Rewards
-      // Edge case: User did not reveal their vote - they forfeit their stake
-      if (!userHasRevealed) {
+      // 5. Logic Checks
+      if (!userHasRevealed || myVote < 0) {
           setData({
               principal: formatUnits(myStake, decimals),
               reward: "0",
-              total: "0",  // User loses their stake
+              total: "0",
               currency: symbol || "USDC",
               isWinner: false,
               isLoading: false
@@ -151,35 +155,16 @@ export function useDisputeFinancials(disputeId: string) {
           return;
       }
 
-      // Check if user's vote was invalid (revealed but vote is not 0 or 1)
-      if (myVote < 0) {
-          setData({
-              principal: formatUnits(myStake, decimals),
-              reward: "0",
-              total: "0",  // Invalid vote - user loses their stake
-              currency: symbol || "USDC",
-              isWinner: false,
-              isLoading: false
-          });
-          return;
-      }
-
-      // Slice.sol logic: return votesFor1 > votesFor0 ? 1 : 0;
-      // Note: In a tie (votesFor0 == votesFor1), choice 0 wins
       const winningChoice = votesFor1 > votesFor0 ? 1 : 0;
       const isWinner = (myVote === winningChoice);
 
-      // 6. Calculate Reward
+      // 6. Calculate Rewards
       let calculatedReward = 0n;
       
       if (isWinner) {
           const totalWinningStake = winningChoice === 1 ? votesFor1 : votesFor0;
           const totalLosingStake = winningChoice === 1 ? votesFor0 : votesFor1;
           
-          // Slice.sol: Reward = Stake + (Stake * LosingPool / WinningPool)
-          // We only want the "Profit" part for the UI display
-          // Safety: Since we have at least one valid revealed vote (the user's), and we determined
-          // a winningChoice, the winning stake pool must be > 0 (it contains at least the user's stake)
           if (totalWinningStake > 0n) {
               calculatedReward = (myStake * totalLosingStake) / totalWinningStake;
           }
@@ -204,7 +189,7 @@ export function useDisputeFinancials(disputeId: string) {
         setData(prev => ({...prev, isLoading: false}));
       }
     }
-  }, [publicClient, address, disputeId, sliceContract, decimals, symbol]);
+  }, [enabled, publicClient, address, disputeId, sliceContract, decimals, symbol]); // Added 'enabled' to deps
 
   useEffect(() => {
     isMountedRef.current = true;
