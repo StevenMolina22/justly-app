@@ -192,7 +192,7 @@ contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
         uint256 _amount,
         string calldata _category,
         uint256 _jurors
-    ) external returns (uint256) {
+    ) external nonReentrant returns (uint256) {
         require(_amount > 0, "Amount must be > 0");
         require(_seller != msg.sender, "Cannot pay self");
 
@@ -232,7 +232,7 @@ contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
     /**
      * @notice Buyer is happy and releases funds to Seller.
      */
-    function release(uint256 _txId) external {
+    function release(uint256 _txId) external nonReentrant {
         Transaction storage txn = transactions[_txId];
         require(msg.sender == txn.buyer, "Only buyer");
         require(txn.status == Status.Active, "Wrong status");
@@ -246,7 +246,7 @@ contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
     /**
      * @notice Seller refunds the Buyer.
      */
-    function refund(uint256 _txId) external {
+    function refund(uint256 _txId) external nonReentrant {
         Transaction storage txn = transactions[_txId];
         require(msg.sender == txn.seller, "Only seller");
         require(txn.status == Status.Active, "Wrong status");
@@ -266,7 +266,7 @@ contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
      * @dev This freezes the state to 'Disputed' but doesn't call Slice yet.
      * Both parties must pay fees first.
      */
-    function raiseDispute(uint256 _txId, string calldata _evidenceIpfs) external {
+    function raiseDispute(uint256 _txId, string calldata _evidenceIpfs) external nonReentrant {
         Transaction storage txn = transactions[_txId];
         require(txn.status == Status.Active, "Not active");
         require(msg.sender == txn.buyer || msg.sender == txn.seller, "Not party");
@@ -300,7 +300,7 @@ contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
      * @dev Uses Slice's staking token (not the principal token) for fees.
      * This allows trades in any token while paying arbitration in USDC.
      */
-    function payArbitrationFee(uint256 _txId) external {
+    function payArbitrationFee(uint256 _txId) external nonReentrant {
         Transaction storage txn = transactions[_txId];
         require(txn.status == Status.Disputed, "Not disputed");
         require(txn.sliceDisputeId != 0, "Dispute not initialized");
@@ -443,7 +443,7 @@ contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
     // 4. CALLBACK (The Ruler)
     // ============================================
 
-    function rule(uint256 _disputeId, uint256 _ruling) external override {
+    function rule(uint256 _disputeId, uint256 _ruling) external override nonReentrant {
         require(msg.sender == address(slice), "Only Slice");
 
         uint256 txId = disputeToTx[_disputeId];
