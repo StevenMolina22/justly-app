@@ -797,4 +797,11 @@ export const sliceAbi = [
     stateMutability: "nonpayable",
     type: "function",
   },
+  {
+    inputs: [{ name: "disputeId", type: "uint256" }],
+    name: "getJurors",
+    outputs: [{ name: "", type: "address[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
 ] as const;

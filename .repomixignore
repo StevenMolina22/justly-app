@@ -43,6 +43,10 @@ package-lock.json
 bun.lockb
 yarn.lock
 *.backup
+.repomixignore
+minikit.config.ts
+next.config.ts
+opencode.json
 
 # --- Generated / Artifacts ---
 # We keep contracts/contracts/ (Solidity) but ignore the frontend JSON ABIs
