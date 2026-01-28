@@ -179,7 +179,8 @@ async function seedFHEDisputes(
 
     // B. Submit Evidence (Since FHE config doesn't include it)
     console.log(`       Attaching Metadata...`);
-    await (await slice.connect(deployer).submitEvidence(id, d.ipfsHash)).wait();
+    const submitTx = await slice.connect(deployer).submitEvidence(id, d.ipfsHash);
+    await submitTx.wait();
 
     console.log(`       ✅ FHE Dispute #${id} Created`);
   }
