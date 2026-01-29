@@ -38,7 +38,7 @@ export const ProfileOverview = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingName, setEditingName] = useState("");
   const [pendingAvatar, setPendingAvatar] = useState(avatar);
-  
+
   // Success Animation State
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -54,9 +54,9 @@ export const ProfileOverview = () => {
   // Note: Error notifications are handled by the useWithdraw hook via toast.error
   const handleWithdraw = async () => {
     if (!hasFunds || isWithdrawing) return;
-    
+
     const success = await withdraw();
-    
+
     if (success) {
       setShowSuccess(true);
     }
@@ -67,7 +67,7 @@ export const ProfileOverview = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
+    <div className="flex flex-col gap-2 pb-10">
       <div className="flex flex-col gap-0">
         <PendingPaymentsDialog />
         <PendingExecutionsDialog />
@@ -266,7 +266,7 @@ export const ProfileOverview = () => {
           <ArrowRight className="w-4 h-4" />
         </div>
       </Button>
-      
+
       {/* Success Animation Overlay */}
       {showSuccess && <SuccessAnimation onComplete={handleAnimationComplete} />}
     </div>

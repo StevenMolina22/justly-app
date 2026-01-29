@@ -1,11 +1,9 @@
+"use client";
+
 import { useRouter } from "next/navigation";
 import { DISPUTE_STATUS } from "@/config/app";
 import {
   Wallet,
-  CheckCircle2,
-  XCircle,
-  ArrowRight,
-  Tag,
   Users,
   Coins,
   Clock,
@@ -13,14 +11,28 @@ import {
   Briefcase,
   ShoppingBag,
   Scale,
-  Gavel,
-  Lock,
-  Archive,
+  Flame,
 } from "lucide-react";
 import type { Dispute } from "@/hooks/disputes/useDisputeList";
 import { cn } from "@/lib/utils";
 
-// Helper to get Lucide icon component based on category string
+// Helper: Auto-format time (Hours -> Days if > 24)
+const formatTimeLeft = (label: string | undefined) => {
+  if (!label) return "";
+  if (label === "Ended") return "Ended";
+
+  // Extract number from "485h left"
+  const hours = parseInt(label);
+  if (isNaN(hours)) return label;
+
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return `${days}d left`;
+  }
+  return `${hours}h left`;
+};
+
+// Helper: Icon mapping
 const CategoryIcon = ({
   category,
   className,
@@ -29,15 +41,12 @@ const CategoryIcon = ({
   className?: string;
 }) => {
   const cat = (category || "").toLowerCase();
-
   if (cat.includes("tech") || cat.includes("software"))
     return <Monitor className={className} />;
   if (cat.includes("freelance") || cat.includes("service"))
     return <Briefcase className={className} />;
   if (cat.includes("commerce") || cat.includes("shop"))
     return <ShoppingBag className={className} />;
-
-  // Default / General
   return <Scale className={className} />;
 };
 
@@ -49,14 +58,17 @@ type DisputeUI = Dispute & {
   voters?: Array<{ isMe: boolean; vote: number }>;
 };
 
-const VOTE_APPROVE = 1;
-
 export const DisputeCard = ({ dispute }: { dispute: DisputeUI }) => {
   const router = useRouter();
 
-  const handleReadDispute = (e: React.MouseEvent) => {
+  const handleOpen = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/disputes/${dispute.id}/file`);
+    // Logic: If active -> Vote/Review. If finished -> Results.
+    if (dispute.status === DISPUTE_STATUS.RESOLVED) {
+      router.push(`/disputes/${dispute.id}/execute`);
+    } else {
+      router.push(`/disputes/${dispute.id}`);
+    }
   };
 
   const handleWithdraw = (e: React.MouseEvent) => {
@@ -64,137 +76,124 @@ export const DisputeCard = ({ dispute }: { dispute: DisputeUI }) => {
     router.push(`/disputes/${dispute.id}/execute`);
   };
 
-  // Status mapping
-  // Status mapping
+  // --- Derived State ---
   const isReveal = dispute.status === DISPUTE_STATUS.REVEAL;
   const isFinished = dispute.status === DISPUTE_STATUS.RESOLVED;
-  const isReadyForWithdrawal =
-    dispute.status === DISPUTE_STATUS.REVEAL && dispute.phase === "WITHDRAW";
+  const isReadyForWithdrawal = isReveal && dispute.phase === "WITHDRAW";
 
-  const myVote = dispute.voters?.find((v) => v.isMe)?.vote;
+  // Calculate "Earn per Juror" (Estimated)
+  const totalStake = parseFloat(dispute.stake || "0");
+  const estEarn =
+    dispute.jurorsRequired > 0
+      ? ((totalStake / dispute.jurorsRequired) * 0.5).toFixed(2)
+      : "0";
+
+  const timeLeft = formatTimeLeft(dispute.deadlineLabel);
+
+  // Trending Logic: If > 50% filled
+  const isTrending = (dispute.votesCount || 0) > dispute.jurorsRequired / 2;
 
   return (
     <div
-      onClick={handleReadDispute}
-      className="group relative bg-white rounded-3xl p-5 border border-gray-200 shadow-md transition-all duration-300 hover:shadow-xl hover:border-[#8c8fff]/40 cursor-pointer overflow-hidden active:scale-[0.99]"
+      onClick={handleOpen}
+      className="group relative bg-white rounded-3xl p-6 border border-gray-200 shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] hover:-translate-y-1 cursor-pointer active:scale-[0.99]"
     >
-      {/* Hover Gradient Overlay */}
-      <div className="absolute inset-0 bg-linear-to-br from-[#8c8fff]/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-      <div className="relative z-10 flex flex-col gap-4">
-        {/* --- Top Row: Category & Stake --- */}
-        <div className="flex justify-between items-start">
-          {/* Category Badge */}
-          <div className="flex items-center gap-1.5 bg-[#F8F9FC] border border-gray-200 rounded-full px-2.5 py-1.5 group-hover:bg-white group-hover:shadow-sm transition-all">
+      {/* 1. Header: Category & Urgency */}
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-gray-100 border border-gray-100 rounded-full px-2.5 py-1 text-xs font-bold text-gray-600 uppercase tracking-wide group-hover:bg-[#8c8fff]/5 group-hover:text-[#8c8fff] group-hover:border-[#8c8fff]/20 transition-colors">
             <CategoryIcon
               category={dispute.category}
-              className="w-3.5 h-3.5 text-[#8c8fff]"
+              className="w-3 h-3 text-[#8c8fff]"
             />
-            <span className="text-[10px] font-extrabold text-gray-600 uppercase tracking-wide">
-              {dispute.category}
-            </span>
+            {dispute.category}
           </div>
 
-          {/* Stake Display */}
-          <div className="flex flex-col items-end">
-            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-              Prize Pool
-            </span>
-            <div className="flex items-center gap-1.5 text-[#1b1c23]">
-              <Coins className="w-3.5 h-3.5 text-[#8c8fff]" />
-              <span className="font-manrope font-black text-base">
-                {dispute.stake}{" "}
-                <span className="text-xs font-bold text-gray-400">USDC</span>
-              </span>
+          {isTrending && !isFinished && (
+            <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+              <Flame className="w-3 h-3 fill-orange-500" /> Hot
             </div>
-          </div>
+          )}
         </div>
 
-        {/* --- Middle: Title & Votes --- */}
-        <div>
-          <h3 className="font-manrope font-extrabold text-base text-[#1b1c23] leading-snug mb-2.5 group-hover:text-[#8c8fff] transition-colors line-clamp-2">
-            {dispute.title}
-          </h3>
-
-          {!isFinished && (
-            <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">
-              <div className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                <span>
-                  {dispute.votesCount || 0}/{dispute.jurorsRequired} Jurors
-                </span>
-              </div>
-              {dispute.deadlineLabel && (
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span className={dispute.isUrgent ? "text-rose-500" : ""}>
-                    {dispute.deadlineLabel}
-                  </span>
-                </div>
+        {!isFinished && timeLeft && (
+          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-lg">
+            <Clock
+              className={cn(
+                "w-3.5 h-3.5",
+                dispute.isUrgent ? "text-rose-500" : "",
               )}
-            </div>
-          )}
+            />
+            <span className={cn(dispute.isUrgent ? "text-rose-500" : "")}>
+              {timeLeft}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* 2. Main Content: Title & Story Hook */}
+      <div className="mb-5">
+        <h3 className="font-manrope font-extrabold text-xl text-[#1b1c23] leading-tight mb-2 group-hover:text-[#8c8fff] transition-colors">
+          {dispute.title}
+        </h3>
+        <p className="text-sm text-gray-500 font-medium line-clamp-2 leading-relaxed">
+          {/* Fallback description if none provided */}
+          {dispute.description !== "No description provided."
+            ? dispute.description
+            : "Review evidence and cast your vote on this case."}
+        </p>
+      </div>
+
+      {/* 3. The "Hook": Reward & Social Proof */}
+      <div className="bg-[#F6F7FA] rounded-2xl p-4 flex items-center justify-between border border-gray-50 group-hover:border-[#8c8fff]/10 group-hover:bg-[#8c8fff]/5 transition-colors">
+        {/* Reward Side */}
+        <div className="flex flex-col justify-center">
+          <span className="text-[12px] font-bold text-gray-600 uppercase tracking-wider mb-0.5">
+            Est. Earnings
+          </span>
+
+          <div className="flex items-center justify-center gap-1.5">
+            <Coins className="w-4 h-4 text-[#8c8fff] fill-[#8c8fff]/20" />
+
+            <span className="text-xl font-bold text-[#1b1c23]  leading-none">
+              {estEarn}
+            </span>
+
+            <span className="text-xs  font-bold text-gray-500 leading-none">
+              USDC
+            </span>
+          </div>
         </div>
 
-        {/* --- Separator --- */}
-        <div className="h-px w-full bg-gray-100 group-hover:bg-[#8c8fff]/10 transition-colors" />
+        {/* Social Divider */}
+        <div className="w-px h-12 bg-gray-300 mx-2" />
 
-        {/* --- Footer: Status & Action --- */}
-        <div className="flex items-center justify-between">
-          {/* Status Indicator */}
-          <div className="flex items-center gap-2">
-            {myVote !== undefined ? (
-              // User has voted
-              <div className="flex items-center gap-1.5">
-                {myVote === VOTE_APPROVE ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                ) : (
-                  <XCircle className="w-3.5 h-3.5 text-red-500" />
-                )}
-                <span className="text-[11px] font-bold text-gray-500">
-                  You voted {myVote === VOTE_APPROVE ? "Claimant" : "Defendant"}
-                </span>
-              </div>
-            ) : (
-              // User hasn't voted / Status View
-              <div className="flex items-center gap-1.5">
-                <div
-                  className={cn(
-                    "w-1.5 h-1.5 rounded-full",
-                    isFinished
-                      ? "bg-green-500"
-                      : isReveal
-                        ? "bg-orange-400"
-                        : "bg-[#8c8fff]",
-                  )}
-                />
-                <span className="text-[11px] font-bold text-gray-500">
-                  {isFinished
-                    ? "Resolved"
-                    : isReveal
-                      ? "Reveal Phase"
-                      : "Voting Open"}
-                </span>
-              </div>
-            )}
+        {/* Social Side */}
+        <div className="flex flex-col items-end">
+          <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-0.5">
+            Activity
+          </span>
+          <div className="flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-gray-500" />
+            <span className="text-xs font-bold text-gray-700">
+              {dispute.votesCount || 0}{" "}
+              <span className="text-gray-500 font-medium">Active</span>
+            </span>
           </div>
-
-          {/* Action Button */}
-          {isReadyForWithdrawal ? (
-            <button
-              onClick={handleWithdraw}
-              className="flex items-center gap-1.5 bg-[#1b1c23] text-white px-3 py-1.5 rounded-lg font-manrope font-bold text-[10px] shadow-md shadow-gray-300 hover:bg-[#2c2d33] transition-all active:scale-95 uppercase tracking-wide"
-            >
-              <Wallet className="w-3 h-3" />
-              <span>Withdraw</span>
-            </button>
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-[#F5F6F9] text-[#1b1c23] flex items-center justify-center group-hover:bg-[#1b1c23] group-hover:text-white transition-all duration-300 border border-gray-100">
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-            </div>
-          )}
         </div>
       </div>
+
+      {/* 4. Action Button (Only for Withdrawals) */}
+      {isReadyForWithdrawal && (
+        <div className="mt-4 w-full">
+          <button
+            onClick={handleWithdraw}
+            className="w-full py-3 bg-[#1b1c23] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Wallet className="w-3.5 h-3.5" /> Claim Reward
+          </button>
+        </div>
+      )}
     </div>
   );
 };

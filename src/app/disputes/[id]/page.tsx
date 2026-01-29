@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useRouter, useParams } from "next/navigation";
 import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
@@ -18,8 +17,10 @@ import {
   Coins,
   BookOpen,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function DisputeOverviewPage() {
+  const [now, setNow] = useState(0);
   const router = useRouter();
   const params = useParams();
   const disputeId = (params?.id as string) || "1";
@@ -27,8 +28,7 @@ export default function DisputeOverviewPage() {
   const { dispute, loading: isLoading } = useGetDispute(disputeId);
 
   const handleBack = () => router.back();
-  const handleStartReview = () =>
-    router.push(`/disputes/${disputeId}/review`);
+  const handleStartReview = () => router.push(`/disputes/${disputeId}/review`);
   const handleOpenCaseFile = () => router.push(`/disputes/${disputeId}/file`);
 
   const bindSwipe = usePageSwipe({
@@ -47,6 +47,41 @@ export default function DisputeOverviewPage() {
     [DISPUTE_STATUS.RESOLVED]: "Executed",
   };
 
+  useEffect(() => {
+    setNow(Math.floor(Date.now() / 1000));
+  }, []);
+
+  const getDeadlineLabel = () => {
+    if (!dispute) return "Loading...";
+    if (dispute.status === DISPUTE_STATUS.RESOLVED) return "Resolved";
+
+    // 3. Handle the initial render (before useEffect runs)
+    if (now === 0) return "Loading...";
+
+    let targetDeadline = 0;
+    if (dispute.status === DISPUTE_STATUS.COMMIT) {
+      targetDeadline = dispute.commitDeadline || 0;
+    } else if (dispute.status === DISPUTE_STATUS.REVEAL) {
+      targetDeadline = dispute.revealDeadline || 0;
+    } else {
+      return dispute.deadlineLabel;
+    }
+
+    // 4. Use the state variable 'now' instead of calling Date.now()
+    const diff = targetDeadline - now;
+
+    if (diff <= 0) return "Ended";
+
+    const hours = Math.ceil(diff / 3600);
+
+    if (hours > 24) {
+      const days = Math.ceil(hours / 24);
+      return `${days} days left`;
+    }
+
+    return `${hours}h left`;
+  };
+
   const displayDispute = dispute
     ? {
         id: dispute.id.toString(),
@@ -55,8 +90,6 @@ export default function DisputeOverviewPage() {
         status: statusLabels[dispute.status] || "Unknown",
         claimer: {
           name: dispute.claimerName || dispute.claimer,
-          // Pass the final string to shortenAddress.
-          // It will detect if it's an address and shorten it, or leave it alone if it's a real name.
           shortName: shortenAddress(dispute.claimerName || dispute.claimer),
           avatar: "/images/profiles-mockup/profile-1.jpg",
           isWinner:
@@ -64,14 +97,13 @@ export default function DisputeOverviewPage() {
         },
         defender: {
           name: dispute.defenderName || dispute.defender,
-          // Same here for defender
           shortName: shortenAddress(dispute.defenderName || dispute.defender),
           avatar: "/images/profiles-mockup/profile-2.jpg",
           isWinner:
             isFinished && winnerAddress === dispute.defender.toLowerCase(),
         },
         description: dispute.description || "No description provided.",
-        deadlineLabel: dispute.deadlineLabel,
+        deadlineLabel: getDeadlineLabel(), // Use new logic
         stake: dispute.stake,
       }
     : null;
@@ -90,13 +122,14 @@ export default function DisputeOverviewPage() {
       {...bindSwipe()}
     >
       {/* Background Decorative blob */}
-      <div className="absolute top-[-150px] left-[-100px] w-[300px] h-[300px] bg-[#8c8fff]/10 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute -top-36 -left-24 w-72 h-72 bg-[#8c8fff]/10 rounded-full blur-[80px] pointer-events-none" />
 
       {/* 1. Header & Title Section */}
-      <div className="px-6 pt-4 pb-2 z-10">
+      {/* Fixed padding/margin to match file page (px-4 instead of px-6) */}
+      <div className="py-2 z-10">
         <DisputeOverviewHeader onBack={handleBack} />
 
-        <div className="mt-6 flex flex-col gap-3">
+        <div className="mt-6 mx-6 flex flex-col gap-4">
           {/* Badges Row */}
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 rounded-full bg-[#8c8fff] text-white text-[10px] font-extrabold uppercase tracking-wide shadow-sm shadow-[#8c8fff]/20">
@@ -125,11 +158,12 @@ export default function DisputeOverviewPage() {
             </h3>
           </div>
 
-          <div className="bg-white rounded-[24px] p-2 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white relative">
-            <div className="flex items-stretch min-h-[120px]">
+          {/* Canonical: rounded-[24px] -> rounded-3xl */}
+          <div className="bg-white rounded-3xl p-2 shadow-sm border border-white relative">
+            <div className="flex items-stretch min-h-30">
               {/* Claimer (Left) */}
-              <div className="flex-1 bg-[#F8F9FC] rounded-l-[18px] rounded-r-[4px] p-4 flex flex-col items-center justify-center gap-2 text-center border border-transparent hover:border-blue-100 transition-colors">
-                {/* Avatar with Ring */}
+              {/* Canonical: rounded-l-[18px] -> rounded-l-2xl */}
+              <div className="flex-1 bg-[#F8F9FC] rounded-l-2xl rounded-r-md p-4 flex flex-col items-center justify-center gap-2 text-center border border-transparent hover:border-blue-100 transition-colors">
                 <div className="w-14 h-14 rounded-full border-[3px] border-white shadow-md overflow-hidden mb-1">
                   <img
                     src={displayDispute.claimer.avatar}
@@ -141,7 +175,6 @@ export default function DisputeOverviewPage() {
                   <span className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">
                     Claimer
                   </span>
-                  {/* Added max-w and truncate to prevent overflow */}
                   <div className="max-w-[100px] sm:max-w-none mx-auto">
                     <span className="inline-block text-base font-bold text-[#1b1c23] bg-white px-3 py-1 rounded-lg border border-gray-100 shadow-sm truncate w-full">
                       {displayDispute.claimer.shortName}
@@ -160,8 +193,8 @@ export default function DisputeOverviewPage() {
               </div>
 
               {/* Defender (Right) */}
-              <div className="flex-1 bg-[#F8F9FC] rounded-r-[18px] rounded-l-[4px] p-4 flex flex-col items-center justify-center gap-2 text-center border border-transparent hover:border-gray-200 transition-colors">
-                {/* Avatar with Ring */}
+              {/* Canonical: rounded-r-[18px] -> rounded-r-2xl */}
+              <div className="flex-1 bg-[#F8F9FC] rounded-r-2xl rounded-l-md p-4 flex flex-col items-center justify-center gap-2 text-center border border-transparent hover:border-gray-200 transition-colors">
                 <div className="w-14 h-14 rounded-full border-[3px] border-white shadow-md overflow-hidden mb-1">
                   <img
                     src={displayDispute.defender.avatar}
@@ -173,7 +206,6 @@ export default function DisputeOverviewPage() {
                   <span className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                     Defender
                   </span>
-                  {/* Added max-w and truncate to prevent overflow */}
                   <div className="max-w-[100px] sm:max-w-none mx-auto">
                     <span className="inline-block text-base font-bold text-[#1b1c23] bg-white px-3 py-1 rounded-lg border border-gray-100 shadow-sm truncate w-full">
                       {displayDispute.defender.shortName}
@@ -193,7 +225,8 @@ export default function DisputeOverviewPage() {
             </h3>
           </div>
 
-          <div className="bg-white rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100 relative overflow-hidden">
+          {/* Canonical: rounded-[24px] -> rounded-3xl */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#8c8fff]/20 to-transparent" />
 
             <p className="text-base text-gray-600 leading-relaxed font-medium">
@@ -226,7 +259,8 @@ export default function DisputeOverviewPage() {
         {/* 3. Case File Link */}
         <button
           onClick={handleOpenCaseFile}
-          className="w-full bg-white p-4 rounded-[20px] border border-gray-100 shadow-sm flex items-center justify-between group hover:border-[#8c8fff]/30 transition-colors"
+          // Canonical: rounded-[20px] -> rounded-2xl
+          className="w-full bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-[#8c8fff]/30 transition-colors"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#F8F9FC] flex items-center justify-center text-[#1b1c23]">
@@ -248,12 +282,13 @@ export default function DisputeOverviewPage() {
       </div>
 
       {/* 4. Sticky Footer CTA */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 bg-linear-to-t from-white via-white/95 to-transparent z-20">
+      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20">
         <button
           onClick={handleStartReview}
-          className="group w-full py-4 bg-[#1b1c23] text-white rounded-[20px] font-manrope font-bold text-base flex items-center justify-center gap-2 shadow-xl shadow-gray-200 hover:bg-[#2c2d33] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 relative overflow-hidden"
+          // Canonical: rounded-[20px] -> rounded-2xl
+          className="group w-full py-4 bg-[#1b1c23] text-white rounded-2xl font-manrope font-bold text-base flex items-center justify-center gap-2 shadow-xl shadow-gray-200 hover:bg-[#2c2d33] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
           <Gavel className="w-5 h-5 fill-white/50" />
           Review Evidence
           <ArrowRight className="w-5 h-5 opacity-70 group-hover:translate-x-1 transition-transform" />

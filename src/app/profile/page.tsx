@@ -13,18 +13,27 @@ const TabLoadingSkeleton = () => (
 
 // Dynamic imports for tab content (only load when tab is active)
 const ProfileOverview = dynamic(
-  () => import("@/components/profile/ProfileOverview").then((m) => ({ default: m.ProfileOverview })),
-  { loading: () => <TabLoadingSkeleton /> }
+  () =>
+    import("@/components/profile/ProfileOverview").then((m) => ({
+      default: m.ProfileOverview,
+    })),
+  { loading: () => <TabLoadingSkeleton /> },
 );
 
 const ContactsView = dynamic(
-  () => import("@/components/profile/ContactsView").then((m) => ({ default: m.ContactsView })),
-  { loading: () => <TabLoadingSkeleton /> }
+  () =>
+    import("@/components/profile/ContactsView").then((m) => ({
+      default: m.ContactsView,
+    })),
+  { loading: () => <TabLoadingSkeleton /> },
 );
 
 const SettingsView = dynamic(
-  () => import("@/components/profile/SettingsView").then((m) => ({ default: m.SettingsView })),
-  { loading: () => <TabLoadingSkeleton /> }
+  () =>
+    import("@/components/profile/SettingsView").then((m) => ({
+      default: m.SettingsView,
+    })),
+  { loading: () => <TabLoadingSkeleton /> },
 );
 
 export default function ProfilePage() {
@@ -33,14 +42,14 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col h-screen bg-[#F8F9FC] overflow-hidden">
       {/* --- Sticky Header --- */}
-      <div className="w-full px-6 pt-10 pb-2 flex items-center justify-between bg-[#F8F9FC]/90 backdrop-blur-md z-30 shrink-0">
+      <div className="w-full px-6 pt-8 pb-2 flex items-center justify-between bg-[#F8F9FC]/90 backdrop-blur-md z-30 shrink-0">
         <button
           onClick={() => router.push("/disputes")}
           className="w-10 h-10 rounded-xl bg-white flex items-center justify-center hover:bg-gray-50 transition-all shadow-sm border border-gray-100 active:scale-95"
         >
           <ArrowLeft className="w-5 h-5 text-[#1b1c23]" />
         </button>
-        <span className="font-manrope font-extrabold text-lg text-[#1b1c23]">
+        <span className="font-manrope font-extrabold text-2xl text-[#1b1c23] ">
           My Profile
         </span>
         <div className="w-10" />
