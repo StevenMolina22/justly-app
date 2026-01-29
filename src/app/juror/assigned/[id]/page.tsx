@@ -24,21 +24,21 @@ export default function JurorAssignedPage() {
     disputeId.toString(),
   );
 
-  // Helper to format the stake (already formatted in DisputeUI)
+  // Prefer myStake (user specific) over stake (generic requirement)
   const stakeDisplay = React.useMemo(() => {
-    return dispute?.stake || null;
+    return dispute?.myStake || dispute?.stake || null;
   }, [dispute]);
 
   if (isLoadingDispute) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F8F9FC]">
+      <div className="flex flex-1 items-center justify-center bg-[#F8F9FC]">
         <Loader2 className="w-8 h-8 animate-spin text-[#8c8fff]" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC] relative overflow-hidden">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden">
       {/* --- Ambient Background Glow (Purple) --- */}
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#8c8fff]/10 rounded-full blur-[100px] pointer-events-none" />
 

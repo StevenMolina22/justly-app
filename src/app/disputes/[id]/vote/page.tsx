@@ -40,7 +40,8 @@ export default function VotePage() {
   const onCommitClick = async () => {
     const success = await handleCommit();
     if (success) {
-      /* Success is typically handled by toast or UI update */
+      // Refresh the page data to reflect the new on-chain state
+      router.refresh();
     }
   };
 
@@ -50,7 +51,7 @@ export default function VotePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC]" {...bindSwipe()}>
+    <div className="flex flex-col flex-1 bg-[#F8F9FC]" {...bindSwipe()}>
       {/* 1. Header */}
       <div className="flex-none z-10 bg-[#F8F9FC]/80 backdrop-blur-md">
         <DisputeOverviewHeader onBack={() => router.back()} />

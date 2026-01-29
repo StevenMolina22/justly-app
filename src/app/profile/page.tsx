@@ -40,7 +40,7 @@ export default function ProfilePage() {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC] overflow-hidden">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden">
       {/* --- Sticky Header --- */}
       <div className="w-full px-6 pt-8 pb-2 flex items-center justify-between bg-[#F8F9FC]/90 backdrop-blur-md z-30 shrink-0">
         <button

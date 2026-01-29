@@ -59,6 +59,10 @@ export const ProfileOverview = () => {
 
     if (success) {
       setShowSuccess(true);
+      // Trigger re-fetch of stats after successful withdrawal
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000); // Give time for success animation
     }
   };
 

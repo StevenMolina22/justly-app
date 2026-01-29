@@ -66,6 +66,17 @@ export function useMyDisputes() {
     }));
   }, [sortedIds, sliceContract, address]);
 
+  // 3c. Prepare Multicall for jurorStakes
+  const stakeCalls = useMemo(() => {
+    if (!address) return [];
+    return sortedIds.map((id) => ({
+      address: sliceContract,
+      abi: SLICE_ABI,
+      functionName: "jurorStakes",
+      args: [id, address],
+    }));
+  }, [sortedIds, sliceContract, address]);
+
   const { data: results, isLoading: loadMulti } = useReadContracts({
     contracts: disputeCalls,
     query: { enabled: sortedIds.length > 0 },
@@ -74,6 +85,11 @@ export function useMyDisputes() {
   const { data: revealResults, isLoading: loadReveal } = useReadContracts({
     contracts: revealCalls,
     query: { enabled: revealCalls.length > 0 },
+  });
+
+  const { data: stakeResults, isLoading: loadStakes } = useReadContracts({
+    contracts: stakeCalls,
+    query: { enabled: stakeCalls.length > 0 },
   });
 
   const [disputes, setDisputes] = useState<DisputeUI[]>([]);
@@ -90,6 +106,7 @@ export function useMyDisputes() {
     // narrowing inside the async closure below.
     const currentResults = results;
     const currentRevealResults = revealResults;
+    const currentStakeResults = stakeResults;
 
     async function process() {
       // Extract all IPFS hashes from successful results
@@ -119,23 +136,30 @@ export function useMyDisputes() {
               ? Boolean(currentRevealResults[idx].result)
               : false;
 
+          // Extract specific stake for this user
+          const userStakeAmount =
+            currentStakeResults?.[idx]?.status === "success"
+              ? (currentStakeResults[idx].result as bigint)
+              : 0n;
+
           const prefetchedMeta = ipfsHash ? ipfsDataMap.get(ipfsHash) : undefined;
 
           return await transformDisputeData(
             { ...(res.result as any), id },
             decimals,
             userHasRevealed,
-            prefetchedMeta
+            prefetchedMeta,
+            userStakeAmount,
           );
         })
       );
       setDisputes(processed.filter((d): d is DisputeUI => d !== null));
     }
     process();
-  }, [results, revealResults, decimals, sortedIds, loadMulti]);
+  }, [results, revealResults, stakeResults, decimals, sortedIds, loadMulti]);
 
   return {
     disputes,
-    isLoading: loadJuror || loadUser || loadMulti || loadReveal,
+    isLoading: loadJuror || loadUser || loadMulti || loadReveal || loadStakes,
   };
 }

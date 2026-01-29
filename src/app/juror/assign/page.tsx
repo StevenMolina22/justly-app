@@ -104,7 +104,7 @@ export default function JurorAssignPage() {
   const isBusy = isChecking || isTxLoading;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 p-4">
+    <div className="flex flex-col flex-1 bg-gray-50 p-4">
       <DisputeOverviewHeader onBack={() => router.back()} />
 
       <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center">

@@ -17,7 +17,7 @@ export default function JurorStakePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC]">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC]">
       <div className="px-4 pt-4">
         <DisputeOverviewHeader onBack={() => router.back()} />
       </div>

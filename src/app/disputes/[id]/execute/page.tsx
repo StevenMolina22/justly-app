@@ -23,8 +23,14 @@ export default function ExecuteRulingPage() {
   // Determine if ruling has been executed (status === 3)
   const isFinished = dispute?.status === 3;
   
-  // Fetch Real Financials (only after ruling is executed)
-  const { principal, reward, total, currency, isWinner, isLoading: isFinanceLoading } = useDisputeFinancials(disputeId, isFinished);
+  // Check if dispute is ready for execution (status === 2, in REVEAL phase)
+  const isReadyForExecution = dispute?.status === 2;
+  
+  // Fetch Real Financials - Enable when ready for execution OR already finished
+  const { principal, reward, total, currency, isWinner, isLoading: isFinanceLoading } = useDisputeFinancials(
+    disputeId, 
+    isReadyForExecution || isFinished
+  );
   
   const [showSuccess, setShowSuccess] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -43,6 +49,8 @@ export default function ExecuteRulingPage() {
     if (success) {
       await refetch();
       setShowSuccess(true);
+      // Refresh the page data to reflect the new on-chain state
+      router.refresh();
     }
   };
 
@@ -53,9 +61,9 @@ export default function ExecuteRulingPage() {
   };
 
   return (
-    <div
+      <div
       ref={containerRef}
-      className="flex flex-col h-screen bg-[#F8F9FC] relative overflow-hidden font-manrope"
+      className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden font-manrope"
       {...bindSwipe()}
     >
       {/* 1. Header (Transparent & Clean) */}
@@ -65,7 +73,7 @@ export default function ExecuteRulingPage() {
         className="pt-6"
       />
 
-      <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col pt-4">
+      <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col justify-center">
         {/* 2. Hero Section: The "Bag" */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-6">
@@ -73,21 +81,27 @@ export default function ExecuteRulingPage() {
               className={`w-24 h-24 rounded-[32px] flex items-center justify-center rotate-3 ${
                 isFinanceLoading 
                   ? "bg-gray-100" 
-                  : !isFinished
-                    ? "bg-gray-100"
-                    : isWinner
+                  : isReadyForExecution
+                    ? isWinner
                       ? "bg-[#8c8fff]/10"
-                      : "bg-red-50"
+                      : "bg-orange-50"
+                    : isFinished
+                      ? isWinner
+                        ? "bg-[#8c8fff]/10"
+                        : "bg-red-50"
+                      : "bg-gray-100"
               }`}
             >
               {isFinanceLoading ? (
                 <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
-              ) : !isFinished ? (
-                 <Gavel className="w-10 h-10 text-gray-400" />
-              ) : isWinner ? (
-                <Wallet className="w-10 h-10 text-[#8c8fff]" />
+              ) : isReadyForExecution || isFinished ? (
+                isWinner ? (
+                  <Wallet className="w-10 h-10 text-[#8c8fff]" />
+                ) : (
+                  <AlertCircle className="w-10 h-10 text-orange-400" />
+                )
               ) : (
-                <AlertCircle className="w-10 h-10 text-red-400" />
+                <Gavel className="w-10 h-10 text-gray-400" />
               )}
             </div>
             <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#1b1c23] rounded-full border-[3px] border-white flex items-center justify-center shadow-lg">
@@ -99,13 +113,17 @@ export default function ExecuteRulingPage() {
             {isFinished ? "Ruling Executed" : "Finalize Ruling"}
           </h1>
           <p className="text-sm text-gray-500 font-medium max-w-[260px]">
-             {!isFinished
-                ? "Execute the ruling to finalize the dispute and see your results."
-                : isFinanceLoading
-                  ? "Calculating results..."
-                  : isWinner
+             {isFinanceLoading
+                ? "Calculating results..."
+                : isFinished
+                  ? isWinner
                     ? "You voted with the majority. Your rewards have been added to your profile."
-                    : "The majority voted differently. You will not receive a reward for this dispute."}
+                    : "The majority voted differently. You will not receive a reward for this dispute."
+                  : isReadyForExecution
+                    ? isWinner
+                      ? "You voted with the majority! Execute to claim your rewards."
+                      : "You voted with the minority. Execute to finalize the dispute."
+                    : "Execute the ruling to finalize the dispute and see your results."}
           </p>
         </div>
 
@@ -128,13 +146,9 @@ export default function ExecuteRulingPage() {
           </div>
 
           {/* Financial Breakdown */}
-          {!isFinished ? (
-             <div className="flex justify-center py-4 text-sm text-gray-400">
-               Execute the ruling to see financial breakdown
-             </div>
-          ) : isFinanceLoading ? (
+          {isFinanceLoading ? (
              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-gray-300" /></div>
-          ) : (
+          ) : isReadyForExecution || isFinished ? (
             <div className="flex flex-col gap-3">
               <RewardRow
                 label="Staked Principal"
@@ -150,27 +164,31 @@ export default function ExecuteRulingPage() {
                 icon={<div className={`w-1.5 h-1.5 rounded-full ${isWinner ? "bg-[#8c8fff]" : "bg-gray-200"}`} />}
               />
             </div>
+          ) : (
+             <div className="flex justify-center py-4 text-sm text-gray-400">
+               Waiting for voting to complete
+             </div>
           )}
 
           {/* Total Section */}
           <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
             <div className="flex flex-col">
               <span className="text-xs font-extrabold text-gray-600 uppercase tracking-wider">
-                Total Payout
+                {isFinished ? "Total Payout" : "Estimated Payout"}
               </span>
               <span className="text-[10px] font-medium text-[#8c8fff]">
                 Principal + Rewards
               </span>
             </div>
-            <span className={`text-xl font-extrabold ${!isFinished ? "text-gray-300" : isWinner ? "text-[#1b1c23]" : "text-gray-300"}`}>
-              {!isFinished ? "—" : isFinanceLoading ? "..." : `${total} ${currency}`}
+            <span className={`text-xl font-extrabold ${isFinanceLoading ? "text-gray-300" : (isReadyForExecution || isFinished) ? isWinner ? "text-[#1b1c23]" : "text-gray-300" : "text-gray-300"}`}>
+              {isFinanceLoading ? "..." : (isReadyForExecution || isFinished) ? `${total} ${currency}` : "—"}
             </span>
           </div>
         </div>
       </div>
 
       {/* 4. Floating Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 pb-8">
+      <div className="shrink-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent">
         <div className="max-w-sm mx-auto flex flex-col gap-4">
           {/* Step Dots (Optional context) */}
           <div className="flex justify-center mb-2">

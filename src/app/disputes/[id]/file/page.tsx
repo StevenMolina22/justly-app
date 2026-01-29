@@ -14,16 +14,16 @@ export default function CaseFilePage() {
 
   if (loading || !dispute) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F8F9FC]">
+      <div className="flex flex-1 items-center justify-center bg-[#F8F9FC]">
         <Loader2 className="animate-spin text-[#8c8fff] w-8 h-8" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC]">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden">
       {/* Header */}
-      <div className="px-4 pt-4 z-10 bg-[#F8F9FC]">
+      <div className="px-4 pt-4 z-10 bg-[#F8F9FC] shrink-0">
         <DisputeOverviewHeader
           onBack={() => router.back()}
           title={`Case #${id}`}
