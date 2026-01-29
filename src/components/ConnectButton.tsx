@@ -61,7 +61,7 @@ const ConnectButton = () => {
 
   // Masked Address Logic
   const maskedAddress = address
-    ? `${address.slice(0, 6)}••••••••${address.slice(-4)}`
+    ? `${address.slice(0, 5)}••••••••${address.slice(-2)}`
     : "";
 
   if (address) {

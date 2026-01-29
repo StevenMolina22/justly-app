@@ -16,20 +16,10 @@ import {
 import type { Dispute } from "@/hooks/disputes/useDisputeList";
 import { cn } from "@/lib/utils";
 
-// Helper: Auto-format time (Hours -> Days if > 24)
+// Helper: Pass through formatted time label from adapter
 const formatTimeLeft = (label: string | undefined) => {
-  if (!label) return "";
-  if (label === "Ended") return "Ended";
-
-  // Extract number from "485h left"
-  const hours = parseInt(label);
-  if (isNaN(hours)) return label;
-
-  if (hours > 24) {
-    const days = Math.floor(hours / 24);
-    return `${days}d left`;
-  }
-  return `${hours}h left`;
+  // The adapter now handles hours->days conversion, just pass through
+  return label || "";
 };
 
 // Helper: Icon mapping
@@ -82,7 +72,9 @@ export const DisputeCard = ({ dispute }: { dispute: DisputeUI }) => {
   const isReadyForWithdrawal = isReveal && dispute.phase === "WITHDRAW";
 
   // Calculate "Earn per Juror" (Estimated)
-  const totalStake = parseFloat(dispute.stake || "0");
+  // Prefer myStake if available (user's specific stake), otherwise use stake (generic requirement)
+  const stakeAmount = dispute.myStake || dispute.stake || "0";
+  const totalStake = parseFloat(stakeAmount);
   const estEarn =
     dispute.jurorsRequired > 0
       ? ((totalStake / dispute.jurorsRequired) * 0.5).toFixed(2)

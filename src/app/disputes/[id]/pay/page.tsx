@@ -39,6 +39,7 @@ export default function PayDisputePage() {
 
     if (success) {
       refetch(); // Refresh local state
+      router.refresh(); // Refresh the page data
       router.push("/profile");
     }
   };
@@ -52,7 +53,7 @@ export default function PayDisputePage() {
         : "Observer";
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC] relative overflow-hidden font-manrope">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden font-manrope">
       {/* --- Ambient Background Glow --- */}
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#8c8fff]/10 rounded-full blur-[100px] pointer-events-none" />
 

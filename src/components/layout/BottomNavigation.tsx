@@ -9,14 +9,22 @@ export const BottomNavigation = () => {
   const pathname = usePathname();
 
   // 1. Precise Hiding Logic
-  // We want to hide the nav ONLY on specific nested flows, not on main tabs.
-  const isDisputeDetail = /^\/disputes\/\d+/.test(pathname || "");
-  const isJurorFlow =
-    pathname?.startsWith("/juror/assign") ||
-    pathname?.startsWith("/juror/stake");
+  // Hide nav on focused action flows where user needs to complete a task
+  const hiddenPaths = [
+    /^\/disputes\/\d+\/vote$/, // Voting flow
+    /^\/disputes\/\d+\/reveal$/, // Reveal flow
+    /^\/disputes\/\d+\/pay$/, // Payment flow
+    /^\/disputes\/\d+\/evidence\/submit$/, // Evidence upload
+    /^\/disputes\/create$/, // Dispute creation wizard
+    /^\/juror\/assign$/, // Juror assignment
+    /^\/juror\/stake$/, // Staking flow
+    /^\/juror\/assigned\/\d+$/, // Assignment confirmation
+  ];
 
-  // If we are in a detail flow, hide the nav to focus attention
-  if (isDisputeDetail || isJurorFlow) return null;
+  const shouldHide = hiddenPaths.some((pattern) =>
+    pattern.test(pathname || ""),
+  );
+  if (shouldHide) return null;
 
   const navItems = [
     {

@@ -6,7 +6,7 @@ import { FileQuestion, Home, ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC] relative overflow-hidden font-manrope items-center justify-center p-6">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden font-manrope items-center justify-center p-6">
       {/* 1. Ambient Background Glow (Purple) */}
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#8c8fff]/10 rounded-full blur-[100px] pointer-events-none" />
 

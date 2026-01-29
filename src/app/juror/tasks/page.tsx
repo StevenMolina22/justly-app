@@ -56,12 +56,12 @@ export default function JurorTasksPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F9FC] font-manrope pb-4 relative overflow-hidden">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] font-manrope pb-4 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#8c8fff]/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="pt-10 px-6 pb-6 bg-[#F8F9FC]/90 backdrop-blur-md z-20 sticky top-0 border-b border-gray-100/50">
-        <div className="flex items-center text-center">
-          <div className="flex items-center gap-4 w-full">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
               className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all shadow-sm active:scale-95 text-[#1b1c23]"
@@ -73,16 +73,16 @@ export default function JurorTasksPage() {
             </h1>
           </div>
           {tasks.length > 0 && (
-            <div className="bg-[#8c8fff] text-white text-xs font-extrabold px-3 py-1.5 rounded-full shadow-lg shadow-[#8c8fff]/30">
-              {tasks.length} Pending
+            <div className="bg-[#8c8fff] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg shadow-[#8c8fff]/30">
+              {tasks.length} <span className="ml-1">Pending</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="px-5 w-full flex flex-col gap-6 mt-2 relative z-10">
+      <div className="flex-1 px-5 w-full flex flex-col gap-6 mt-2 relative z-10 overflow-y-auto">
         {!address ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 bg-white rounded-[24px] flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <Wallet className="w-8 h-8 text-gray-300" />
             </div>
@@ -97,14 +97,14 @@ export default function JurorTasksPage() {
             </button>
           </div>
         ) : isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+          <div className="flex-1 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="w-10 h-10 animate-spin text-[#8c8fff]" />
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest animate-pulse">
               Fetching Disputes...
             </p>
           </div>
         ) : tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in-95 duration-500">
+          <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-500">
             <div className="w-28 h-28 bg-linear-to-tr from-white to-[#F0F2F5] rounded-full flex items-center justify-center mb-6 border-[6px] border-[#F8F9FC] shadow-xl">
               <CheckCircle2 className="w-12 h-12 text-[#8c8fff]" />
             </div>

@@ -34,7 +34,7 @@ export default function DisputeManagerPage() {
   const handleCreate = () => router.push("/disputes/create");
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC] font-manrope">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] font-manrope">
       {/* Header */}
       <div className="pt-4 z-10">
         <DisputeOverviewHeader
@@ -43,9 +43,9 @@ export default function DisputeManagerPage() {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6">
+      <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6 flex flex-col">
         {/* Intro */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 shrink-0">
           <div>
             <h1 className="text-2xl font-black text-[#1b1c23]">My Cases</h1>
             <p className="text-sm text-gray-400 font-medium">
@@ -62,11 +62,11 @@ export default function DisputeManagerPage() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex-1 flex flex-col items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-[#8c8fff]" />
           </div>
         ) : myCases.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center opacity-80">
+          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-80">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Briefcase className="w-12 h-12 text-gray-600" />
             </div>

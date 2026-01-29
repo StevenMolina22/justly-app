@@ -101,7 +101,7 @@ export default function CreateDisputePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC] overflow-hidden relative">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden relative">
       {/* --- HEADER --- */}
       <div className="pt-8 px-6 pb-4 bg-white shadow-sm z-20 flex justify-between items-center">
         <button

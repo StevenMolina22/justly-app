@@ -71,7 +71,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
   return (
     <div
       ref={containerRef}
-      className="flex flex-col h-screen bg-[#F8F9FC] font-manrope relative overflow-hidden touch-none"
+      className="flex flex-col flex-1 bg-[#F8F9FC] font-manrope relative overflow-hidden touch-none"
       {...bindSwipe()}
     >
       {/* --- 1. FIXED HEADER --- */}

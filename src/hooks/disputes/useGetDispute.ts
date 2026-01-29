@@ -1,4 +1,4 @@
-import { useReadContract } from "wagmi";
+import { useReadContract, useAccount } from "wagmi";
 import { SLICE_ABI } from "@/config/contracts";
 import { transformDisputeData, type DisputeUI } from "@/util/disputeAdapter";
 import { useState, useEffect } from "react";
@@ -6,12 +6,14 @@ import { useStakingToken } from "../core/useStakingToken";
 import { useContracts } from "../core/useContracts";
 
 export function useGetDispute(id: string) {
+  const { address } = useAccount();
   const { decimals } = useStakingToken();
   const { sliceContract } = useContracts();
+
   // 1. Fetch raw dispute data from the contract
   const {
     data: rawDispute,
-    isLoading,
+    isLoading: isDisputeLoading,
     error,
     refetch,
   } = useReadContract({
@@ -25,10 +27,21 @@ export function useGetDispute(id: string) {
     },
   });
 
+  // 2. Fetch jurorStakes for the current user
+  const { data: myStake, isLoading: isStakeLoading } = useReadContract({
+    address: sliceContract,
+    abi: SLICE_ABI,
+    functionName: "jurorStakes",
+    args: address ? [BigInt(id), address] : undefined,
+    query: {
+      enabled: !!id && !!address,
+    },
+  });
+
   const [transformedDispute, setTransformedDispute] =
     useState<DisputeUI | null>(null);
 
-  // 2. Transform the data using your utility
+  // 3. Transform the data using your utility
   // Since transformDisputeData is async (fetches IPFS), we need a useEffect
   useEffect(() => {
     async function load() {
@@ -37,13 +50,16 @@ export function useGetDispute(id: string) {
         return;
       }
       try {
-        // We pass the raw result to the transformer we fixed in Step 1
+        // We pass the raw result to the transformer with the user's stake
         const transformed = await transformDisputeData(
           {
             ...(rawDispute as any),
             id,
           },
           decimals,
+          false, // userHasRevealed (not critical for this view, or add fetch)
+          undefined,
+          myStake ? (myStake as bigint) : undefined,
         );
         setTransformedDispute(transformed);
       } catch (e) {
@@ -51,11 +67,11 @@ export function useGetDispute(id: string) {
       }
     }
     load();
-  }, [rawDispute, id, decimals]);
+  }, [rawDispute, myStake, id, decimals]);
 
   return {
     dispute: transformedDispute,
-    loading: isLoading,
+    loading: isDisputeLoading || isStakeLoading,
     error,
     refetch,
   };

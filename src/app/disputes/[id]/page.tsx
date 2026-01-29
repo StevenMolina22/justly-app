@@ -55,7 +55,7 @@ export default function DisputeOverviewPage() {
     if (!dispute) return "Loading...";
     if (dispute.status === DISPUTE_STATUS.RESOLVED) return "Resolved";
 
-    // 3. Handle the initial render (before useEffect runs)
+    // Handle the initial render (before useEffect runs)
     if (now === 0) return "Loading...";
 
     let targetDeadline = 0;
@@ -67,7 +67,7 @@ export default function DisputeOverviewPage() {
       return dispute.deadlineLabel;
     }
 
-    // 4. Use the state variable 'now' instead of calling Date.now()
+    // Use the state variable 'now' instead of calling Date.now()
     const diff = targetDeadline - now;
 
     if (diff <= 0) return "Ended";
@@ -76,7 +76,7 @@ export default function DisputeOverviewPage() {
 
     if (hours > 24) {
       const days = Math.ceil(hours / 24);
-      return `${days} days left`;
+      return `${days}d left`;
     }
 
     return `${hours}h left`;
@@ -110,7 +110,7 @@ export default function DisputeOverviewPage() {
 
   if (isLoading || !displayDispute) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F8F9FC]">
+      <div className="flex flex-1 items-center justify-center bg-[#F8F9FC]">
         <Loader2 className="animate-spin text-[#8c8fff] w-8 h-8" />
       </div>
     );
@@ -118,7 +118,7 @@ export default function DisputeOverviewPage() {
 
   return (
     <div
-      className="flex flex-col h-screen bg-[#F8F9FC] relative overflow-hidden touch-none"
+      className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden touch-none"
       {...bindSwipe()}
     >
       {/* Background Decorative blob */}
@@ -282,7 +282,7 @@ export default function DisputeOverviewPage() {
       </div>
 
       {/* 4. Sticky Footer CTA */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20">
+      <div className="shrink-0 p-6 pt-2 bg-gradient-to-t from-white via-white/95 to-transparent z-20">
         <button
           onClick={handleStartReview}
           // Canonical: rounded-[20px] -> rounded-2xl

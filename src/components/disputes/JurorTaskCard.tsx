@@ -69,7 +69,7 @@ export function JurorTaskCard({ task, index, onAction }: JurorTaskCardProps) {
             : state === "REVEAL_PENDING"
               ? "bg-[#1b1c23]"
               : state === "READY_TO_EXECUTE"
-                ? "bg-purple-600"
+                ? "bg-[#8c8fff]"
                 : "bg-gray-300"
         }`}
       />
@@ -96,13 +96,13 @@ export function JurorTaskCard({ task, index, onAction }: JurorTaskCardProps) {
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Coins className="w-3.5 h-3.5 text-[#8c8fff]" />
-                {task.stake} USDC Stake
+                {task.myStake || task.stake} USDC Stake
               </span>
             </div>
           </div>
         </div>
 
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-[#8c8fff]/20 to-transparent" />
+        <div className="h-px w-full bg-linear-to-r from-transparent via-[#8c8fff]/20 to-transparent" />
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ export function JurorTaskCard({ task, index, onAction }: JurorTaskCardProps) {
                   : state === "REVEAL_PENDING"
                     ? "bg-gray-100 text-gray-600"
                     : state === "READY_TO_EXECUTE"
-                      ? "bg-purple-100 text-purple-600"
+                      ? "bg-[#8c8fff]/10 text-[#8c8fff]"
                       : "bg-gray-50 text-gray-400"
               }`}
             >
@@ -159,7 +159,7 @@ export function JurorTaskCard({ task, index, onAction }: JurorTaskCardProps) {
                 pl-5 pr-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all duration-300
                 ${state === "VOTE_PENDING" ? "bg-[#1b1c23] hover:bg-[#32363f]" : ""}
                 ${state === "REVEAL_PENDING" ? "bg-[#8c8fff] hover:bg-[#7a7de0] shadow-[#8c8fff]/20" : ""}
-                ${state === "READY_TO_EXECUTE" ? "bg-purple-600 hover:bg-purple-700 shadow-purple-600/20" : ""}
+                ${state === "READY_TO_EXECUTE" ? "bg-[#8c8fff] hover:bg-[#7a7de0] shadow-[#8c8fff]/20" : ""}
               `}
             >
               {state === "VOTE_PENDING" && "Cast Vote"}

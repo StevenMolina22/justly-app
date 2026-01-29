@@ -27,7 +27,11 @@ export default function RevealPage() {
   });
 
   const handleRevealClick = async () => {
-    if (await revealVote()) setShowSuccess(true);
+    if (await revealVote()) {
+      setShowSuccess(true);
+      // Refresh the page data to reflect the new on-chain state
+      router.refresh();
+    }
   };
 
   const handleAnimationComplete = () => {
@@ -39,7 +43,7 @@ export default function RevealPage() {
   const votedParty = localVote === 1 ? parties.claimer : parties.defender;
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FC]" {...bindSwipe()}>
+    <div className="flex flex-col flex-1 bg-[#F8F9FC]" {...bindSwipe()}>
       {/* 1. Header */}
       <div className="flex-none z-10 bg-[#F8F9FC]/80 backdrop-blur-md">
         <DisputeOverviewHeader onBack={() => router.back()} />

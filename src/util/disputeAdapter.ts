@@ -13,7 +13,8 @@ export interface DisputeUI {
   phase: "VOTE" | "REVEAL" | "WITHDRAW" | "CLOSED";
   deadlineLabel: string;
   isUrgent: boolean;
-  stake: string;
+  stake: string; // Generic required stake (usually 1 USDC)
+  myStake?: string; // The specific amount the user staked
   jurorsRequired: number;
   revealDeadline: number;
   evidenceDeadline?: number;
@@ -80,6 +81,7 @@ export async function transformDisputeData(
   decimals: number = 6,
   userHasRevealed: boolean = false,
   prefetchedMetadata?: any,
+  userStakeAmount?: bigint,
 ): Promise<DisputeUI> {
   // Extract fields using safe accessor with fallbacks
   // Struct field order based on Solidity Dispute struct:
@@ -209,12 +211,22 @@ export async function transformDisputeData(
   const diff = deadline - now;
   const isUrgent = diff < 86400 && diff > 0;
   const hours = Math.ceil(diff / 3600);
-  const deadlineLabel =
-    status < DISPUTE_STATUS.RESOLVED
-      ? diff > 0
-        ? `${hours}h left`
-        : "Ended"
-      : "Resolved";
+  
+  // Deadline Label Logic - Display days if hours > 24
+  let deadlineLabel = "Resolved";
+  
+  if (status < DISPUTE_STATUS.RESOLVED) {
+    if (diff > 0) {
+      if (hours > 24) {
+        const days = Math.ceil(hours / 24);
+        deadlineLabel = `${days}d left`;
+      } else {
+        deadlineLabel = `${hours}h left`;
+      }
+    } else {
+      deadlineLabel = "Ended";
+    }
+  }
 
   return {
     id,
@@ -225,6 +237,9 @@ export async function transformDisputeData(
     deadlineLabel,
     isUrgent,
     stake: requiredStake ? formatUnits(requiredStake, decimals) : "0",
+    myStake: userStakeAmount
+      ? formatUnits(userStakeAmount, decimals)
+      : undefined,
     jurorsRequired,
     revealDeadline,
     evidenceDeadline,
