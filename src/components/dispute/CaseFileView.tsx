@@ -108,7 +108,7 @@ export function CaseFileView({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-6 pb-24 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto px-6 pb-6 scrollbar-hide">
           <TabsContent
             value="claimant"
             className="mt-0 data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-left-2 data-[state=active]:duration-300"

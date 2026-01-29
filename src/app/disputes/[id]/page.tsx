@@ -104,7 +104,7 @@ export default function DisputeOverviewPage() {
         },
         description: dispute.description || "No description provided.",
         deadlineLabel: getDeadlineLabel(), // Use new logic
-        stake: dispute.stake,
+        stake: dispute.myStake || dispute.stake,
       }
     : null;
 
