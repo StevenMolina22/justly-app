@@ -17,6 +17,7 @@ export interface DisputeUI {
   jurorsRequired: number;
   revealDeadline: number;
   evidenceDeadline?: number;
+  commitDeadline?: number;
   description: string;
   evidence: string[];
   claimer: string;

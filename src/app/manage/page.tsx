@@ -36,7 +36,7 @@ export default function DisputeManagerPage() {
   return (
     <div className="flex flex-col h-screen bg-[#F8F9FC] font-manrope">
       {/* Header */}
-      <div className="px-4 pt-4 z-10">
+      <div className="pt-4 z-10">
         <DisputeOverviewHeader
           onBack={() => router.back()}
           title="Dispute Manager"
@@ -66,17 +66,17 @@ export default function DisputeManagerPage() {
             <Loader2 className="w-8 h-8 animate-spin text-[#8c8fff]" />
           </div>
         ) : myCases.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center opacity-60">
+          <div className="flex flex-col items-center justify-center py-20 text-center opacity-80">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Briefcase className="w-8 h-8 text-gray-400" />
+              <Briefcase className="w-12 h-12 text-gray-600" />
             </div>
-            <h3 className="text-lg font-bold text-gray-800">No Cases Found</h3>
-            <p className="text-xs text-gray-500 max-w-[200px]">
+            <h3 className="text-2xl font-bold text-gray-800">No Cases Found</h3>
+            <p className="text-gray-600 max-w-50">
               You haven&apos;t created or been added to any disputes yet.
             </p>
             <button
               onClick={handleCreate}
-              className="mt-6 text-[#8c8fff] font-bold text-sm hover:underline"
+              className="mt-6 text-[#8c8fff] font-bold hover:underline"
             >
               Create your first case
             </button>
@@ -107,7 +107,7 @@ const ManagerCaseCard = ({
 }) => {
   const router = useRouter();
 
-  // FIX: Store 'now' in state to ensure purity during render
+  // Store 'now' in state to ensure purity during render
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -173,7 +173,7 @@ const ManagerCaseCard = ({
   }
 
   return (
-    <div className="bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm flex flex-col gap-4">
+    <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center gap-2 mb-1">

@@ -1,9 +1,20 @@
 "use client";
+
 import React, { useState } from "react";
 import { useSliceConnect } from "@/hooks/core/useSliceConnect";
 import { useAccount } from "wagmi";
 import { toast } from "sonner";
-import { Loader2, Copy, Check, Wallet, LogOut, User } from "lucide-react";
+import {
+  Loader2,
+  Copy,
+  Check,
+  Wallet,
+  LogOut,
+  User,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -18,10 +29,10 @@ const ConnectButton = () => {
 
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
 
   const handleConnect = async () => {
     try {
-      // Call connect(). The hook decides the strategy.
       await connect();
     } catch (error) {
       console.error(error);
@@ -32,6 +43,7 @@ const ConnectButton = () => {
     try {
       await disconnect();
       setIsOpen(false);
+      setShowAddress(false);
       toast.success("Disconnected");
     } catch (e) {
       console.error("Disconnect failed:", e);
@@ -42,13 +54,14 @@ const ConnectButton = () => {
     if (address) {
       navigator.clipboard.writeText(address);
       setCopied(true);
-      toast.success("Address copied");
+      toast.success("Address copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const shortAddress = address
-    ? `${address.slice(0, 5)}...${address.slice(-4)}`
+  // Masked Address Logic
+  const maskedAddress = address
+    ? `${address.slice(0, 6)}••••••••${address.slice(-4)}`
     : "";
 
   if (address) {
@@ -57,41 +70,59 @@ const ConnectButton = () => {
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="h-11 gap-3 rounded-2xl border-gray-200 bg-white px-5 text-[#1b1c23] shadow-sm transition-all duration-200 hover:bg-gray-50 hover:text-[#1b1c23] hover:scale-[1.02] active:scale-[0.98]"
+            className="h-11 gap-2.5 rounded-2xl border-gray-200 bg-white px-5 text-[#1b1c23] shadow-sm transition-all duration-200 hover:bg-gray-50 hover:text-[#1b1c23] hover:scale-[1.02] active:scale-[0.98]"
           >
-            <div className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8c8fff] opacity-75"></span>
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#8c8fff]"></span>
-            </div>
-            <span className="font-manrope font-bold tracking-tight">
-              {shortAddress}
+            {/* Dot removed per request */}
+
+            <span className="font-manrope font-bold tracking-tight text-sm">
+              My Profile
             </span>
+            <User size={16} className="text-gray-600" />
           </Button>
         </PopoverTrigger>
 
         <PopoverContent
           align="end"
           sideOffset={8}
-          className="w-72 rounded-2xl border-gray-100 p-0 shadow-xl"
+          className="w-80 rounded-3xl border-gray-100 p-0 shadow-2xl"
         >
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-manrope font-bold text-[#1b1c23] flex items-center gap-2">
-                <User size={16} /> Account
+          <div className="p-5 space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-50 pb-2">
+              <h4 className="font-manrope font-extrabold text-[#1b1c23] flex items-center gap-2 text-base">
+                <ShieldCheck className="w-5 h-5 text-[#8c8fff]" />
+                My Account
               </h4>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-[#8c8fff]">
-                Connected
+              {/* Swapped Green for Justice Purple (#8c8fff) */}
+              <span className="rounded-full bg-[#8c8fff]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#8c8fff] border border-[#8c8fff]/20">
+                Active
               </span>
             </div>
 
-            <div className="break-all rounded-xl border border-gray-100 bg-gray-50 p-3 font-mono text-xs text-gray-600">
-              {address}
+            {/* Address Privacy Box */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-gray-600 uppercase tracking-wider ml-1">
+                Wallet Address
+              </span>
+              <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/50 p-3 transition-colors hover:border-gray-200">
+                <div className="font-mono text-xs text-gray-600 truncate mr-2 select-all">
+                  {showAddress ? address : maskedAddress}
+                </div>
+                <button
+                  onClick={() => setShowAddress(!showAddress)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-white hover:text-[#1b1c23] hover:shadow-sm transition-all"
+                  title={showAddress ? "Hide Address" : "Show Address"}
+                >
+                  {showAddress ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2">
+            {/* Actions */}
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="secondary"
-                className="h-9 w-full text-base font-semibold justify-center rounded-xl bg-[#1b1c23] text-white hover:bg-[#2c2d33]"
+                className="h-10 text-xs font-bold rounded-xl bg-[#1b1c23] text-white hover:bg-[#2c2d33] shadow-md shadow-gray-200"
                 onClick={copyToClipboard}
               >
                 {copied ? (
@@ -100,15 +131,14 @@ const ConnectButton = () => {
                   </>
                 ) : (
                   <>
-                    <Copy className="mr-2 h-3.5 w-3.5" /> Copy Address
+                    <Copy className="mr-2 h-3.5 w-3.5" /> Copy
                   </>
                 )}
               </Button>
 
               <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 w-full justify-center rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600"
+                variant="outline"
+                className="h-10 text-xs font-bold rounded-xl border-red-100 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                 onClick={handleDisconnect}
               >
                 <LogOut className="mr-2 h-3.5 w-3.5" /> Disconnect
@@ -124,7 +154,7 @@ const ConnectButton = () => {
     <Button
       onClick={handleConnect}
       disabled={isConnecting}
-      className="h-11 rounded-2xl bg-[#1b1c23] px-6 text-base font-bold text-white shadow-lg hover:bg-[#2c2d33]"
+      className="h-11 rounded-2xl bg-[#1b1c23] px-6 text-sm font-bold text-white shadow-xl shadow-gray-200 hover:bg-[#2c2d33] hover:scale-[1.02] active:scale-[0.98] transition-all"
     >
       {isConnecting ? (
         <>

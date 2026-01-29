@@ -25,7 +25,7 @@ export default function DisputesPage() {
         </div>
       </div>
       {/* Public Disputes Feed */}
-      <DisputesList mode="all" options={{ activeOnly: true }} />
+      <DisputesList mode="all" />
     </div>
   );
 }

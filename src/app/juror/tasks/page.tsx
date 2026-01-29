@@ -33,7 +33,8 @@ export default function JurorTasksPage() {
       if (!d.userHasRevealed) return true;
 
       // Case 1 & 2: User revealed - check if others have too
-      const allRevealed = d.revealsCount >= d.commitsCount && d.commitsCount > 0;
+      const allRevealed =
+        d.revealsCount >= d.commitsCount && d.commitsCount > 0;
 
       // Case 2: All revealed, ready to execute - show as task
       if (allRevealed) return true;
@@ -59,15 +60,15 @@ export default function JurorTasksPage() {
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#8c8fff]/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="pt-10 px-6 pb-6 bg-[#F8F9FC]/90 backdrop-blur-md z-20 sticky top-0 border-b border-gray-100/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center text-center">
+          <div className="flex items-center gap-4 w-full">
             <button
               onClick={() => router.back()}
               className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all shadow-sm active:scale-95 text-[#1b1c23]"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-black text-[#1b1c23] tracking-tight">
+            <h1 className="font-manrope text-2xl  font-black text-[#1b1c23] tracking-tight">
               Your Missions
             </h1>
           </div>

@@ -44,7 +44,10 @@ export const DisputeListView: React.FC<Props> = ({
   // Filter Logic
   const filteredDisputes = useMemo(() => {
     return disputes.filter((d) => {
-      const matchesTab = activeTab === "active" ? d.status < 3 : d.status === 3;
+      const matchesTab =
+        activeTab === "active"
+          ? d.status === 1 || d.status === 2
+          : d.status === 3;
 
       // Robust matching: Check if the dispute category includes the selected filter value
       const matchesCategory = selectedCategory
@@ -165,7 +168,7 @@ export const DisputeListView: React.FC<Props> = ({
       </div>
 
       {/* List Content */}
-      <div className="flex flex-col gap-6 min-h-[300px]">
+      <div className="flex flex-col gap-6 min-h-75">
         {isLoading ? (
           <div className="flex flex-col items-center py-16">
             <Loader2 className="animate-spin text-[#8c8fff]" />

@@ -39,12 +39,16 @@ export function useAssignDispute() {
       console.log(`[Draft] Staking: ${amount} ${symbol} (${amountToStake})`);
 
       // 1. Check & Approve Allowance
-      const allowance = await publicClient.readContract({
-        address: stakingToken,
-        abi: erc20Abi,
-        functionName: "allowance",
-        args: [address, sliceContract],
-      });
+      const getAllowance = async () => {
+        return await publicClient.readContract({
+          address: stakingToken,
+          abi: erc20Abi,
+          functionName: "allowance",
+          args: [address, sliceContract],
+        });
+      };
+
+      let allowance = await getAllowance();
 
       if (allowance < amountToStake) {
         toast.info("Approving Stake...");
@@ -54,11 +58,32 @@ export function useAssignDispute() {
           functionName: "approve",
           args: [sliceContract, amountToStake],
         });
+
+        // Wait for the transaction to be mined
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
-        toast.success("Approval confirmed.");
+
+        // --- FIX: Race Condition Protection ---
+        // With auto-signing wallets, the next tx simulation happens so fast
+        // that the RPC node might still report the old allowance.
+        // We poll until the node actually confirms the new allowance.
+        let retries = 0;
+        while (allowance < amountToStake && retries < 10) {
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s
+          allowance = await getAllowance();
+          retries++;
+        }
+
+        if (allowance < amountToStake) {
+          // Safety fallback if RPC is extremely laggy
+          toast.warning("Network lagging. Waiting for approval sync...");
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        } else {
+          toast.success("Approval confirmed.");
+        }
       }
 
       // 2. Execute Draw
+      // Now safe to simulate because we verified the node sees the allowance
       toast.info("Entering the Draft Pool...");
       const hash = await writeContractAsync({
         address: sliceContract,
