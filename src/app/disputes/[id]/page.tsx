@@ -29,7 +29,7 @@ export default function DisputeOverviewPage() {
 
   const handleBack = () => router.back();
   const handleStartReview = () => router.push(`/disputes/${disputeId}/review`);
-  const handleOpenCaseFile = () => router.push(`/disputes/${disputeId}/file`);
+  const handleOpenCaseFile = () => router.push(`/disputes/${disputeId}/review`);
 
   const bindSwipe = usePageSwipe({
     onSwipeLeft: handleStartReview,
@@ -255,42 +255,18 @@ export default function DisputeOverviewPage() {
             </div>
           </div>
         </div>
-
-        {/* 3. Case File Link */}
-        <button
-          onClick={handleOpenCaseFile}
-          // Canonical: rounded-[20px] -> rounded-2xl
-          className="w-full bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-[#8c8fff]/30 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#F8F9FC] flex items-center justify-center text-[#1b1c23]">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div className="text-left">
-              <h4 className="font-bold text-[#1b1c23] text-sm">
-                Full Case File
-              </h4>
-              <p className="text-[11px] text-gray-400 font-medium">
-                Browse all statements & evidence
-              </p>
-            </div>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#1b1c23] group-hover:text-white transition-colors">
-            <ArrowRight className="w-4 h-4" />
-          </div>
-        </button>
       </div>
 
       {/* 4. Sticky Footer CTA */}
       <div className="shrink-0 p-6 pt-2 bg-gradient-to-t from-white via-white/95 to-transparent z-20">
         <button
-          onClick={handleStartReview}
+          onClick={handleOpenCaseFile}
           // Canonical: rounded-[20px] -> rounded-2xl
           className="group w-full py-4 bg-[#1b1c23] text-white rounded-2xl font-manrope font-bold text-base flex items-center justify-center gap-2 shadow-xl shadow-gray-200 hover:bg-[#2c2d33] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-          <Gavel className="w-5 h-5 fill-white/50" />
-          Review Evidence
+          <BookOpen className="w-5 h-5" />
+          Browse Evidence
           <ArrowRight className="w-5 h-5 opacity-70 group-hover:translate-x-1 transition-transform" />
         </button>
 
