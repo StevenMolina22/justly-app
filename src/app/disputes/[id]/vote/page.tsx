@@ -178,7 +178,7 @@ export default function VotePage() {
             <button
               onClick={() =>
                 isRevealDisabled
-                  ? router.push("/disputes")
+                  ? router.push("/")
                   : router.push(`/disputes/${disputeId}/reveal`)
               }
               className={`
