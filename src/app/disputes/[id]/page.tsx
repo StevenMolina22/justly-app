@@ -125,7 +125,7 @@ export default function DisputeOverviewPage() {
       {/* 1. Header & Title Section */}
       <DisputeOverviewHeader onBack={handleBack} title="Dispute Overview" />
 
-      <div className="mt-6 mx-6 flex flex-col gap-4 z-10">
+      <div className="mt-6 mx-6 flex flex-col gap-4 z-10 pt-24">
         {/* Badges Row */}
         <div className="flex items-center gap-2">
           <span className="px-3 py-1 rounded-full bg-[#8c8fff] text-white text-[10px] font-extrabold uppercase tracking-wide shadow-sm shadow-[#8c8fff]/20">

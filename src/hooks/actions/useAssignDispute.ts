@@ -62,7 +62,7 @@ export function useAssignDispute() {
         // Wait for the transaction to be mined
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
-        // --- FIX: Race Condition Protection ---
+        // --- Race Condition Protection ---
         // With auto-signing wallets, the next tx simulation happens so fast
         // that the RPC node might still report the old allowance.
         // We poll until the node actually confirms the new allowance.

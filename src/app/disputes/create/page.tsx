@@ -109,7 +109,7 @@ export default function CreateDisputePage() {
       </DisputeOverviewHeader>
 
       {/* --- SCROLLABLE CONTENT --- */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 pb-4">
+      <div className="flex-1 overflow-y-auto px-6 py-6 pb-4 pt-24">
         <div className="flex flex-col gap-2 mb-6">
           <h1 className="text-2xl font-extrabold text-[#1b1c23] tracking-tight">
             {STEPS[currentStep - 1].title}

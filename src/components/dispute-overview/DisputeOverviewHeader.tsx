@@ -27,7 +27,7 @@ export const DisputeOverviewHeader: React.FC<DisputeOverviewHeaderProps> = ({
   return (
     <div
       className={cn(
-        "w-full pt-8 px-6 pb-2 flex flex-col gap-6 sticky top-0 z-50 bg-[#F8F9FC]/90 backdrop-blur-md",
+        "w-full pt-8 px-6 pb-2 flex flex-col gap-6 absolute top-0 left-0 right-0 z-50 bg-[#F8F9FC]/90 backdrop-blur-md",
         className,
       )}
     >

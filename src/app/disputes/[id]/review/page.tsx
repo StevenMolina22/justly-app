@@ -22,7 +22,7 @@ export default function JurorReviewPage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden relative">
       {/* 1. Header */}
       <DisputeOverviewHeader
         onBack={() => router.back()}
@@ -30,7 +30,7 @@ export default function JurorReviewPage() {
       />
 
       {/* 2. Main Content (The Reusable Component) */}
-      <div className="flex-1 overflow-hidden pt-4">
+      <div className="flex-1 overflow-hidden pt-24">
         <CaseFileView dispute={dispute} defaultTab="claimant" />
       </div>
 

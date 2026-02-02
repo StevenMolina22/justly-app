@@ -17,11 +17,11 @@ export default function JurorStakePage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC]">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative">
       <DisputeOverviewHeader onBack={() => router.back()} />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col justify-center px-5 py-4 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center px-5 py-4 overflow-y-auto pt-24">
         {/* SINGLE UNIFIED CARD */}
         <div className="w-full bg-white rounded-4xl p-6 shadow-[0px_20px_40px_-10px_rgba(27,28,35,0.05)] border border-white/50 relative overflow-hidden">
           {/* Ambient Background Glow (Justice Purple) */}

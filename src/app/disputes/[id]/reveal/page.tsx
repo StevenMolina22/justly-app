@@ -43,12 +43,12 @@ export default function RevealPage() {
   const votedParty = localVote === 1 ? parties.claimer : parties.defender;
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC]" {...bindSwipe()}>
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative" {...bindSwipe()}>
       {/* 1. Header */}
       <DisputeOverviewHeader onBack={() => router.back()} title="Reveal Vote" />
 
       {/* 2. Content Area */}
-      <div className="flex-1 flex flex-col px-6 overflow-y-auto scrollbar-hide relative z-0">
+      <div className="flex-1 flex flex-col px-6 overflow-y-auto scrollbar-hide relative z-0 pt-24">
         <div className="flex-1 flex flex-col justify-center w-full max-w-sm mx-auto pb-24 pt-4">
           {/* STATE 1: TOO EARLY (Locked) */}
           {status.isTooEarly && (

@@ -72,7 +72,7 @@ export default function ExecuteRulingPage() {
         title="Ruling Phase"
       />
 
-      <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col justify-center">
+      <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col justify-center pt-24">
         {/* 2. Hero Section: The "Bag" */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-6">

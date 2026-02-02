@@ -51,12 +51,12 @@ export default function VotePage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC]" {...bindSwipe()}>
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative" {...bindSwipe()}>
       {/* 1. Header */}
       <DisputeOverviewHeader onBack={() => router.back()} title="Cast Vote" />
 
       {/* 2. Content */}
-      <div className="flex-1 flex flex-col px-6 overflow-y-auto scrollbar-hide relative z-0">
+      <div className="flex-1 flex flex-col px-6 overflow-y-auto scrollbar-hide relative z-0 pt-24">
         {/* - Removed min-h-[500px] to prevent top-alignment on small screens
           - Added py-10 to ensure breathing room on short screens
         */}

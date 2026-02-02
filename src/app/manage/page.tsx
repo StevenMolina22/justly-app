@@ -34,14 +34,14 @@ export default function DisputeManagerPage() {
   const handleCreate = () => router.push("/disputes/create");
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] font-manrope">
+    <div className="flex flex-col flex-1 bg-[#F8F9FC] font-manrope relative">
       {/* Header */}
       <DisputeOverviewHeader
         onBack={() => router.back()}
         title="Dispute Manager"
       />
 
-      <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6 flex flex-col">
+      <div className="flex-1 overflow-y-auto px-6 pb-4 pt-24 flex flex-col">
         {/* Intro */}
         <div className="flex items-center justify-between mb-6 shrink-0">
           <div>

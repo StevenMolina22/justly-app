@@ -43,7 +43,7 @@ export default function ProfilePage() {
   return (
     <Tabs
       defaultValue="overview"
-      className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden"
+      className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden relative"
     >
       {/* --- Sticky Header --- */}
       <DisputeOverviewHeader
@@ -79,7 +79,7 @@ export default function ProfilePage() {
       </DisputeOverviewHeader>
 
       {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 pt-2 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto px-6 pt-24 scrollbar-hide">
           <TabsContent
             value="overview"
             className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-300"
