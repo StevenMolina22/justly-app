@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, RefreshCw, User, Activity } from "lucide-react";
+import { Plus, RefreshCw, User, Activity, Send } from "lucide-react";
+import { SendNativeDialog } from "./SendNativeDialog";
 
 interface ContractInfo {
   count: string;
@@ -26,6 +27,7 @@ export const GlobalStateCard: React.FC<GlobalStateCardProps> = ({
   onSelectId,
 }) => {
   const router = useRouter();
+  const [isSendNativeOpen, setIsSendNativeOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-6">
@@ -64,6 +66,15 @@ export const GlobalStateCard: React.FC<GlobalStateCardProps> = ({
               <Plus className="w-3 h-3" />
             )}
             Quick Create
+          </button>
+
+          {/* 3. Send Native Button */}
+          <button
+            onClick={() => setIsSendNativeOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-[#1b1c23] rounded-xl font-bold text-xs hover:bg-gray-50 transition-colors shadow-sm active:scale-95"
+          >
+            <Send className="w-3 h-3" />
+            Send Native
           </button>
         </div>
       </div>
@@ -104,6 +115,12 @@ export const GlobalStateCard: React.FC<GlobalStateCardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Dialogs */}
+      <SendNativeDialog
+        isOpen={isSendNativeOpen}
+        onClose={() => setIsSendNativeOpen(false)}
+      />
     </div>
   );
 };

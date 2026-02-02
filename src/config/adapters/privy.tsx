@@ -66,4 +66,3 @@ export function PrivyAuthAdapter({ children }: { children: ReactNode }) {
     </AuthStrategyProvider>
   );
 }
-
