@@ -72,7 +72,7 @@ export const SendNativeDialog: React.FC<SendNativeDialogProps> = ({
             <div className="flex-1 bg-black rounded-2xl overflow-hidden relative border border-gray-100 shadow-inner">
               <Scanner
                 onScan={(detectedCodes) =>
-                  handleScan(detectedCodes[0].rawValue)
+                  detectedCodes.length > 0 && handleScan(detectedCodes[0].rawValue)
                 }
                 components={{
                   torch: false,
