@@ -4,9 +4,9 @@ export enum Tenant {
   BEEXO = "beexo", // Beexo Strategy (MiniApp)
 }
 
+const PRIVY_SUBDOMAINS = ["frame.", "privy.", "app."];
+const BASE_SUBDOMAINS = ["base.", "web."];
 const BEEXO_SUBDOMAINS = ["beexo.", "mini."];
-const PRIVY_SUBDOMAINS = ["frame.", "privy."];
-const BASE_SUBDOMAINS = ["base.", "web.", "app."];
 
 export const getTenantFromHost = (host: string | null): Tenant => {
   if (!host) return Tenant.PRIVY;
