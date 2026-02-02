@@ -13,29 +13,26 @@ export default function DisputesExplorerPage() {
   return (
     <div className="flex flex-col flex-1 w-full bg-[#F8F9FC] overflow-hidden">
       {/* 1. Clean Header (No User Balance) */}
-      <div className="pt-4 px-4 pb-2 shrink-0">
-        <DisputeOverviewHeader
-          onBack={() => router.back()}
-          title="Protocol Archive"
-        />
-      </div>
-
-      {/* 2. Search & Filter Bar */}
-      <div className="px-5 py-2 z-10 bg-[#F8F9FC]/95 backdrop-blur-sm shrink-0">
-        <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-          <Search className="w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by ID, Title or Address..."
-            className="flex-1 bg-transparent text-sm font-bold text-[#1b1c23] placeholder:text-gray-300 outline-none"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-            <Filter className="w-4 h-4 text-gray-500" />
-          </button>
+      <DisputeOverviewHeader
+        onBack={() => router.back()}
+        title="Protocol Archive"
+      >
+        <div className="w-full">
+          <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+            <Search className="w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by ID, Title or Address..."
+              className="flex-1 bg-transparent text-sm font-bold text-[#1b1c23] placeholder:text-gray-300 outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+              <Filter className="w-4 h-4 text-gray-500" />
+            </button>
+          </div>
         </div>
-      </div>
+      </DisputeOverviewHeader>
 
       {/* 3. The Full List (including Resolved) */}
       <div className="px-5 pb-2 pt-4 shrink-0">

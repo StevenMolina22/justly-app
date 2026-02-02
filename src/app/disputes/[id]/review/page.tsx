@@ -24,12 +24,10 @@ export default function JurorReviewPage() {
   return (
     <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden">
       {/* 1. Header */}
-      <div className="px-4 pt-4 z-10 bg-[#F8F9FC] shrink-0">
-        <DisputeOverviewHeader
-          onBack={() => router.back()}
-          title="Review Evidence"
-        />
-      </div>
+      <DisputeOverviewHeader
+        onBack={() => router.back()}
+        title="Review Evidence"
+      />
 
       {/* 2. Main Content (The Reusable Component) */}
       <div className="flex-1 overflow-hidden pt-4">

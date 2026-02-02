@@ -57,12 +57,10 @@ export default function SubmitEvidencePage() {
 
   return (
     <div className="flex flex-col flex-1 bg-[#F8F9FC]">
-      <div className="px-4 pt-4">
-        <DisputeOverviewHeader
-          onBack={() => router.back()}
-          title={`Evidence #${id}`}
-        />
-      </div>
+      <DisputeOverviewHeader
+        onBack={() => router.back()}
+        title={`Evidence #${id}`}
+      />
 
       <div className="flex-1 p-6 flex flex-col justify-center items-center gap-6">
         <div className="w-full max-w-sm bg-white rounded-[32px] p-8 text-center shadow-sm border border-gray-100">

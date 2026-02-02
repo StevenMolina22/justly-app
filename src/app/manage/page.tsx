@@ -36,12 +36,10 @@ export default function DisputeManagerPage() {
   return (
     <div className="flex flex-col flex-1 bg-[#F8F9FC] font-manrope">
       {/* Header */}
-      <div className="pt-4 z-10">
-        <DisputeOverviewHeader
-          onBack={() => router.back()}
-          title="Dispute Manager"
-        />
-      </div>
+      <DisputeOverviewHeader
+        onBack={() => router.back()}
+        title="Dispute Manager"
+      />
 
       <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6 flex flex-col">
         {/* Intro */}

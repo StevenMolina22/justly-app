@@ -70,7 +70,6 @@ export default function ExecuteRulingPage() {
       <DisputeOverviewHeader
         onBack={() => router.back()}
         title="Ruling Phase"
-        className="pt-6"
       />
 
       <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col justify-center">

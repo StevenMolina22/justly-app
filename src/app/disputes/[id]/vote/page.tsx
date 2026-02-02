@@ -53,9 +53,7 @@ export default function VotePage() {
   return (
     <div className="flex flex-col flex-1 bg-[#F8F9FC]" {...bindSwipe()}>
       {/* 1. Header */}
-      <div className="flex-none z-10 bg-[#F8F9FC]/80 backdrop-blur-md">
-        <DisputeOverviewHeader onBack={() => router.back()} />
-      </div>
+      <DisputeOverviewHeader onBack={() => router.back()} title="Cast Vote" />
 
       {/* 2. Content */}
       <div className="flex-1 flex flex-col px-6 overflow-y-auto scrollbar-hide relative z-0">

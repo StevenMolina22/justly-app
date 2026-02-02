@@ -58,9 +58,7 @@ export default function PayDisputePage() {
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#8c8fff]/10 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header */}
-      <div className="px-4 pt-2 z-10 flex-none">
-        <DisputeOverviewHeader onBack={handleBack} />
-      </div>
+      <DisputeOverviewHeader onBack={handleBack} title={`Fund #${disputeId}`} />
 
       {/* Main Centered Content */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 pb-4 z-10 animate-in fade-in zoom-in-95 duration-500">

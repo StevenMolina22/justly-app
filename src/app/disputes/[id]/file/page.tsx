@@ -23,12 +23,10 @@ export default function CaseFilePage() {
   return (
     <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden">
       {/* Header */}
-      <div className="px-4 pt-4 z-10 bg-[#F8F9FC] shrink-0">
-        <DisputeOverviewHeader
-          onBack={() => router.back()}
-          title={`Case #${id}`}
-        />
-      </div>
+      <DisputeOverviewHeader
+        onBack={() => router.back()}
+        title={`Case #${id}`}
+      />
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden pt-4">

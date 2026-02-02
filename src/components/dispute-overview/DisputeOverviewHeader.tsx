@@ -6,10 +6,11 @@ import { Home, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DisputeOverviewHeaderProps {
-  onBack: () => void;
-  title?: string;
+  onBack?: () => void;
+  title?: React.ReactNode;
   className?: string;
   children?: React.ReactNode; // Allows injecting content below the nav row (e.g. CategorySelector)
+  rightElement?: React.ReactNode; // Allows overriding the Home button
 }
 
 export const DisputeOverviewHeader: React.FC<DisputeOverviewHeaderProps> = ({
@@ -17,20 +18,23 @@ export const DisputeOverviewHeader: React.FC<DisputeOverviewHeaderProps> = ({
   title,
   className,
   children,
+  rightElement,
 }) => {
   const router = useRouter();
+
+  const handleBack = onBack || (() => router.back());
 
   return (
     <div
       className={cn(
-        "w-full pt-9 px-6 pb-2 flex flex-col gap-6 relative z-50",
+        "w-full pt-8 px-6 pb-2 flex flex-col gap-6 sticky top-0 z-50 bg-[#F8F9FC]/90 backdrop-blur-md",
         className,
       )}
     >
       {/* Top Navigation Row */}
       <div className="flex items-center justify-between w-full relative">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm text-[#1b1c23]"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -42,12 +46,16 @@ export const DisputeOverviewHeader: React.FC<DisputeOverviewHeaderProps> = ({
           </span>
         )}
 
-        <button
-          onClick={() => router.push("/")}
-          className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm text-[#1b1c23]"
-        >
-          <Home className="w-5 h-5" />
-        </button>
+        {rightElement ? (
+          rightElement
+        ) : (
+          <button
+            onClick={() => router.push("/")}
+            className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm text-[#1b1c23]"
+          >
+            <Home className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Optional Children (e.g. Dropdowns, Filters) */}

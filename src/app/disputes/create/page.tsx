@@ -16,6 +16,7 @@ import {
 
 import { useCreateDisputeForm } from "@/hooks/forms/useCreateDisputeForm";
 import { Button } from "@/components/ui/button";
+import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 
 // Direct imports instead of barrel file (better tree-shaking)
 import { WizardProgress } from "@/components/create/WizardProgress";
@@ -103,18 +104,9 @@ export default function CreateDisputePage() {
   return (
     <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden relative">
       {/* --- HEADER --- */}
-      <div className="pt-8 px-6 pb-4 bg-white shadow-sm z-20 flex justify-between items-center">
-        <button
-          onClick={handleBack}
-          disabled={isProcessing}
-          className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors border border-gray-100"
-        >
-          <ArrowLeft className="w-5 h-5 text-[#1b1c23]" />
-        </button>
-        {/* Progress Dots */}
+      <DisputeOverviewHeader onBack={handleBack} title="Create Dispute">
         <WizardProgress currentStep={currentStep} totalSteps={STEPS.length} />
-        <div className="w-10" /> {/* Spacer for centering */}
-      </div>
+      </DisputeOverviewHeader>
 
       {/* --- SCROLLABLE CONTENT --- */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-4">
