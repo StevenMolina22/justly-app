@@ -62,7 +62,7 @@ export default function DisputeOverviewPage() {
     } else if (dispute.status === DISPUTE_STATUS.REVEAL) {
       targetDeadline = dispute.revealDeadline;
     } else {
-      return "Pending";
+      return dispute.deadlineLabel ?? "Pending";
     }
 
     // Use the state variable 'now' instead of calling Date.now()
