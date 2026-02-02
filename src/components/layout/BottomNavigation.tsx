@@ -8,18 +8,9 @@ import { cn } from "@/lib/utils";
 export const BottomNavigation = () => {
   const pathname = usePathname();
 
-  // 1. Precise Hiding Logic
-  // Hide nav on focused action flows where user needs to complete a task
-  const hiddenPaths = [
-    /^\/disputes\/\d+\/vote$/, // Voting flow
-    /^\/disputes\/\d+\/reveal$/, // Reveal flow
-    /^\/disputes\/\d+\/pay$/, // Payment flow
-    /^\/disputes\/\d+\/evidence\/submit$/, // Evidence upload
-    /^\/disputes\/create$/, // Dispute creation wizard
-    /^\/juror\/assign$/, // Juror assignment
-    /^\/juror\/stake$/, // Staking flow
-    /^\/juror\/assigned\/\d+$/, // Assignment confirmation
-  ];
+  // Precise Hiding Logic (disabled for now so the nav renders everywhere)
+  // We keep the placeholder array for future tenant-specific hides.
+  const hiddenPaths: RegExp[] = [];
 
   const shouldHide = hiddenPaths.some((pattern) =>
     pattern.test(pathname || ""),
