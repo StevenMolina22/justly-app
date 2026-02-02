@@ -1,14 +1,15 @@
 export enum Tenant {
-  WEB = "web", // Coinbase Strategy (Main App)
+  PRIVY = "privy", // Privy Strategy (Default)
+  BASE = "base", // Base Strategy (Coinbase)
   BEEXO = "beexo", // Beexo Strategy (MiniApp)
-  PRIVY = "privy", // Privy Strategy (Frames / Fallback)
 }
 
 const BEEXO_SUBDOMAINS = ["beexo.", "mini."];
 const PRIVY_SUBDOMAINS = ["frame.", "privy."];
+const BASE_SUBDOMAINS = ["base.", "web.", "app."];
 
 export const getTenantFromHost = (host: string | null): Tenant => {
-  if (!host) return Tenant.WEB;
+  if (!host) return Tenant.PRIVY;
 
   const hostname = host.split(":")[0];
 
@@ -16,11 +17,16 @@ export const getTenantFromHost = (host: string | null): Tenant => {
     return Tenant.BEEXO;
   }
 
-  // Example: Use Privy for specific subdomains
+  // Use Base for specific subdomains
+  if (BASE_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
+    return Tenant.BASE;
+  }
+
+  // Use Privy for specific subdomains
   if (PRIVY_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
     return Tenant.PRIVY;
   }
 
-  // Default remains WEB (Coinbase)
-  return Tenant.WEB;
+  // Default is PRIVY
+  return Tenant.PRIVY;
 };
