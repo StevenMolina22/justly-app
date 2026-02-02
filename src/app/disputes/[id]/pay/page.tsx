@@ -112,7 +112,7 @@ export default function PayDisputePage() {
       </div>
 
       {/* Fixed Bottom Action Area */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 flex flex-col items-center gap-2 pb-8 pt-6 bg-gradient-to-t from-[#F8F9FC] via-[#F8F9FC] to-transparent">
+        <div className="fixed bottom-[64px] left-0 right-0 z-20 flex flex-col items-center gap-2 pb-8 pt-6 bg-gradient-to-t from-[#F8F9FC] via-[#F8F9FC] to-transparent">
         {/* Swipe Button */}
         <div className="mt-2">
           {isPaying ? (

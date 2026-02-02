@@ -39,7 +39,7 @@ export default function NotFound() {
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
           <Link
-            href="/disputes"
+            href="/"
             className="w-full py-4 bg-[#1b1c23] text-white rounded-2xl font-bold text-sm shadow-xl shadow-gray-200 hover:bg-[#2c2d33] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             <Home className="w-4 h-4" />

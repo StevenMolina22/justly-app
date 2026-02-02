@@ -13,7 +13,6 @@ import {
   FileText,
   ArrowRight,
   Scale,
-  Gavel,
   Coins,
   BookOpen,
 } from "lucide-react";
@@ -29,7 +28,6 @@ export default function DisputeOverviewPage() {
 
   const handleBack = () => router.back();
   const handleStartReview = () => router.push(`/disputes/${disputeId}/review`);
-  const handleOpenCaseFile = () => router.push(`/disputes/${disputeId}/review`);
 
   const bindSwipe = usePageSwipe({
     onSwipeLeft: handleStartReview,
@@ -260,7 +258,7 @@ export default function DisputeOverviewPage() {
       {/* 4. Sticky Footer CTA */}
       <div className="shrink-0 p-6 pt-2 bg-gradient-to-t from-white via-white/95 to-transparent z-20">
         <button
-          onClick={handleOpenCaseFile}
+          onClick={handleStartReview}
           // Canonical: rounded-[20px] -> rounded-2xl
           className="group w-full py-4 bg-[#1b1c23] text-white rounded-2xl font-manrope font-bold text-base flex items-center justify-center gap-2 shadow-xl shadow-gray-200 hover:bg-[#2c2d33] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 relative overflow-hidden"
         >
