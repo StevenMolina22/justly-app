@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface DisputeOverviewHeaderProps {
   onBack?: () => void;
-  title?: string;
+  title?: React.ReactNode;
   className?: string;
   children?: React.ReactNode; // Allows injecting content below the nav row (e.g. CategorySelector)
   rightElement?: React.ReactNode; // Allows overriding the Home button
