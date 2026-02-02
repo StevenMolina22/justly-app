@@ -71,9 +71,12 @@ export const SendNativeDialog: React.FC<SendNativeDialogProps> = ({
 
             <div className="flex-1 bg-black rounded-2xl overflow-hidden relative border border-gray-100 shadow-inner">
               <Scanner
-                onScan={(detectedCodes) =>
-                  detectedCodes.length > 0 && handleScan(detectedCodes[0].rawValue)
-                }
+                onScan={(detectedCodes) => {
+                  if (!detectedCodes || detectedCodes.length === 0) return;
+                  const firstCode = detectedCodes[0];
+                  if (!firstCode?.rawValue) return;
+                  handleScan(firstCode.rawValue);
+                }}
                 components={{
                   torch: false,
                 }}
