@@ -18,9 +18,7 @@ export default function JurorStakePage() {
 
   return (
     <div className="flex flex-col flex-1 bg-[#F8F9FC]">
-      <div className="px-4 pt-4">
-        <DisputeOverviewHeader onBack={() => router.back()} />
-      </div>
+      <DisputeOverviewHeader onBack={() => router.back()} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col justify-center px-5 py-4 overflow-y-auto">

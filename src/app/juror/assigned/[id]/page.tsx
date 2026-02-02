@@ -43,9 +43,7 @@ export default function JurorAssignedPage() {
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#8c8fff]/10 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header */}
-      <div className="px-4 z-10">
-        <DisputeOverviewHeader onBack={() => router.back()} />
-      </div>
+      <DisputeOverviewHeader onBack={() => router.back()} />
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 z-10 animate-in fade-in zoom-in-95 duration-500 pb-20">
         {/* Main Card */}

@@ -123,11 +123,9 @@ export default function DisputeOverviewPage() {
       <div className="absolute -top-36 -left-24 w-72 h-72 bg-[#8c8fff]/10 rounded-full blur-[80px] pointer-events-none" />
 
       {/* 1. Header & Title Section */}
-      {/* Fixed padding/margin to match file page (px-4 instead of px-6) */}
-      <div className="py-2 z-10">
-        <DisputeOverviewHeader onBack={handleBack} />
+      <DisputeOverviewHeader onBack={handleBack} title="Dispute Overview" />
 
-        <div className="mt-6 mx-6 flex flex-col gap-4">
+      <div className="mt-6 mx-6 flex flex-col gap-4 z-10">
           {/* Badges Row */}
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 rounded-full bg-[#8c8fff] text-white text-[10px] font-extrabold uppercase tracking-wide shadow-sm shadow-[#8c8fff]/20">
