@@ -58,14 +58,22 @@ export default function ContextProvider({
       );
       break;
 
-    case Tenant.WEB:
-    default:
+    case Tenant.BASE:
       tenantProvider = (
         <Coinbase.CoinbaseProviderTree initialState={initialState}>
           <Coinbase.CoinbaseAuthAdapter>
             {children}
           </Coinbase.CoinbaseAuthAdapter>
         </Coinbase.CoinbaseProviderTree>
+      );
+      break;
+
+    default:
+      // Default to PRIVY
+      tenantProvider = (
+        <Privy.PrivyProviderTree initialState={initialState}>
+          <Privy.PrivyAuthAdapter>{children}</Privy.PrivyAuthAdapter>
+        </Privy.PrivyProviderTree>
       );
   }
 

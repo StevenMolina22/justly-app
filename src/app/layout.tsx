@@ -56,9 +56,11 @@ export default async function RootLayout({
     case Tenant.BEEXO:
       config = beexoConfig;
       break;
-    case Tenant.WEB:
-    default:
+    case Tenant.BASE:
       config = coinbaseConfig;
+      break;
+    default:
+      config = privyConfig;
       break;
   }
 
