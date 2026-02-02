@@ -21,7 +21,7 @@ export function useSendNative(onSuccess?: () => void) {
       toast.error("Invalid recipient address");
       return;
     }
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || !(parseFloat(amount) > 0)) {
       toast.error("Invalid amount");
       return;
     }
