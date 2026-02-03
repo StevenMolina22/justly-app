@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SelectAmount } from "@/components/category-amount/SelectAmount";
-import { SwipeButton } from "@/components/category-amount/SwipeButton";
+import { SelectAmount } from "@/components/SelectAmount";
+import { SwipeButton } from "@/components/SwipeButton";
 import { AlertCircle } from "lucide-react";
 import { FinancialProjection } from "@/components/juror/FinancialProjection";
 import { useHeader } from "@/lib/hooks/useHeader";
@@ -26,7 +26,7 @@ export default function JurorStakePage() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col justify-center px-5 py-4 overflow-y-auto">
         {/* SINGLE UNIFIED CARD */}
-        <div className="w-full bg-white rounded-4xl p-6 shadow-[0px_20px_40px_-10px_rgba(27,28,35,0.05)] border border-white/50 relative overflow-hidden">
+        <div className="w-full bg-white rounded-4xl p-6 shadow-[0px_20px_40px_-10px_rgba(27,28,35,0.05)] border border-gray-200 relative overflow-hidden">
           {/* Ambient Background Glow (Justice Purple) */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-75 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#8c8fff]/10 via-transparent to-transparent pointer-events-none opacity-60" />
 
@@ -85,7 +85,7 @@ export default function JurorStakePage() {
       {/* Bottom Action Area */}
       <div className="px-5 pb-8 pt-2 flex justify-center shrink-0 z-20">
         <SwipeButton onSwipeComplete={handleSwipeComplete}>
-          <span className="font-bold text-[#1b1c23]">Join Jury</span>
+          <span className="font-bold ">Join Jury</span>
         </SwipeButton>
       </div>
     </div>

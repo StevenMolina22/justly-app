@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { User, Coins } from "lucide-react";
 
-import { SwipeButton } from "@/components/category-amount/SwipeButton";
+import { SwipeButton } from "@/components/SwipeButton";
 import { usePayDispute } from "@/hooks/actions/usePayDispute";
 import { useGetDispute } from "@/hooks/disputes/useGetDispute";
 import { useHeader } from "@/lib/hooks/useHeader";
@@ -41,7 +41,7 @@ export default function PayDisputePage() {
     if (success) {
       // Add propagation delay to allow RPC indexing
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      
+
       refetch(); // Refresh local state
       router.refresh(); // Refresh the page data
       router.push("/profile");

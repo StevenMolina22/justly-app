@@ -7,7 +7,6 @@ import {
   Filter,
   Check,
   XCircle,
-  Sparkles,
 } from "lucide-react";
 import {
   Popover,
@@ -196,36 +195,6 @@ export const DisputeListView: React.FC<Props> = ({
           filteredDisputes.map((d) => <DisputeCard key={d.id} dispute={d} />)
         )}
       </div>
-
-      <button
-        onClick={onEarnClick}
-        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 group"
-      >
-        <div
-          className="
-          relative flex items-center gap-3 px-6 py-3.5
-          bg-[#1b1c23] rounded-full
-          border border-white/10
-          shadow-[0_10px_40px_-10px_rgba(27,28,35,0.4)]
-          hover:shadow-[0_20px_40px_-10px_rgba(140,143,255,0.3)]
-          hover:-translate-y-1 active:scale-95
-          transition-all duration-300 ease-out
-        "
-        >
-          {/* Animated Gradient Background Effect (Optional subtle shine) */}
-          <div className="absolute inset-0 rounded-full overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-          </div>
-
-          {/* Icon - Switched to Brand Purple or Money Green based on preference */}
-          <Sparkles className="w-4 h-4 text-[#8c8fff] fill-[#8c8fff]/20" />
-
-          {/* Text - Single Line, Bold, Clean */}
-          <span className="text-white font-manrope font-semibold tracking-wide pr-1">
-            Start Earning
-          </span>
-        </div>
-      </button>
     </div>
   );
 };
