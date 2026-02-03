@@ -6,9 +6,9 @@ import { useWriteContract, usePublicClient } from "wagmi";
 import { uploadFileToIPFS } from "@/util/ipfs";
 import { SLICE_ABI } from "@/config/contracts";
 import { useContracts } from "@/hooks/core/useContracts";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { toast } from "sonner";
 import { UploadCloud, Loader2, ArrowRight } from "lucide-react";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function SubmitEvidencePage() {
   const router = useRouter();
@@ -19,6 +19,11 @@ export default function SubmitEvidencePage() {
 
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Configure header
+  useHeader({
+    title: `Evidence #${id}`,
+  });
 
   const handleSubmit = async () => {
     if (!file) return toast.error("Please select a file");
@@ -56,12 +61,7 @@ export default function SubmitEvidencePage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC]">
-      <DisputeOverviewHeader
-        onBack={() => router.back()}
-        title={`Evidence #${id}`}
-      />
-
+    <div className="flex flex-col flex-1">
       <div className="flex-1 p-6 flex flex-col justify-center items-center gap-6">
         <div className="w-full max-w-sm bg-white rounded-[32px] p-8 text-center shadow-sm border border-gray-100">
           <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -5,23 +5,26 @@ import { useRouter } from "next/navigation";
 import { SelectAmount } from "@/components/category-amount/SelectAmount";
 import { SwipeButton } from "@/components/category-amount/SwipeButton";
 import { AlertCircle } from "lucide-react";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { FinancialProjection } from "@/components/juror/FinancialProjection";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function JurorStakePage() {
   const router = useRouter();
   const [selectedAmount, setSelectedAmount] = useState<number>(5);
+
+  // Configure header (no title for minimal look)
+  useHeader({
+    title: undefined,
+  });
 
   const handleSwipeComplete = () => {
     router.push(`/juror/assign?amount=${selectedAmount.toString()}`);
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative">
-      <DisputeOverviewHeader onBack={() => router.back()} />
-
+    <div className="flex flex-col flex-1 relative">
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col justify-center px-5 py-4 overflow-y-auto pt-24">
+      <div className="flex-1 flex flex-col justify-center px-5 py-4 overflow-y-auto">
         {/* SINGLE UNIFIED CARD */}
         <div className="w-full bg-white rounded-4xl p-6 shadow-[0px_20px_40px_-10px_rgba(27,28,35,0.05)] border border-white/50 relative overflow-hidden">
           {/* Ambient Background Glow (Justice Purple) */}

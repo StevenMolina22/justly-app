@@ -56,7 +56,7 @@ export const BalanceCard: React.FC = () => {
 
   return (
     <>
-      <div className="relative bg-[#1b1c23] rounded-[21px] p-6 my-6 mx-4 w-auto min-h-28 flex flex-row justify-between items-end text-white box-border shadow-xl shadow-gray-200/20">
+      <div className="relative bg-[#1b1c23] rounded-[21px] p-6 w-auto min-h-28 flex flex-row justify-between items-end text-white box-border shadow-xl shadow-gray-200/20">
         {/* Top Right Refresh Button */}
         <button
           onClick={() => refetch()}

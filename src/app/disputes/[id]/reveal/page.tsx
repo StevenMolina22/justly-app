@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { RefreshCw, Clock, Lock, Gavel, CheckCircle2 } from "lucide-react";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { DisputeCandidateCard } from "@/components/disputes/DisputeCandidateCard";
 import { useReveal } from "@/hooks/voting/useReveal";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { useDisputeParties } from "@/hooks/disputes/useDisputeParties";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function RevealPage() {
   const router = useRouter();
@@ -24,6 +24,11 @@ export default function RevealPage() {
 
   const bindSwipe = usePageSwipe({
     onSwipeRight: () => router.push(`/disputes/${disputeId}/vote`),
+  });
+
+  // Configure header
+  useHeader({
+    title: "Reveal Vote",
   });
 
   const handleRevealClick = async () => {
@@ -43,12 +48,9 @@ export default function RevealPage() {
   const votedParty = localVote === 1 ? parties.claimer : parties.defender;
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative" {...bindSwipe()}>
-      {/* 1. Header */}
-      <DisputeOverviewHeader onBack={() => router.back()} title="Reveal Vote" />
-
+    <div className="flex flex-col flex-1 relative" {...bindSwipe()}>
       {/* 2. Content Area */}
-      <div className="flex-1 flex flex-col px-6 overflow-y-auto scrollbar-hide relative z-0 pt-24">
+      <div className="flex-1 flex flex-col px-6 scrollbar-hide relative z-0">
         <div className="flex-1 flex flex-col justify-center w-full max-w-sm mx-auto pb-24 pt-4">
           {/* STATE 1: TOO EARLY (Locked) */}
           {status.isTooEarly && (
@@ -140,7 +142,7 @@ export default function RevealPage() {
 
       {/* 3. Footer Action */}
       {status.isRevealOpen && (
-        <div className="fixed bottom-[64px] left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
+        <div className="shrink-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
           <div className="w-full max-w-sm flex flex-col gap-5">
             <div className="mb-1">
               <PaginationDots currentIndex={3} total={4} />
@@ -175,7 +177,7 @@ export default function RevealPage() {
 
       {/* Dots for other states */}
       {!status.isRevealOpen && (
-        <div className="fixed bottom-8 left-0 right-0 z-20">
+        <div className="shrink-0 pb-8 z-20">
           <PaginationDots currentIndex={3} total={4} />
         </div>
       )}

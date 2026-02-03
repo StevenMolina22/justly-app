@@ -10,7 +10,7 @@ import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { Loader2, Wallet, Trophy, Coins, Gavel, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function ExecuteRulingPage() {
   const router = useRouter();
@@ -39,6 +39,11 @@ export default function ExecuteRulingPage() {
     onSwipeRight: () => router.back(),
   });
 
+  // Configure header
+  useHeader({
+    title: "Ruling Phase",
+  });
+
   const handleExecute = async () => {
     if (!dispute) return;
     if (dispute.status !== 2) {
@@ -63,16 +68,10 @@ export default function ExecuteRulingPage() {
   return (
       <div
       ref={containerRef}
-      className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden font-manrope"
+      className="flex flex-col flex-1 relative overflow-hidden font-manrope"
       {...bindSwipe()}
     >
-      {/* 1. Header (Transparent & Clean) */}
-      <DisputeOverviewHeader
-        onBack={() => router.back()}
-        title="Ruling Phase"
-      />
-
-      <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col justify-center pt-24">
+      <div className="flex-1 px-6 pb-4 flex flex-col justify-center">
         {/* 2. Hero Section: The "Bag" */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-6">

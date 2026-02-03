@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAssignDispute } from "@/hooks/actions/useAssignDispute";
 import { Shuffle, Loader2, AlertCircle, Scale } from "lucide-react";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 import { usePublicClient, useChainId } from "wagmi";
 import { SLICE_ABI, getContractsForChain } from "@/config/contracts";
@@ -19,6 +19,11 @@ export default function JurorAssignPage() {
   const { sliceContract } = getContractsForChain(chainId);
 
   const { drawDispute, isLoading: isTxLoading, isReady } = useAssignDispute();
+
+  // Configure header (minimal)
+  useHeader({
+    title: undefined,
+  });
 
   // State
   const [hasDrafted, setHasDrafted] = useState(false);
@@ -105,8 +110,6 @@ export default function JurorAssignPage() {
 
   return (
     <div className="flex flex-col flex-1 bg-gray-50">
-      <DisputeOverviewHeader onBack={() => router.back()} />
-
       <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center p-4">
         {/* SCENARIO 1: NO DISPUTES AVAILABLE */}
         {noDisputesAvailable ? (

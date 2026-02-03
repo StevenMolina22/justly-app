@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { useGetDispute } from "@/hooks/disputes/useGetDispute";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { shortenAddress } from "@/util/wallet";
 import { DISPUTE_STATUS } from "@/config/app";
+import { useHeader } from "@/lib/hooks/useHeader";
 import {
   Loader2,
   Clock,
@@ -31,6 +31,11 @@ export default function DisputeOverviewPage() {
 
   const bindSwipe = usePageSwipe({
     onSwipeLeft: handleStartReview,
+  });
+
+  // Configure header
+  useHeader({
+    title: "Dispute Overview",
   });
 
   // Calculate winner logic
@@ -108,7 +113,7 @@ export default function DisputeOverviewPage() {
 
   if (isLoading || !displayDispute) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-[#F8F9FC]">
+      <div className="flex flex-1 items-center justify-center">
         <Loader2 className="animate-spin text-[#8c8fff] w-8 h-8" />
       </div>
     );
@@ -116,16 +121,13 @@ export default function DisputeOverviewPage() {
 
   return (
     <div
-      className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden touch-none"
+      className="flex flex-col flex-1 relative overflow-hidden touch-none"
       {...bindSwipe()}
     >
       {/* Background Decorative blob */}
       <div className="absolute -top-36 -left-24 w-72 h-72 bg-[#8c8fff]/10 rounded-full blur-[80px] pointer-events-none" />
 
-      {/* 1. Header & Title Section */}
-      <DisputeOverviewHeader onBack={handleBack} title="Dispute Overview" />
-
-      <div className="mt-6 mx-6 flex flex-col gap-4 z-10 pt-24">
+      <div className="mt-6 mx-6 flex flex-col gap-4 z-10">
         {/* Badges Row */}
         <div className="flex items-center gap-2">
           <span className="px-3 py-1 rounded-full bg-[#8c8fff] text-white text-[10px] font-extrabold uppercase tracking-wide shadow-sm shadow-[#8c8fff]/20">

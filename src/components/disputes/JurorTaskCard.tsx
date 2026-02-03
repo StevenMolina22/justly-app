@@ -67,7 +67,7 @@ export function JurorTaskCard({ task, index, onAction }: JurorTaskCardProps) {
           state === "VOTE_PENDING"
             ? "bg-[#8c8fff]"
             : state === "REVEAL_PENDING"
-              ? "bg-[#1b1c23]"
+              ? "bg-[#8c8fff]"
               : state === "READY_TO_EXECUTE"
                 ? "bg-[#8c8fff]"
                 : "bg-gray-300"

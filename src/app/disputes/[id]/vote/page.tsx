@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { RefreshCw, Scale, Home, Eye, ArrowRight, Lock } from "lucide-react";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { DisputeCandidateCard } from "@/components/disputes/DisputeCandidateCard";
@@ -11,6 +10,7 @@ import { VsBadge } from "@/components/disputes/VsBadge";
 import { useVote } from "@/hooks/voting/useVote";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { useDisputeParties } from "@/hooks/disputes/useDisputeParties";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function VotePage() {
   const router = useRouter();
@@ -37,6 +37,11 @@ export default function VotePage() {
       router.push(`/disputes/${disputeId}/evidence/defendant`),
   });
 
+  // Configure header
+  useHeader({
+    title: "Cast Vote",
+  });
+
   const onCommitClick = async () => {
     const success = await handleCommit();
     if (success) {
@@ -51,12 +56,9 @@ export default function VotePage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative" {...bindSwipe()}>
-      {/* 1. Header */}
-      <DisputeOverviewHeader onBack={() => router.back()} title="Cast Vote" />
-
+    <div className="flex flex-col flex-1 relative" {...bindSwipe()}>
       {/* 2. Content */}
-      <div className="flex-1 flex flex-col px-6 overflow-y-auto scrollbar-hide relative z-0 pt-24">
+      <div className="flex-1 flex flex-col px-6 scrollbar-hide relative z-0">
         {/* - Removed min-h-[500px] to prevent top-alignment on small screens
           - Added py-10 to ensure breathing room on short screens
         */}
@@ -142,7 +144,7 @@ export default function VotePage() {
       </div>
 
       {/* 3. Footer Action */}
-      <div className="fixed bottom-[64px] left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
+      <div className="shrink-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
         <div className="w-full max-w-sm flex flex-col gap-5">
           <div className="mb-1">
             <PaginationDots currentIndex={3} total={4} />

@@ -1,9 +1,9 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, User, Users, Settings, Loader2 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
+import { User, Users, Settings, Loader2 } from "lucide-react";
+import { useHeader } from "@/lib/hooks/useHeader";
+import { cn } from "@/lib/utils";
 
 // Loading skeleton for tab content
 const TabLoadingSkeleton = () => (
@@ -37,70 +37,103 @@ const SettingsView = dynamic(
   { loading: () => <TabLoadingSkeleton /> },
 );
 
+type TabValue = "overview" | "contacts" | "settings";
+
+// Custom tab button component (no Radix context needed)
+const TabButton = ({
+  value,
+  activeTab,
+  onSelect,
+  icon: Icon,
+  label,
+}: {
+  value: TabValue;
+  activeTab: TabValue;
+  onSelect: (value: TabValue) => void;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) => (
+  <button
+    onClick={() => onSelect(value)}
+    className={cn(
+      "flex-1 gap-2 rounded-xl py-2.5 flex items-center justify-center transition-all font-bold text-xs",
+      activeTab === value
+        ? "bg-[#1b1c23] text-white shadow-md"
+        : "text-gray-500 hover:text-gray-700"
+    )}
+  >
+    <Icon className="w-4 h-4" />
+    {label}
+  </button>
+);
+
+// Tab navigation pills component for the header (controlled via props)
+const ProfileTabsList = ({
+  activeTab,
+  onTabChange,
+}: {
+  activeTab: TabValue;
+  onTabChange: (value: TabValue) => void;
+}) => (
+  <div className="w-full bg-white h-auto p-1 rounded-2xl border border-gray-200 shadow-sm flex">
+    <TabButton
+      value="overview"
+      activeTab={activeTab}
+      onSelect={onTabChange}
+      icon={User}
+      label="Overview"
+    />
+    <TabButton
+      value="contacts"
+      activeTab={activeTab}
+      onSelect={onTabChange}
+      icon={Users}
+      label="Contacts"
+    />
+    <TabButton
+      value="settings"
+      activeTab={activeTab}
+      onSelect={onTabChange}
+      icon={Settings}
+      label="Settings"
+    />
+  </div>
+);
+
 export default function ProfilePage() {
-  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<TabValue>("overview");
+
+  // Configure the header via the hook
+  useHeader({
+    title: "My Profile",
+    showBack: false,
+    children: (
+      <ProfileTabsList activeTab={activeTab} onTabChange={setActiveTab} />
+    ),
+  });
 
   return (
-    <Tabs
-      defaultValue="overview"
-      className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden relative"
-    >
-      {/* --- Sticky Header --- */}
-      <DisputeOverviewHeader
-        onBack={() => router.push("/disputes")}
-        title="My Profile"
-      >
-        {/* Navigation Pills */}
-        <TabsList className="w-full bg-white h-auto p-1 rounded-2xl border border-gray-200 shadow-sm flex">
-          <TabsTrigger
-            value="overview"
-            className="flex-1 gap-2 rounded-xl py-2.5 data-[state=active]:bg-[#1b1c23] data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-bold text-xs text-gray-500"
-          >
-            <User className="w-4 h-4" />
-            Overview
-          </TabsTrigger>
-
-          <TabsTrigger
-            value="contacts"
-            className="flex-1 gap-2 rounded-xl py-2.5 data-[state=active]:bg-[#1b1c23] data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-bold text-xs text-gray-500"
-          >
-            <Users className="w-4 h-4" />
-            Contacts
-          </TabsTrigger>
-
-          <TabsTrigger
-            value="settings"
-            className="flex-1 gap-2 rounded-xl py-2.5 data-[state=active]:bg-[#1b1c23] data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-bold text-xs text-gray-500"
-          >
-            <Settings className="w-4 h-4" />
-            Settings
-          </TabsTrigger>
-        </TabsList>
-      </DisputeOverviewHeader>
-
+    <div className="flex flex-col flex-1 overflow-hidden">
       {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 pt-24 scrollbar-hide">
-          <TabsContent
-            value="overview"
-            className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-300"
-          >
+      <div className="flex-1 overflow-y-auto px-6 scrollbar-hide">
+        {activeTab === "overview" && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
             <ProfileOverview />
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent
-            value="contacts"
-            className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-300"
-          >
+        {activeTab === "contacts" && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
             <ContactsView />
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent
-            value="settings"
-            className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-300"
-          >
+        {activeTab === "settings" && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
             <SettingsView />
-          </TabsContent>
-        </div>
-    </Tabs>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
