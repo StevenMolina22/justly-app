@@ -16,7 +16,7 @@ export const ContactsView = () => {
   const { address } = useAccount();
   const { contacts, removeContact } = useAddressBook();
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // Modals State
   const [showMyQR, setShowMyQR] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -44,24 +44,24 @@ export const ContactsView = () => {
     <div className="flex flex-col gap-5 pb-20">
       {/* 1. Action Cards */}
       <div className="grid grid-cols-2 gap-3">
-        <button 
+        <button
           onClick={() => setShowMyQR(true)}
           className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors py-6"
         >
           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-1">
             <QrCode className="w-6 h-6" />
           </div>
-          <span className="font-bold text-[#1b1c23] text-sm">My Code</span>
+          <span className="font-semibold text-[#1b1c23]">My Code</span>
         </button>
 
-        <button 
+        <button
           onClick={() => setShowScanner(true)}
           className="bg-[#1b1c23] p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-[#2c2d33] transition-colors py-6 text-white"
         >
           <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-1">
             <ScanLine className="w-6 h-6" />
           </div>
-          <span className="font-bold text-sm">Scan QR</span>
+          <span className="font-semibold">Scan QR</span>
         </button>
       </div>
 
@@ -117,14 +117,14 @@ export const ContactsView = () => {
                     {shortenAddress(c.address)}
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     removeContact(c.address);
                   }}
-                  className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                  className="p-2 text-gray-500 hover:text-red-500 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4 " />
                 </button>
               </div>
             ))}
@@ -158,16 +158,16 @@ export const ContactsView = () => {
       </div>
 
       {/* --- Modals --- */}
-      <MyQRModal 
-        address={address} 
-        isOpen={showMyQR} 
-        onClose={() => setShowMyQR(false)} 
+      <MyQRModal
+        address={address}
+        isOpen={showMyQR}
+        onClose={() => setShowMyQR(false)}
       />
 
-      <ScanContactModal 
-        isOpen={showScanner} 
-        onClose={() => setShowScanner(false)} 
-        onScanSuccess={handleScanSuccess} 
+      <ScanContactModal
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScanSuccess={handleScanSuccess}
       />
 
       <AddScannedContactDialog

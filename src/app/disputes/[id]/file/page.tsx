@@ -28,7 +28,7 @@ export default function CaseFilePage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden pt-4">
+      <div className="flex-1 overflow-hidden">
         <CaseFileView dispute={dispute} />
       </div>
     </div>

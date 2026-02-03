@@ -47,8 +47,10 @@ export function AddContactDialog({
             variant="outline"
             className="w-full h-auto py-4 flex items-center justify-center gap-3 rounded-2xl bg-[#1b1c23] text-white hover:bg-gray-800 border-none shadow-lg transition-all group"
           >
-            <UserPlus className="w-5 h-5" />
-            <span className="font-semibold">Add New Contact</span>
+            <UserPlus className="w-5 h-5 text-white" />
+            <span className="font-semibold text-md text-white">
+              Add New Contact
+            </span>
           </Button>
         ) : (
           <Button
@@ -65,7 +67,8 @@ export function AddContactDialog({
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[425px] rounded-3xl p-6">
+      {/* FIX: Added 'bg-white' explicitly here */}
+      <DialogContent className="sm:max-w-[425px] rounded-3xl p-6 bg-white">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold text-[#1b1c23]">
             New Contact
@@ -76,11 +79,11 @@ export function AddContactDialog({
           {/* 1. Inputs (Moved to Top) */}
           <div className="flex flex-col gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase">
+              <label className="text-xs font-bold text-gray-800 uppercase">
                 Alias Name
               </label>
               <input
-                className="w-full p-3 bg-gray-50 rounded-xl font-bold text-[#1b1c23] outline-none focus:ring-2 focus:ring-[#8c8fff]/20 border border-gray-100 focus:border-[#8c8fff]"
+                className="w-full p-3 bg-gray-50 rounded-xl font-semibold text-gray-600 outline-none focus:ring-2 focus:ring-[#8c8fff]/20 border border-gray-100 focus:border-[#8c8fff]"
                 placeholder="e.g. Alice (DAO)"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -88,7 +91,7 @@ export function AddContactDialog({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase">
+              <label className="text-xs font-bold text-gray-800 uppercase">
                 Wallet Address
               </label>
               <input
@@ -148,7 +151,7 @@ export function AddContactDialog({
           <Button
             onClick={handleSave}
             disabled={!name || !isValidAddress}
-            className="w-full py-6 rounded-xl font-bold bg-[#1b1c23] text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-6 text-md rounded-xl font-semibold bg-[#1b1c23] text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <Save className="w-4 h-4" />
             Save Contact

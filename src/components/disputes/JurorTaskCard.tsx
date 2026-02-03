@@ -54,7 +54,7 @@ export function JurorTaskCard({ task, index, onAction }: JurorTaskCardProps) {
   return (
     <div
       onClick={() => !isWaiting && onAction(task, state)}
-      className={`group relative bg-white rounded-[28px] p-1 shadow-[0_4px_25px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 animate-in slide-in-from-bottom-4 fade-in fill-mode-forwards ${
+      className={`group relative bg-white rounded-[28px] border border-gray-200 p-1 shadow-[0_4px_25px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 animate-in slide-in-from-bottom-4 fade-in fill-mode-forwards ${
         isWaiting
           ? "opacity-75 cursor-default"
           : "hover:shadow-[0_8px_35px_-5px_rgba(140,143,255,0.15)] cursor-pointer active:scale-[0.98]"

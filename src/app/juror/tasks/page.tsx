@@ -114,7 +114,7 @@ export default function JurorTasksPage() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-5 pb-10 pt-4">
+          <div className="flex flex-col gap-5 pb-10">
             {tasks.map((task, index) => (
               <JurorTaskCard
                 key={task.id}

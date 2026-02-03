@@ -15,7 +15,7 @@ export default function DisputesPage() {
     <div className="flex flex-col h-full w-full">
       {/* Header is now handled by AppShell via TopNavigation */}
 
-      <div className="px-5 pt-2">
+      <div className="px-5">
         <BalanceCard />
       </div>
 
