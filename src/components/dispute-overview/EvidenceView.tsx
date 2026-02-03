@@ -3,7 +3,6 @@
 import React, { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
-import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { useEvidence, EvidenceRole } from "@/hooks/evidence/useEvidence";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import {
@@ -361,15 +360,10 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
       {/* --- 3. NAVIGATION DOCK --- */}
       <div className="flex-none p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20">
         <div className="relative bg-white rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-100 p-2 flex items-center justify-between min-h-[72px]">
-          {/* 1. ABSOLUTE CENTERED DOTS */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <PaginationDots currentIndex={pageIndex} total={4} />
-          </div>
-
-          {/* 2. BACK BUTTON (Left) */}
+          {/* BACK BUTTON (Left) */}
           <button
             onClick={() => router.push(prevPath)}
-            className="relative z-10 flex items-center gap-3 px-2 py-2 pr-4 rounded-[18px] hover:bg-gray-50 active:bg-gray-100 transition-all group"
+            className="flex items-center gap-3 px-2 py-2 pr-4 rounded-[18px] hover:bg-gray-50 active:bg-gray-100 transition-all group"
           >
             <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm border border-transparent group-hover:border-gray-100 transition-all">
               <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-[#1b1c23]" />
@@ -379,10 +373,10 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
             </span>
           </button>
 
-          {/* 3. NEXT BUTTON (Right) */}
+          {/* NEXT BUTTON (Right) */}
           <button
             onClick={() => router.push(nextPath)}
-            className="relative z-10 flex items-center gap-3 px-2 py-2 pl-4 rounded-[18px] hover:bg-gray-50 active:bg-gray-100 transition-all group"
+            className="flex items-center gap-3 px-2 py-2 pl-4 rounded-[18px] hover:bg-gray-50 active:bg-gray-100 transition-all group"
           >
             <span className="text-xs font-bold text-gray-600 group-hover:text-[#1b1c23] hidden sm:block">
               Next

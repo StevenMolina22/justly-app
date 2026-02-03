@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { useGetDispute } from "@/hooks/disputes/useGetDispute";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { shortenAddress } from "@/util/wallet";
@@ -266,10 +265,6 @@ export default function DisputeOverviewPage() {
           Browse Evidence
           <ArrowRight className="w-5 h-5 opacity-70 group-hover:translate-x-1 transition-transform" />
         </button>
-
-        <div className="mt-4">
-          <PaginationDots currentIndex={0} total={4} />
-        </div>
       </div>
     </div>
   );

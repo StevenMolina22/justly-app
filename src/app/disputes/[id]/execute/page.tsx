@@ -9,7 +9,6 @@ import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { Loader2, Wallet, Trophy, Coins, Gavel, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function ExecuteRulingPage() {
@@ -187,12 +186,7 @@ export default function ExecuteRulingPage() {
 
       {/* 4. Floating Action Bar */}
       <div className="shrink-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent">
-        <div className="max-w-sm mx-auto flex flex-col gap-4">
-          {/* Step Dots (Optional context) */}
-          <div className="flex justify-center mb-2">
-            <PaginationDots currentIndex={3} total={4} />
-          </div>
-
+        <div className="max-w-sm mx-auto">
           {isFinished ? (
             <button
               onClick={() => router.push("/profile")}

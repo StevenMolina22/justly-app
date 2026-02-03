@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetDispute } from "@/hooks/disputes/useGetDispute";
 import { CaseFileView } from "@/components/dispute/CaseFileView";
 import { Loader2, ArrowRight, Gavel } from "lucide-react";
-import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function JurorReviewPage() {
@@ -45,11 +44,6 @@ export default function JurorReviewPage() {
             Proceed to Vote
             <ArrowRight className="w-5 h-5 opacity-70 group-hover:translate-x-1 transition-transform" />
           </button>
-
-          <div className="flex justify-center">
-            {/* Pagination Context: Overview(0) -> Review(1) -> Vote(2) -> Reveal(3) */}
-            <PaginationDots currentIndex={1} total={4} />
-          </div>
         </div>
       </div>
     </div>

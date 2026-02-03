@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { RefreshCw, Scale, Home, Eye, ArrowRight, Lock } from "lucide-react";
-import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { DisputeCandidateCard } from "@/components/disputes/DisputeCandidateCard";
 import { VsBadge } from "@/components/disputes/VsBadge";
@@ -60,9 +59,9 @@ export default function VotePage() {
       {/* 2. Content */}
       <div className="flex-1 flex flex-col px-6 scrollbar-hide relative z-0">
         {/* - Removed min-h-[500px] to prevent top-alignment on small screens
-          - Added py-10 to ensure breathing room on short screens
+          - Balanced vertical padding for proper centering
         */}
-        <div className="flex-1 flex flex-col justify-center w-full max-w-sm mx-auto pb-24 pt-4">
+        <div className="flex-1 flex flex-col justify-center w-full max-w-sm mx-auto pb-6 pt-4">
           {/* Title Section - Centered & Cohesive */}
           <div className="relative mb-8 text-center">
             <h2 className="text-3xl font-black text-[#1b1c23] leading-tight tracking-tight">
@@ -145,11 +144,7 @@ export default function VotePage() {
 
       {/* 3. Footer Action */}
       <div className="shrink-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
-        <div className="w-full max-w-sm flex flex-col gap-5">
-          <div className="mb-1">
-            <PaginationDots currentIndex={3} total={4} />
-          </div>
-
+        <div className="w-full max-w-sm">
           {!hasCommittedLocally ? (
             <button
               onClick={() => void onCommitClick()}

@@ -57,7 +57,7 @@ export const DisputeCard = ({ dispute }: { dispute: DisputeUI }) => {
     if (dispute.status === DISPUTE_STATUS.RESOLVED) {
       router.push(`/disputes/${dispute.id}/execute`);
     } else {
-      router.push(`/disputes/${dispute.id}`);
+      router.push(`/disputes/${dispute.id}/file`);
     }
   };
 

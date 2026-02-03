@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, RefreshCw, Terminal, Search } from "lucide-react";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { formatUnits } from "viem";
 import { useSliceVoting } from "@/hooks/voting/useSliceVoting";
@@ -253,21 +252,7 @@ export default function DebugPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 font-manrope pb-20">
-      {/* Header */}
-      <DisputeOverviewHeader
-        onBack={() => router.back()}
-        title="Debug Console"
-        rightElement={
-          <button
-            onClick={refreshGlobalState}
-            className="w-10 h-10 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors text-[#1b1c23] flex items-center justify-center"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </button>
-        }
-      />
-
+    <div className="flex flex-col flex-1 bg-gray-50 font-manrope">
       <div className="flex-1 p-5 flex flex-col gap-6 overflow-y-auto">
         <GlobalStateCard
           contractInfo={contractInfo}
