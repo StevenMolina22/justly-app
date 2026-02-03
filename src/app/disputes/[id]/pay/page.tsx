@@ -39,6 +39,9 @@ export default function PayDisputePage() {
     const success = await payDispute(disputeId, stakeAmountDisplay);
 
     if (success) {
+      // Add propagation delay to allow RPC indexing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
       refetch(); // Refresh local state
       router.refresh(); // Refresh the page data
       router.push("/profile");

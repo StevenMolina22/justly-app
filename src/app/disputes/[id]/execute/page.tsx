@@ -49,11 +49,22 @@ export default function ExecuteRulingPage() {
       toast.error("Dispute is not ready for execution yet.");
       return;
     }
+    
+    // 1. Execute transaction
     const success = await executeRuling(disputeId);
+    
     if (success) {
+      // 2. CRITICAL FIX: Add a delay to allow RPC indexing
+      // 2 seconds is usually enough for standard RPCs to catch up
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+      // 3. Now refetch. The RPC should have the new state (Status 3) by now.
       await refetch();
+      
+      // 4. Update UI
       setShowSuccess(true);
-      // Refresh the page data to reflect the new on-chain state
+      
+      // 5. Refresh server components
       router.refresh();
     }
   };

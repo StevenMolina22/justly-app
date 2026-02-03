@@ -236,11 +236,15 @@ export default function DebugPage() {
   };
 
   const handleExecute = async () => {
-    await executeRuling(targetId);
-    setTimeout(() => {
-      fetchRawDispute();
-      refreshGlobalState();
-    }, 2000);
+    const success = await executeRuling(targetId);
+    
+    if (success) {
+      // Propagation delay is already here (2000ms)
+      setTimeout(() => {
+        fetchRawDispute();
+        refreshGlobalState();
+      }, 2000);
+    }
   };
 
   const handleSelectId = (id: string) => {

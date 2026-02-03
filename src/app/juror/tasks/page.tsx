@@ -60,18 +60,19 @@ export default function JurorTasksPage() {
   useHeader({
     title: "Your Missions",
     showBack: true,
-    rightElement: tasks.length > 0 ? (
-      <div className="bg-[#8c8fff] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg shadow-[#8c8fff]/30">
-        {tasks.length} <span className="ml-1">Pending</span>
-      </div>
-    ) : undefined,
+    rightElement:
+      tasks.length > 0 ? (
+        <div className="bg-[#8c8fff] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg shadow-[#8c8fff]/30">
+          {tasks.length} <span className="ml-1">Pending</span>
+        </div>
+      ) : undefined,
   });
 
   return (
     <div className="flex flex-col flex-1 font-manrope relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#8c8fff]/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="flex-1 px-5 w-full flex flex-col gap-6 relative z-10">
+      <div className="flex-1 px-5 w-full flex flex-col gap-6 relative z-10 overflow-y-auto scrollbar-hide">
         {!address ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 bg-white rounded-[24px] flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
@@ -113,7 +114,7 @@ export default function JurorTasksPage() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-5 pb-10">
+          <div className="flex flex-col gap-5 pb-10 pt-4">
             {tasks.map((task, index) => (
               <JurorTaskCard
                 key={task.id}
