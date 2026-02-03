@@ -10,7 +10,8 @@ export function useExecuteRuling() {
   const publicClient = usePublicClient();
   const [isExecuting, setIsExecuting] = useState(false);
 
-  const executeRuling = async (disputeId: string | number) => {
+  // Return Promise<boolean> for cleaner control flow
+  const executeRuling = async (disputeId: string | number): Promise<boolean> => {
     try {
       setIsExecuting(true);
       console.log(`Executing ruling for dispute #${disputeId}...`);
@@ -24,19 +25,18 @@ export function useExecuteRuling() {
 
       toast.info("Transaction sent. Waiting for confirmation...");
 
-      // Wait for confirmation so the UI can reload the status immediately after
       if (publicClient) {
         await publicClient.waitForTransactionReceipt({ hash });
       }
 
       toast.success("Ruling executed successfully!");
-      return hash;
+      return true; // Explicitly return true on success
     } catch (err: any) {
       console.error("Execution Error:", err);
       const msg =
         err.reason || err.shortMessage || err.message || "Unknown error";
       toast.error(`Execution Failed: ${msg}`);
-      throw err;
+      return false; // Return false on failure
     } finally {
       setIsExecuting(false);
     }
@@ -44,6 +44,6 @@ export function useExecuteRuling() {
 
   return {
     executeRuling,
-    isExecuting, // Matches the original return name (was isExecuting in view_file)
+    isExecuting,
   };
 }

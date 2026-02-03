@@ -12,7 +12,7 @@ import {
   Scale,
   CheckCircle2,
 } from "lucide-react";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function JurorAssignedPage() {
   const router = useRouter();
@@ -24,6 +24,11 @@ export default function JurorAssignedPage() {
     disputeId.toString(),
   );
 
+  // Configure header (minimal)
+  useHeader({
+    title: undefined,
+  });
+
   // Prefer myStake (user specific) over stake (generic requirement)
   const stakeDisplay = React.useMemo(() => {
     return dispute?.myStake || dispute?.stake || null;
@@ -31,21 +36,16 @@ export default function JurorAssignedPage() {
 
   if (isLoadingDispute) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-[#F8F9FC]">
+      <div className="flex flex-1 items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#8c8fff]" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden">
+    <div className="flex flex-col flex-1 relative overflow-hidden">
       {/* --- Ambient Background Glow (Purple) --- */}
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#8c8fff]/10 rounded-full blur-[100px] pointer-events-none" />
-
-      {/* Header */}
-      <div className="px-4 z-10">
-        <DisputeOverviewHeader onBack={() => router.back()} />
-      </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 z-10 animate-in fade-in zoom-in-95 duration-500 pb-20">
         {/* Main Card */}

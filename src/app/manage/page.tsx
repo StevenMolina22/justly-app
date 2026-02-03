@@ -4,7 +4,6 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { useMyDisputes } from "@/hooks/disputes/useMyDisputes";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import {
   Plus,
   Loader2,
@@ -15,11 +14,17 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { DisputeUI } from "@/util/disputeAdapter";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function DisputeManagerPage() {
   const router = useRouter();
   const { address } = useAccount();
   const { disputes, isLoading } = useMyDisputes();
+
+  // Configure header
+  useHeader({
+    title: "Dispute Manager",
+  });
 
   // Filter: Only show disputes where I am Claimer or Defender
   const myCases = useMemo(() => {
@@ -34,54 +39,46 @@ export default function DisputeManagerPage() {
   const handleCreate = () => router.push("/disputes/create");
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] font-manrope">
-      {/* Header */}
-      <div className="pt-4 z-10">
-        <DisputeOverviewHeader
-          onBack={() => router.back()}
-          title="Dispute Manager"
-        />
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6 flex flex-col">
-        {/* Intro */}
-        <div className="flex items-center justify-between mb-6 shrink-0">
-          <div>
-            <h1 className="text-2xl font-black text-[#1b1c23]">My Cases</h1>
-            <p className="text-sm text-gray-400 font-medium">
-              Manage your active disputes
-            </p>
+    <div className="flex flex-col flex-1 font-manrope relative">
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[#8c8fff]" />
+        </div>
+      ) : myCases.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Briefcase className="w-12 h-12 text-gray-600" />
           </div>
+          <h3 className="text-2xl font-bold text-gray-800">No Cases Found</h3>
+          <p className="text-gray-600 max-w-50">
+            You haven&apos;t created or been added to any disputes yet.
+          </p>
           <button
             onClick={handleCreate}
-            className="w-12 h-12 rounded-full bg-[#1b1c23] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+            className="mt-6 px-6 py-3 bg-[#1b1c23] text-white rounded-2xl font-bold hover:scale-105 active:scale-95 transition-transform shadow-lg"
           >
-            <Plus className="w-6 h-6" />
+            Create your first case
           </button>
         </div>
-
-        {/* Content */}
-        {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-[#8c8fff]" />
-          </div>
-        ) : myCases.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-80">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Briefcase className="w-12 h-12 text-gray-600" />
+      ) : (
+        <div className="flex-1 px-6 pb-4 flex flex-col">
+          {/* Intro */}
+          <div className="flex items-center justify-between mb-6 shrink-0 pt-4">
+            <div>
+              <h1 className="text-2xl font-black text-[#1b1c23]">My Cases</h1>
+              <p className="text-sm text-gray-400 font-medium">
+                Manage your active disputes
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800">No Cases Found</h3>
-            <p className="text-gray-600 max-w-50">
-              You haven&apos;t created or been added to any disputes yet.
-            </p>
             <button
               onClick={handleCreate}
-              className="mt-6 text-[#8c8fff] font-bold hover:underline"
+              className="w-12 h-12 rounded-full bg-[#1b1c23] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
             >
-              Create your first case
+              <Plus className="w-6 h-6" />
             </button>
           </div>
-        ) : (
+
           <div className="flex flex-col gap-4">
             {myCases.map((dispute) => (
               <ManagerCaseCard
@@ -91,8 +88,8 @@ export default function DisputeManagerPage() {
               />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

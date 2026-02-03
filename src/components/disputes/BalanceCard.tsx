@@ -11,8 +11,13 @@ import { SendModal } from "./SendModal";
 import { ReceiveModal } from "./ReceiveModal";
 import { FaucetButton } from "./FaucetButton";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-export const BalanceCard: React.FC = () => {
+interface BalanceCardProps {
+  className?: string;
+}
+
+export const BalanceCard: React.FC<BalanceCardProps> = ({ className }) => {
   const router = useRouter();
   const { address } = useAccount();
 
@@ -56,7 +61,12 @@ export const BalanceCard: React.FC = () => {
 
   return (
     <>
-      <div className="relative bg-[#1b1c23] rounded-[21px] p-6 my-6 mx-4 w-auto min-h-28 flex flex-row justify-between items-end text-white box-border shadow-xl shadow-gray-200/20">
+      <div
+        className={cn(
+          "relative bg-[#1b1c23] rounded-[21px] p-6 w-auto min-h-28 flex flex-row justify-between items-end text-white box-border shadow-xl shadow-gray-200/20",
+          className,
+        )}
+      >
         {/* Top Right Refresh Button */}
         <button
           onClick={() => refetch()}

@@ -9,8 +9,7 @@ import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { Loader2, Wallet, Trophy, Coins, Gavel, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function ExecuteRulingPage() {
   const router = useRouter();
@@ -39,17 +38,33 @@ export default function ExecuteRulingPage() {
     onSwipeRight: () => router.back(),
   });
 
+  // Configure header
+  useHeader({
+    title: "Ruling Phase",
+  });
+
   const handleExecute = async () => {
     if (!dispute) return;
     if (dispute.status !== 2) {
       toast.error("Dispute is not ready for execution yet.");
       return;
     }
+    
+    // 1. Execute transaction
     const success = await executeRuling(disputeId);
+    
     if (success) {
+      // 2. CRITICAL FIX: Add a delay to allow RPC indexing
+      // 2 seconds is usually enough for standard RPCs to catch up
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+      // 3. Now refetch. The RPC should have the new state (Status 3) by now.
       await refetch();
+      
+      // 4. Update UI
       setShowSuccess(true);
-      // Refresh the page data to reflect the new on-chain state
+      
+      // 5. Refresh server components
       router.refresh();
     }
   };
@@ -63,17 +78,10 @@ export default function ExecuteRulingPage() {
   return (
       <div
       ref={containerRef}
-      className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden font-manrope"
+      className="flex flex-col flex-1 relative overflow-hidden font-manrope"
       {...bindSwipe()}
     >
-      {/* 1. Header (Transparent & Clean) */}
-      <DisputeOverviewHeader
-        onBack={() => router.back()}
-        title="Ruling Phase"
-        className="pt-6"
-      />
-
-      <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col justify-center">
+      <div className="flex-1 px-6 pb-4 flex flex-col justify-center">
         {/* 2. Hero Section: The "Bag" */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-6">
@@ -189,12 +197,7 @@ export default function ExecuteRulingPage() {
 
       {/* 4. Floating Action Bar */}
       <div className="shrink-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent">
-        <div className="max-w-sm mx-auto flex flex-col gap-4">
-          {/* Step Dots (Optional context) */}
-          <div className="flex justify-center mb-2">
-            <PaginationDots currentIndex={3} total={4} />
-          </div>
-
+        <div className="max-w-sm mx-auto">
           {isFinished ? (
             <button
               onClick={() => router.push("/profile")}

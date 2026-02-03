@@ -25,10 +25,10 @@ async function waitForIndex(checkFn: () => Promise<boolean>, errorMessage: strin
 async function ensureFunds(ethers: any, usdc: MockUSDC, funder: any, recipient: any) {
   // 1. ETH Check
   const ethBal = await ethers.provider.getBalance(recipient.address);
-  // Fund if less than 0.01 ETH
-  if (ethBal < parseUnits("0.01", 18)) {
+  // Fund if less than 0.00001 ETH
+  if (ethBal < parseUnits("0.00001", 18)) {
     console.log(`    ⛽ Funding ${recipient.address.slice(0, 6)} with ETH...`);
-    await (await funder.sendTransaction({ to: recipient.address, value: parseUnits("0.02", 18) })).wait();
+    await (await funder.sendTransaction({ to: recipient.address, value: parseUnits("0.00002", 18) })).wait();
   }
 
   // 2. USDC Check
@@ -177,7 +177,7 @@ async function main() {
     await (await slice.connect(deployer).payDispute(disputeId)).wait();
 
     console.log("   ... Defender Paying");
-    await (await slice.connect(defenderWallet).payDispute(disputeId)).wait();
+    await (await slice.connect(defenderWallet).payDispute(disputeId, { gasLimit: 300000 })).wait();
 
     console.log(`   ✨ Dispute #${disputeId} -> Status: COMMIT`);
   }

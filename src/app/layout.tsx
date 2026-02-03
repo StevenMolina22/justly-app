@@ -5,8 +5,7 @@ import React from "react";
 import ContextProvider from "./providers";
 import { Geist } from "next/font/google";
 import localFont from "next/font/local";
-import { BottomNavigation } from "@/components/layout/BottomNavigation";
-import { ConsoleOverlay } from "@/components/debug/ConsoleOverlay";
+import { AppShell } from "@/components/layout/AppShell";
 import { getTenantFromHost, Tenant } from "@/config/tenant";
 import { privyConfig } from "@/config/adapters/privy";
 import { beexoConfig } from "@/config/adapters/beexo";
@@ -71,16 +70,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex justify-center min-h-screen bg-gray-100`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex justify-center min-h-screen bg-background text-foreground`}
       >
         {/* Pass tenant so Client Components know which Strategy to load */}
         <ContextProvider tenant={tenant} initialState={initialState}>
-          <div className="w-full max-w-md min-h-screen bg-white shadow-2xl relative flex flex-col pb-24">
-            <div className="flex-1 flex flex-col">{children}</div>
-
-            <BottomNavigation />
-            <ConsoleOverlay />
-          </div>
+          <AppShell>{children}</AppShell>
         </ContextProvider>
       </body>
     </html>

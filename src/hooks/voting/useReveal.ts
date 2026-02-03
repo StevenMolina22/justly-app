@@ -10,7 +10,7 @@ export function useReveal(disputeId: string) {
   const { sliceContract } = useContracts();
 
   const { revealVote, isProcessing, logs } = useSliceVoting();
-  const { dispute } = useGetDispute(disputeId);
+  const { dispute, refetch } = useGetDispute(disputeId);
 
   const [localVote, setLocalVote] = useState<number | null>(null);
   const [hasLocalData, setHasLocalData] = useState(false);
@@ -34,12 +34,26 @@ export function useReveal(disputeId: string) {
     }
   }, [address, disputeId, sliceContract]);
 
+  const handleRevealVote = async () => {
+    const success = await revealVote(disputeId);
+    
+    if (success) {
+      // Add propagation delay to allow RPC indexing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+      // Refetch to get updated state
+      await refetch();
+    }
+    
+    return success;
+  };
+
   return {
     dispute,
     localVote,
     hasLocalData,
     status,
-    revealVote: () => revealVote(disputeId),
+    revealVote: handleRevealVote,
     isProcessing,
     logs,
   };

@@ -60,6 +60,10 @@ export function useVote(disputeId: string) {
     if (success) {
       setHasCommittedLocally(true);
       toast.success("Vote committed! Refreshing status...");
+      
+      // Add propagation delay to allow RPC indexing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
       await handleRefresh();
       return true;
     }

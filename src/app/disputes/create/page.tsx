@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   ArrowRight,
   Loader2,
   UploadCloud,
@@ -16,6 +15,7 @@ import {
 
 import { useCreateDisputeForm } from "@/hooks/forms/useCreateDisputeForm";
 import { Button } from "@/components/ui/button";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 // Direct imports instead of barrel file (better tree-shaking)
 import { WizardProgress } from "@/components/create/WizardProgress";
@@ -68,6 +68,12 @@ export default function CreateDisputePage() {
     else router.back();
   };
 
+  // Configure header with progress indicator
+  useHeader({
+    title: "Create Dispute",
+    children: <WizardProgress currentStep={currentStep} totalSteps={STEPS.length} />,
+  });
+
   // --- RENDER CURRENT STEP ---
   const renderStep = () => {
     switch (currentStep) {
@@ -101,23 +107,9 @@ export default function CreateDisputePage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] overflow-hidden relative">
-      {/* --- HEADER --- */}
-      <div className="pt-8 px-6 pb-4 bg-white shadow-sm z-20 flex justify-between items-center">
-        <button
-          onClick={handleBack}
-          disabled={isProcessing}
-          className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors border border-gray-100"
-        >
-          <ArrowLeft className="w-5 h-5 text-[#1b1c23]" />
-        </button>
-        {/* Progress Dots */}
-        <WizardProgress currentStep={currentStep} totalSteps={STEPS.length} />
-        <div className="w-10" /> {/* Spacer for centering */}
-      </div>
-
+    <div className="flex flex-col flex-1 overflow-hidden relative">
       {/* --- SCROLLABLE CONTENT --- */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 pb-4">
+      <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
         <div className="flex flex-col gap-2 mb-6">
           <h1 className="text-2xl font-extrabold text-[#1b1c23] tracking-tight">
             {STEPS[currentStep - 1].title}
@@ -131,7 +123,7 @@ export default function CreateDisputePage() {
       </div>
 
       {/* --- FLOATING FOOTER --- */}
-      <div className="absolute bottom-[64px] left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-30">
+      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-30">
         <Button
           onClick={currentStep === 4 ? submit : handleNext}
           disabled={isProcessing}

@@ -5,10 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { User, Coins } from "lucide-react";
 
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { SwipeButton } from "@/components/category-amount/SwipeButton";
 import { usePayDispute } from "@/hooks/actions/usePayDispute";
 import { useGetDispute } from "@/hooks/disputes/useGetDispute";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function PayDisputePage() {
   const router = useRouter();
@@ -22,6 +22,11 @@ export default function PayDisputePage() {
   // Derive stakeAmountDisplay directly from dispute
   const stakeAmountDisplay = dispute?.stake || "Loading...";
 
+  // Configure header
+  useHeader({
+    title: `Fund #${disputeId}`,
+  });
+
   useEffect(() => {
     if (dispute && dispute.status > 0) {
       // Check Status: If status > 0 (Created), payment is already done
@@ -29,15 +34,14 @@ export default function PayDisputePage() {
     }
   }, [dispute, router]);
 
-  const handleBack = () => {
-    router.back();
-  };
-
   const handleSwipeComplete = async () => {
     if (!dispute) return;
     const success = await payDispute(disputeId, stakeAmountDisplay);
 
     if (success) {
+      // Add propagation delay to allow RPC indexing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
       refetch(); // Refresh local state
       router.refresh(); // Refresh the page data
       router.push("/profile");
@@ -53,14 +57,9 @@ export default function PayDisputePage() {
         : "Observer";
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden font-manrope">
+    <div className="flex flex-col flex-1 relative overflow-hidden font-manrope">
       {/* --- Ambient Background Glow --- */}
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#8c8fff]/10 rounded-full blur-[100px] pointer-events-none" />
-
-      {/* Header */}
-      <div className="px-4 pt-2 z-10 flex-none">
-        <DisputeOverviewHeader onBack={handleBack} />
-      </div>
 
       {/* Main Centered Content */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 pb-4 z-10 animate-in fade-in zoom-in-95 duration-500">
@@ -112,7 +111,7 @@ export default function PayDisputePage() {
       </div>
 
       {/* Fixed Bottom Action Area */}
-        <div className="fixed bottom-[64px] left-0 right-0 z-20 flex flex-col items-center gap-2 pb-8 pt-6 bg-gradient-to-t from-[#F8F9FC] via-[#F8F9FC] to-transparent">
+      <div className="shrink-0 z-20 flex flex-col items-center gap-2 pb-8 pt-6 bg-gradient-to-t from-[#F8F9FC] via-[#F8F9FC] to-transparent">
         {/* Swipe Button */}
         <div className="mt-2">
           {isPaying ? (

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, Wallet, CheckCircle2 } from "lucide-react";
+import { Loader2, Wallet, CheckCircle2 } from "lucide-react";
 import { useSliceConnect } from "@/hooks/core/useSliceConnect";
 import { useAccount } from "wagmi";
 import { useMyDisputes } from "@/hooks/disputes/useMyDisputes";
@@ -11,6 +11,7 @@ import {
   type TaskState,
 } from "@/components/disputes/JurorTaskCard";
 import type { DisputeUI } from "@/util/disputeAdapter";
+import { useHeader } from "@/lib/hooks/useHeader";
 
 export default function JurorTasksPage() {
   const router = useRouter();
@@ -55,32 +56,23 @@ export default function JurorTasksPage() {
     // WAITING_FOR_OTHERS has no action
   };
 
+  // Configure header with dynamic badge
+  useHeader({
+    title: "Your Missions",
+    showBack: true,
+    rightElement:
+      tasks.length > 0 ? (
+        <div className="bg-[#8c8fff] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg shadow-[#8c8fff]/30">
+          {tasks.length} <span className="ml-1">Pending</span>
+        </div>
+      ) : undefined,
+  });
+
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F9FC] font-manrope pb-4 relative overflow-hidden">
+    <div className="flex flex-col flex-1 font-manrope relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#8c8fff]/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="pt-10 px-6 pb-6 bg-[#F8F9FC]/90 backdrop-blur-md z-20 sticky top-0 border-b border-gray-100/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all shadow-sm active:scale-95 text-[#1b1c23]"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="font-manrope text-2xl  font-black text-[#1b1c23] tracking-tight">
-              Your Missions
-            </h1>
-          </div>
-          {tasks.length > 0 && (
-            <div className="bg-[#8c8fff] text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg shadow-[#8c8fff]/30">
-              {tasks.length} <span className="ml-1">Pending</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex-1 px-5 w-full flex flex-col gap-6 mt-2 relative z-10 overflow-y-auto">
+      <div className="flex-1 px-5 w-full flex flex-col gap-6 relative z-10 overflow-y-auto scrollbar-hide">
         {!address ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 bg-white rounded-[24px] flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">

@@ -1,12 +1,11 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
-import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { useGetDispute } from "@/hooks/disputes/useGetDispute";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { shortenAddress } from "@/util/wallet";
 import { DISPUTE_STATUS } from "@/config/app";
+import { useHeader } from "@/lib/hooks/useHeader";
 import {
   Loader2,
   Clock,
@@ -31,6 +30,11 @@ export default function DisputeOverviewPage() {
 
   const bindSwipe = usePageSwipe({
     onSwipeLeft: handleStartReview,
+  });
+
+  // Configure header
+  useHeader({
+    title: "Dispute Overview",
   });
 
   // Calculate winner logic
@@ -60,9 +64,9 @@ export default function DisputeOverviewPage() {
     if (dispute.status === DISPUTE_STATUS.COMMIT) {
       targetDeadline = dispute.commitDeadline || 0;
     } else if (dispute.status === DISPUTE_STATUS.REVEAL) {
-      targetDeadline = dispute.revealDeadline || 0;
+      targetDeadline = dispute.revealDeadline;
     } else {
-      return dispute.deadlineLabel;
+      return dispute.deadlineLabel ?? "Pending";
     }
 
     // Use the state variable 'now' instead of calling Date.now()
@@ -108,7 +112,7 @@ export default function DisputeOverviewPage() {
 
   if (isLoading || !displayDispute) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-[#F8F9FC]">
+      <div className="flex flex-1 items-center justify-center">
         <Loader2 className="animate-spin text-[#8c8fff] w-8 h-8" />
       </div>
     );
@@ -116,35 +120,29 @@ export default function DisputeOverviewPage() {
 
   return (
     <div
-      className="flex flex-col flex-1 bg-[#F8F9FC] relative overflow-hidden touch-none"
+      className="flex flex-col flex-1 relative overflow-hidden touch-none"
       {...bindSwipe()}
     >
       {/* Background Decorative blob */}
       <div className="absolute -top-36 -left-24 w-72 h-72 bg-[#8c8fff]/10 rounded-full blur-[80px] pointer-events-none" />
 
-      {/* 1. Header & Title Section */}
-      {/* Fixed padding/margin to match file page (px-4 instead of px-6) */}
-      <div className="py-2 z-10">
-        <DisputeOverviewHeader onBack={handleBack} />
-
-        <div className="mt-6 mx-6 flex flex-col gap-4">
-          {/* Badges Row */}
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-[#8c8fff] text-white text-[10px] font-extrabold uppercase tracking-wide shadow-sm shadow-[#8c8fff]/20">
-              {displayDispute.category}
+      <div className="mt-6 mx-6 flex flex-col gap-4 z-10">
+        {/* Badges Row */}
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full bg-[#8c8fff] text-white text-[10px] font-extrabold uppercase tracking-wide shadow-sm shadow-[#8c8fff]/20">
+            {displayDispute.category}
+          </span>
+          <div className="flex items-center gap-1.5 text-gray-600 bg-white px-3 py-1 rounded-full border border-gray-100 shadow-sm">
+            <Clock className="w-3.5 h-3.5 text-[#8c8fff]" />
+            <span className="text-[10px] font-bold uppercase tracking-wide">
+              {displayDispute.deadlineLabel}
             </span>
-            <div className="flex items-center gap-1.5 text-gray-600 bg-white px-3 py-1 rounded-full border border-gray-100 shadow-sm">
-              <Clock className="w-3.5 h-3.5 text-[#8c8fff]" />
-              <span className="text-[10px] font-bold uppercase tracking-wide">
-                {displayDispute.deadlineLabel}
-              </span>
-            </div>
           </div>
-
-          <h1 className="text-2xl font-manrope font-extrabold text-[#1b1c23] leading-tight tracking-tight">
-            {displayDispute.title}
-          </h1>
         </div>
+
+        <h1 className="text-2xl font-manrope font-extrabold text-[#1b1c23] leading-tight tracking-tight">
+          {displayDispute.title}
+        </h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col gap-6 z-10 scrollbar-hide">
@@ -267,10 +265,6 @@ export default function DisputeOverviewPage() {
           Browse Evidence
           <ArrowRight className="w-5 h-5 opacity-70 group-hover:translate-x-1 transition-transform" />
         </button>
-
-        <div className="mt-4">
-          <PaginationDots currentIndex={0} total={4} />
-        </div>
       </div>
     </div>
   );
