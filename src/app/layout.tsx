@@ -68,7 +68,7 @@ export default async function RootLayout({
   const initialState = cookieToInitialState(config, cookies);
 
   return (
-    <html lang="en">
+    <html lang="en" className="light" style={{ colorScheme: "light" }}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex justify-center min-h-screen bg-background text-foreground`}
       >
