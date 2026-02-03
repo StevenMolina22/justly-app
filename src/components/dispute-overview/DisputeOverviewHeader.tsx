@@ -31,7 +31,7 @@ export const DisputeOverviewHeader: React.FC<DisputeOverviewHeaderProps> = ({
     // Added: flex-none (prevents shrinking in flex container)
     <div
       className={cn(
-        "w-full py-6 px-6 flex flex-col gap-6 bg-background/90 backdrop-blur-md flex-none z-10 transition-colors duration-300",
+        "w-full py-4 px-6 flex flex-col gap-3 bg-background/90 backdrop-blur-md flex-none z-10 transition-colors duration-300",
         className,
       )}
     >

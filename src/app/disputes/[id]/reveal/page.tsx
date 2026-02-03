@@ -9,6 +9,7 @@ import { useReveal } from "@/hooks/voting/useReveal";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { useDisputeParties } from "@/hooks/disputes/useDisputeParties";
 import { useHeader } from "@/lib/hooks/useHeader";
+import { SwipeButton } from "@/components/SwipeButton";
 
 export default function RevealPage() {
   const router = useRouter();
@@ -143,29 +144,12 @@ export default function RevealPage() {
       {status.isRevealOpen && (
         <div className="shrink-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
           <div className="w-full max-w-sm">
-            <button
-              onClick={() => void handleRevealClick()}
-              disabled={isProcessing}
-              className={`
-                w-full py-4 px-6 rounded-[20px] font-manrope font-semibold text-lg tracking-wide transition-all duration-300 shadow-xl flex items-center justify-center gap-3
-                ${
-                  isProcessing
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none border border-gray-200"
-                    : "bg-[#1b1c23] text-white hover:scale-[1.02] active:scale-[0.98] shadow-gray-200"
-                }
-              `}
+            <SwipeButton
+              onSwipeComplete={() => void handleRevealClick()}
+              isLoading={isProcessing}
             >
-              {isProcessing ? (
-                <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  <span>CONFIRMING...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" /> <span>CONFIRM VOTE</span>
-                </>
-              )}
-            </button>
+              SWIPE TO REVEAL
+            </SwipeButton>
           </div>
         </div>
       )}

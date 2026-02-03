@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { RefreshCw, Scale, Home, Eye, ArrowRight, Lock } from "lucide-react";
+import { RefreshCw, Home, Eye, ArrowRight, Lock } from "lucide-react";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { DisputeCandidateCard } from "@/components/disputes/DisputeCandidateCard";
 import { VsBadge } from "@/components/disputes/VsBadge";
@@ -10,6 +10,7 @@ import { useVote } from "@/hooks/voting/useVote";
 import { usePageSwipe } from "@/hooks/ui/usePageSwipe";
 import { useDisputeParties } from "@/hooks/disputes/useDisputeParties";
 import { useHeader } from "@/lib/hooks/useHeader";
+import { SwipeButton } from "@/components/SwipeButton";
 
 export default function VotePage() {
   const router = useRouter();
@@ -58,9 +59,6 @@ export default function VotePage() {
     <div className="flex flex-col flex-1 relative" {...bindSwipe()}>
       {/* 2. Content */}
       <div className="flex-1 flex flex-col px-6 scrollbar-hide relative z-0">
-        {/* - Removed min-h-[500px] to prevent top-alignment on small screens
-          - Balanced vertical padding for proper centering
-        */}
         <div className="flex-1 flex flex-col justify-center w-full max-w-sm mx-auto pb-6 pt-4">
           {/* Title Section - Centered & Cohesive */}
           <div className="relative mb-8 text-center">
@@ -72,7 +70,7 @@ export default function VotePage() {
               Review evidence and select a winner.
             </p>
 
-            {/* Refresh Button - Absolute positioned to not break center alignment */}
+            {/* Refresh Button */}
             <button
               onClick={() => void handleRefresh()}
               disabled={isRefreshing || isProcessing}
@@ -95,7 +93,7 @@ export default function VotePage() {
                   isSelected={selectedVote === 1}
                   isDisabled={hasCommittedLocally}
                   onClick={() => handleVoteSelect(1)}
-                  className="w-full h-32" // Ensuring larger size
+                  className="w-full h-32"
                 />
               </div>
               <VsBadge />
@@ -108,7 +106,7 @@ export default function VotePage() {
                 isSelected={selectedVote === 0}
                 isDisabled={hasCommittedLocally}
                 onClick={() => handleVoteSelect(0)}
-                className="w-full h-32" // Ensuring larger size
+                className="w-full h-32"
               />
             </div>
           </div>
@@ -146,29 +144,13 @@ export default function VotePage() {
       <div className="shrink-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent z-20 flex justify-center pb-8">
         <div className="w-full max-w-sm">
           {!hasCommittedLocally ? (
-            <button
-              onClick={() => void onCommitClick()}
+            <SwipeButton
+              onSwipeComplete={() => void onCommitClick()}
+              isLoading={isProcessing}
               disabled={isCommitDisabled}
-              className={`
-                w-full py-4 px-6 rounded-[20px] font-manrope font-semibold text-lg tracking-wide transition-all duration-300 shadow-xl flex items-center justify-center gap-3
-                ${
-                  isCommitDisabled
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
-                    : "bg-[#1b1c23] text-white hover:scale-[1.02] active:scale-[0.98] shadow-gray-200"
-                }
-              `}
             >
-              {isProcessing ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>COMMITTING...</span>
-                </>
-              ) : (
-                <>
-                  <Scale className="w-4 h-4" /> <span>CAST VOTE</span>
-                </>
-              )}
-            </button>
+              SWIPE TO VOTE
+            </SwipeButton>
           ) : (
             <button
               onClick={() =>
