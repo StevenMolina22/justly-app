@@ -4,6 +4,7 @@ import React from "react";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import { TopNavigation } from "@/components/layout/TopNavigation";
 import { ConsoleOverlay } from "@/components/debug/ConsoleOverlay";
+import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -27,6 +28,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <ConsoleOverlay />
         <BottomNavigation />
       </div>
+
+      <OnboardingModal />
     </div>
   );
 };
