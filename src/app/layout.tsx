@@ -10,6 +10,7 @@ import { getTenantFromHost, Tenant } from "@/config/tenant";
 import { privyConfig } from "@/config/adapters/privy";
 import { beexoConfig } from "@/config/adapters/beexo";
 import { coinbaseConfig } from "@/config/adapters/coinbase";
+import { farcasterConfig } from "@/config/adapters/farcaster";
 import { cookieToInitialState } from "wagmi";
 
 export const metadata: Metadata = {
@@ -55,7 +56,10 @@ export default async function RootLayout({
     case Tenant.BEEXO:
       config = beexoConfig;
       break;
-    case Tenant.BASE:
+    case Tenant.FARCASTER:
+      config = farcasterConfig;
+      break;
+    case Tenant.COINBASE:
       config = coinbaseConfig;
       break;
     default:
