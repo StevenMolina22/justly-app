@@ -2,13 +2,38 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Terminal, Bug, Shield, BookOpen, ExternalLink } from "lucide-react";
+import {
+  Terminal,
+  Bug,
+  Shield,
+  BookOpen,
+  ExternalLink,
+  RotateCcw,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useSliceAccount } from "@/hooks/core/useSliceAccount";
+import {
+  ONBOARDING_REPLAY_EVENT,
+  resetOnboarding,
+} from "@/hooks/ui/useOnboarding";
 
 export const SettingsView = () => {
   const router = useRouter();
+  const { address, isConnected } = useSliceAccount();
 
   const openConsole = () =>
     window.dispatchEvent(new Event("open-debug-console"));
+
+  const replayOnboarding = () => {
+    if (!isConnected || !address) {
+      toast.error("Connect your wallet first to replay onboarding");
+      return;
+    }
+
+    resetOnboarding(address);
+    window.dispatchEvent(new Event(ONBOARDING_REPLAY_EVENT));
+    toast.success("Onboarding restarted");
+  };
 
   return (
     <div className="flex flex-col gap-6 pb-20">
@@ -90,7 +115,7 @@ export const SettingsView = () => {
             href="https://docs.slicehub.xyz"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left group cursor-pointer"
+            className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left group cursor-pointer border-b border-gray-100"
           >
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
               <BookOpen className="w-5 h-5" />
@@ -105,6 +130,23 @@ export const SettingsView = () => {
             </div>
             <ExternalLink className="w-4 h-4 text-gray-300 group-hover:text-[#1b1c23] transition-colors" />
           </a>
+
+          <button
+            onClick={replayOnboarding}
+            className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+              <RotateCcw className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <span className="block text-sm font-bold text-[#1b1c23]">
+                Replay onboarding
+              </span>
+              <span className="text-[10px] text-gray-400">
+                Show the 3-step onboarding again
+              </span>
+            </div>
+          </button>
         </div>
       </div>
 
