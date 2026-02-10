@@ -7,6 +7,7 @@ import { Tenant } from "@/config/tenant";
 import * as Privy from "@/config/adapters/privy";
 import * as Beexo from "@/config/adapters/beexo";
 import * as Coinbase from "@/config/adapters/coinbase";
+import * as Farcaster from "@/config/adapters/farcaster";
 
 interface Props {
   children: ReactNode;
@@ -58,7 +59,15 @@ export default function ContextProvider({
       );
       break;
 
-    case Tenant.BASE:
+    case Tenant.FARCASTER:
+      tenantProvider = (
+        <Farcaster.FarcasterProviderTree initialState={initialState}>
+          <Farcaster.FarcasterAuthAdapter>{children}</Farcaster.FarcasterAuthAdapter>
+        </Farcaster.FarcasterProviderTree>
+      );
+      break;
+
+    case Tenant.COINBASE:
       tenantProvider = (
         <Coinbase.CoinbaseProviderTree initialState={initialState}>
           <Coinbase.CoinbaseAuthAdapter>

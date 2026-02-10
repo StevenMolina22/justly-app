@@ -1,11 +1,13 @@
 export enum Tenant {
   PRIVY = "privy", // Privy Strategy (Default)
-  BASE = "base", // Base Strategy (Coinbase)
+  FARCASTER = "farcaster", // Farcaster Mini App Strategy
+  COINBASE = "coinbase", // Coinbase Wallet Strategy
   BEEXO = "beexo", // Beexo Strategy (MiniApp)
 }
 
 const PRIVY_SUBDOMAINS = ["frame.", "privy.", "app."];
-const BASE_SUBDOMAINS = ["base.", "web."];
+const FARCASTER_SUBDOMAINS = ["base."];
+const COINBASE_SUBDOMAINS = ["coinbase.", "web."];
 const BEEXO_SUBDOMAINS = ["beexo.", "mini."];
 
 export const getTenantFromHost = (host: string | null): Tenant => {
@@ -17,9 +19,16 @@ export const getTenantFromHost = (host: string | null): Tenant => {
     return Tenant.BEEXO;
   }
 
-  // Use Base for specific subdomains
-  if (BASE_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
-    return Tenant.BASE;
+  // Use Farcaster Mini App for specific subdomains
+  if (
+    FARCASTER_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))
+  ) {
+    return Tenant.FARCASTER;
+  }
+
+  // Use Coinbase Wallet for specific subdomains
+  if (COINBASE_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
+    return Tenant.COINBASE;
   }
 
   // Use Privy for specific subdomains
