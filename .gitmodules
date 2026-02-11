@@ -1,0 +1,3 @@
+[submodule "contracts"]
+	path = contracts
+	url = /home/steven/dev/slice/slice-app/contracts
