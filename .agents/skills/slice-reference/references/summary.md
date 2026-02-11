@@ -38,23 +38,24 @@ This skill contains the following reference files:
 
 ## Statistics
 
-89 files | 10,142 lines
+91 files | 10,319 lines
 
 | Language | Files | Lines |
 |----------|------:|------:|
-| TypeScript | 46 | 3,787 |
-| TypeScript (TSX) | 28 | 3,281 |
-| Solidity | 8 | 2,220 |
-| Markdown | 3 | 467 |
-| JSON | 2 | 186 |
+| TypeScript | 46 | 3,754 |
+| TypeScript (TSX) | 29 | 3,370 |
+| Solidity | 9 | 2,497 |
+| Markdown | 3 | 397 |
+| No Extension | 1 | 18 |
 | EXAMPLE | 1 | 24 |
+| JSON | 1 | 82 |
 | CSS | 1 | 177 |
 
 **Largest files:**
-- `contracts/contracts/core/SliceV1.5.sol` (716 lines)
-- `contracts/contracts/core/SliceEscrowV1.5.sol` (471 lines)
-- `contracts/contracts/core/Slice.sol` (440 lines)
-- `contracts/contracts/fhe/SliceFHE.sol` (399 lines)
+- `slice_sc/src/core/SliceV1.5.sol` (719 lines)
+- `slice_sc/src/core/SliceEscrowV1.5.sol` (505 lines)
+- `slice_sc/src/core/P2PTradeEscrow.sol` (460 lines)
+- `slice_sc/src/core/Slice.sol` (440 lines)
 - `src/app/debug/page.tsx` (313 lines)
 - `src/app/disputes/[id]/execute/page.tsx` (303 lines)
 - `src/app/disputes/[id]/page.tsx` (271 lines)

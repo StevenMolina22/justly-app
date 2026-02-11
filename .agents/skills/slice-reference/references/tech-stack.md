@@ -17,6 +17,7 @@
 - @coinbase/onchainkit (^1.1.2)
 - @ducanh2912/next-pwa (^10.2.9)
 - @farcaster/miniapp-sdk (^0.2.1)
+- @farcaster/miniapp-wagmi-connector (^1.1.0)
 - @farcaster/quick-auth (^0.0.8)
 - @privy-io/react-auth (^3.9.1)
 - @privy-io/wagmi (^2.1.2)

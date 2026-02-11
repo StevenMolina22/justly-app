@@ -47,6 +47,8 @@ yarn.lock
 minikit.config.ts
 next.config.ts
 opencode.json
+*.gitmodules
+*foundry.lock
 
 # --- Generated / Artifacts ---
 # We keep contracts/contracts/ (Solidity) but ignore the frontend JSON ABIs
@@ -65,6 +67,8 @@ src/components/icons/
 docs/
 CONTRIBUTING.md
 LICENSE
+
+slice_sc/src/fhe
 
 #
 .agent/

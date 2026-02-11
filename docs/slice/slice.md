@@ -345,7 +345,7 @@ For users, it means fairness is not just promised — it is enforced by design.
 
 Slice is a **decentralized, on-demand dispute resolution system**, designed for digital platforms that process user-to-user payments and need a fast, impartial, and transparent way to resolve conflicts.
 
-Unlike traditional systems—slow, manual, and centralized—Slice enables disputes to be resolved **in minutes**, through distributed jurors, clear economic incentives, and automatic execution of outcomes.
+Unlike traditional systems—slow, manual, and centralized—Slice enables disputes to be resolved in **hours**, and often in minutes when jurors are highly available, through distributed jurors, clear economic incentives, and automatic execution of outcomes.
 
 Slice functions as a **universal trust module** that can be integrated into fintechs, marketplaces, wallets, exchanges, service platforms, and Web3 applications, without forcing these platforms to act as judge and jury.
 
@@ -368,9 +368,10 @@ The entire process is designed to minimize friction, remove intermediaries, and 
 
 Slice introduces a **real-time resolution model**:
 
-* Voting rounds last minutes, not days.
-* The system escalates instantly if there is disagreement.
-* Each dispute has a maximum of **three instances**, preventing infinite appeals.
+* Disputes are designed to resolve in hours, and can resolve in minutes when jurors respond quickly.
+* Time windows are intentionally conservative safety buffers to protect liveness under lower activity.
+* Resolution timing becomes more predictable as juror liquidity deepens in each court/category.
+* Appeals are central to the protocol design and are one of the most urgent roadmap priorities.
 
 This approach makes Slice viable even for **microtransactions**, where legal systems or traditional customer support processes are economically unfeasible.
 
@@ -425,7 +426,7 @@ In this way, Slice positions itself as core infrastructure for the digital econo
 
 Slice is a lightweight digital justice system that resolves disputes in a way that is:
 
-* ⚡ Fast (minutes, not days)
+* ⚡ Fast (typically hours, sometimes minutes)
 * ⚖️ Impartial (distributed jurors)
 * 🔍 Transparent (verifiable rules and execution)
 * 🌍 Global (built for digital payments and stablecoins)
@@ -746,9 +747,8 @@ Slice’s primary security mechanism is **incentive alignment**, not identity or
 
 Key properties:
 
-* Stake does **not** increase voting power.
-* Every juror has exactly one vote.
-* Economic exposure scales risk, not influence.
+* Jurors are economically exposed to the quality of their decisions.
+* Economic exposure scales risk and reward.
 * Rewards are only distributed to jurors who align with the final outcome.
 
 This structure discourages whales, favors independent judgment, and aligns rational behavior with protocol integrity.
@@ -757,11 +757,11 @@ This structure discourages whales, favors independent judgment, and aligns ratio
 
 ### Tier-Based Security Escalation
 
-Slice supports multiple tiers to match security guarantees with dispute risk.
+Slice supports multiple security levels to match guarantees with dispute risk.
 
-Higher tiers provide:
+Higher security levels provide:
 
-* more jurors,
+* broader juror participation,
 * higher total economic exposure,
 * and increased resistance to manipulation.
 
@@ -771,9 +771,12 @@ This allows users and integrators to choose a security level proportional to the
 
 ### Appeals as a Security Amplifier
 
-Appeals act as a **secondary security layer**, increasing the cost of incorrect or adversarial outcomes.
+Appeals are a **core security layer** in the Slice design, increasing the cost of incorrect or adversarial outcomes.
 
-Each appeal:
+In the live contracts today, disputes finalize in a single round once executed.
+Appeals are one of the most urgent roadmap priorities and are designed to be introduced as structured escalation rounds.
+
+Planned appeal rounds:
 
 * increases juror count and economic exposure,
 * re-evaluates the dispute under stricter conditions,
@@ -805,7 +808,7 @@ Human judgment is inherently probabilistic. Slice guarantees that **dishonesty i
 
 Security in Slice increases through:
 
-* higher tiers,
+* higher security levels,
 * appeals,
 * identity primitives,
 * and protocol adoption scale.
@@ -836,7 +839,7 @@ Slice enables platforms to resolve these conflicts quickly and transparently wit
 ### 2. Freelancer and Contractor Platforms
 
 Disputes over scope, quality, and payments are common in freelance work, especially for small or medium amounts.\
-Slice allows these conflicts to be resolved fairly in minutes, without legal friction or centralized arbitration.
+Slice allows these conflicts to be resolved fairly in hours, and often in minutes under strong juror liquidity, without legal friction or centralized arbitration.
 
 **Core value:** reduced friction, faster payouts, higher user retention.
 
@@ -2515,7 +2518,7 @@ Regardless of the dispute type or implementation phase, Slice guarantees:
 
 * Jurors are economically incentivized to act coherently.
 * Malicious or incoherent behavior is penalized by design.
-* No participant has privileged voting power.
+* No participant has privileged influence over outcomes.
 
 **3. Deterministic Execution**
 
@@ -2714,44 +2717,32 @@ Each dispute follows a deterministic, on-chain lifecycle:
    * juror rewards,
    * and penalties.
 
-The outcome is final in the current implementation.
+Current implementation: once executed, the outcome is final.
+Roadmap priority: add appeal rounds as a first-class escalation mechanism.
 
 ***
 
 #### Jurors
 
-* Jurors are **human participants** verified via **Proof of Humanity (PoH)**.
-* Each juror represents **one vote**.
-* Jurors are anonymous to disputing parties.
+* Jurors are human participants selected through protocol-defined assignment.
+* Identity and anti-Sybil layers are part of the broader roadmap.
+* Jurors are pseudonymous to disputing parties.
 * Jurors must stake funds to participate.
-
-**Stake does not affect voting power**.\
-It only determines:
-
-* potential rewards,
-* and potential losses.
 
 ***
 
 #### Matchmaking
 
-Slice uses backend-assisted matchmaking to ensure disputes are resolved reliably and on time. This mechanism exists to:
+Slice uses coordination mechanisms to improve liveness and operational reliability. This coordination is designed to:
 
-&#x20;• ensure disputes always reach the required number of jurors&#x20;
+* reduce stalled or abandoned disputes,
+* improve timing predictability for platforms and users,
+* and adapt to available juror liquidity.
 
-• avoid stalled or abandoned cases&#x20;
+Juror selection remains randomized and independent, and outcome execution remains on-chain.
 
-• provide predictable resolution times for platforms and users Juror selection remains randomized and independent.&#x20;
-
-The backend only coordinates assignment to guarantee dispute completion. Importantly, the backend cannot:&#x20;
-
-• influence juror votes&#x20;
-
-• affect dispute outcomes&#x20;
-
-• control fund execution&#x20;
-
-All decisions and transfers are enforced by the protocol and smart contracts. This approach prioritizes liveness, UX, and system reliability while preserving neutrality and incentive alignment.
+Operational timing is most predictable when juror liquidity is healthy in the relevant court/category.
+Longer windows remain in place as safety buffers for periods of lower participation.
 
 ***
 
@@ -2759,14 +2750,16 @@ All decisions and transfers are enforced by the protocol and smart contracts. Th
 
 * Voting is executed **fully on-chain**.
 * A **commit–reveal scheme** is used to prevent vote manipulation.
-* Shutter-based encryption is used to improve privacy and voting fairness.
+* Roadmap: integrate Shutter's API to support encrypted commit–reveal with automatic reveal.
 * All state transitions and outcomes are verifiable on-chain.
 
 ***
 
 #### Tiers
 
-The MVP introduces **four fixed dispute tiers**.
+Roadmap: Slice introduces standardized dispute tiers.
+
+Current implementation: disputes are configured through courts/categories and dispute parameters.
 
 Each tier defines:
 
@@ -2797,9 +2790,8 @@ The following features are **not included** in the current implementation:
 
 * Appeals or dispute escalation
 * Private disputes
-* Category-based disputes
 * Rating or decision-based disputes
-* Fully on-chain randomness-only matchmaking
+* Automatic reveal via Shutter API integration
 
 These features are part of the Slice protocol design and will be introduced in future phases.
 
@@ -2819,6 +2811,9 @@ This approach allows Slice to validate its core assumptions while preserving a c
 # What is a Tier
 
 A **tier** defines the **security level, cost, and robustness** of a dispute in Slice.
+
+In the current implementation, the same goals are achieved through configurable courts/categories.
+Standardized tier profiles are part of the protocol roadmap.
 
 Tiers allow the protocol to adapt to different types of conflicts by balancing:
 
@@ -2856,8 +2851,7 @@ Higher stakes:
 * raise the economic commitment of participants,
 * and better align incentives when the value or complexity of the dispute is higher.
 
-The stake **does not grant additional voting power**.\
-Each juror always has exactly one vote, regardless of the amount staked.
+Stake determines economic exposure and incentives for participation.
 
 ***
 
@@ -2910,9 +2904,8 @@ Each tier defines a fixed set of parameters that determine the **security level*
 #### **Important Notes**
 
 * All values are expressed in USD (or equivalent stablecoins).
-* The number of jurors and stake amounts are **predefined and fixed per tier**.
-* The stake **does not grant additional voting power**.\
-  Each juror has exactly one vote, regardless of the amount staked.
+* Tier values are target profiles for standardized configurations.
+* Live deployments may use court/category configurations while preserving the same economic principles.
 * Higher tiers increase the cost of attacks, the diversity of judgment, and the overall robustness of the outcome.
 * Selecting a tier allows the parties to choose a security level proportional to the value or complexity of the dispute.
 
@@ -3040,7 +3033,8 @@ This includes:
 
 In the current implementation, dispute outcomes are final once executed.
 
-Future versions of the protocol may introduce appeal mechanisms or additional resolution layers, depending on the dispute type and tier.
+Appeals are central to Slice's long-term security model and are one of the most urgent roadmap priorities.
+Future iterations will introduce structured appeal rounds and additional resolution layers.
 
 
 # Jurors
@@ -3058,7 +3052,7 @@ Any eligible participant who meets the protocol’s requirements may act as a ju
 
 Jurors:
 
-* are verified through Proof of Humanity mechanisms,
+* can be gated by identity and anti-Sybil mechanisms depending on deployment profile,
 * participate anonymously with respect to the disputing parties,
 * and must actively opt in to each dispute they join.
 
@@ -3088,8 +3082,7 @@ This stake:
 * aligns juror incentives with honest participation,
 * and discourages low-effort or malicious behavior.
 
-The stake amount does not affect voting power.\
-Each juror has exactly one vote.
+Staking defines economic exposure and reinforces honest participation.
 
 ***
 
@@ -3148,23 +3141,19 @@ Instead, it relies on structured human voting combined with economic incentives 
 
 ***
 
-#### One Juror, One Vote
+#### Independent Juror Participation
 
-Each juror has exactly **one vote** per dispute.
+Jurors participate independently in each dispute and are evaluated economically on outcome coherence.
 
-* Voting power is **not influenced by stake size**.
-* Economic exposure affects risk and reward, not decision weight.
-* All votes are treated equally by the protocol.
-
-This design prevents stake-based dominance while preserving incentive alignment.
-
-Stake size only affects economic exposure and potential rewards, not decision authority.
+Staking aligns incentives by creating meaningful upside for coherent decisions and downside for incoherent behavior.
 
 ***
 
 #### Commit–Reveal Voting
 
 Slice uses a **commit–reveal** voting scheme to protect the integrity of the voting process.
+
+Roadmap: integrate Shutter's API for encrypted commit–reveal with automatic reveal to reduce juror UX friction and improve liveness.
 
 The process is divided into two phases:
 
@@ -3444,7 +3433,9 @@ All steps follow predefined rules enforced by smart contracts.
 
 ### Appeals
 
-Adversarial disputes support **appeals through additional rounds**.
+Appeals are **central to adversarial disputes** and one of the most urgent roadmap priorities.
+
+Current live contracts finalize in a single executed round. The next phase introduces additional appeal rounds.
 
 An appeal represents a request for a new evaluation under stricter conditions.
 
@@ -3582,7 +3573,7 @@ In this case, the proposer’s bond is used to:
 * compensate jurors,
 * and cover protocol costs.
 
-This mechanism discourages biased, low-quality, or malformed proposals without granting proposers voting power.
+This mechanism discourages biased, low-quality, or malformed proposals without giving proposers special influence.
 
 ***
 
@@ -3977,15 +3968,12 @@ Non-participation can result in:
 
 <summary>Can someone “whale” attack Slice by staking a lot?</summary>
 
-Slice is designed so that **stake does not grant voting power**.
-
-Each juror has exactly **one vote**, regardless of stake size.
-
 Stakes affect:
 
 * economic exposure,
-* and rewards/penalties,\
-  not voting weight.
+* and rewards/penalties.
+
+Large stakes increase financial exposure, but do not create special control over final execution rules.
 
 (See: *Security Model)*
 
@@ -4150,5 +4138,3 @@ They are not court rulings and do not automatically constitute legal judgments u
 # Still under construction...
 
 ;)
-
-

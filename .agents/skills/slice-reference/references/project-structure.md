@@ -1,23 +1,23 @@
 # Directory Structure
 
 ```
-contracts/
-  contracts/
+slice_sc/
+  script/
+    DeploySlice.s.sol (58 lines)
+    SeedSlice.s.sol (165 lines)
+  src/
     core/
+      P2PTradeEscrow.sol (460 lines)
       Slice.sol (440 lines)
-      SliceEscrowV1.5.sol (471 lines)
-      SliceV1.5.sol (716 lines)
-    fhe/
-      FHECounter.sol (46 lines)
-      SliceFHE.sol (399 lines)
+      SliceEscrowV1.5.sol (505 lines)
+      SliceV1.5.sol (719 lines)
     interfaces/
       IArbitrable.sol (6 lines)
-      ISlice.sol (126 lines)
+      ISlice.sol (128 lines)
     mocks/
       MockUSDC.sol (16 lines)
-  hardhat.config.ts (132 lines)
-  package.json (105 lines)
-  README.md (135 lines)
+  Makefile (18 lines)
+  README.md (59 lines)
 src/
   app/
     .well-known/
@@ -65,19 +65,20 @@ src/
     profile/
       page.tsx (139 lines)
     globals.css (177 lines)
-    layout.tsx (82 lines)
+    layout.tsx (86 lines)
     not-found.tsx (65 lines)
     page.tsx (67 lines)
-    providers.tsx (81 lines)
+    providers.tsx (90 lines)
   config/
     adapters/
       beexo.tsx (150 lines)
       coinbase.tsx (56 lines)
+      farcaster.tsx (76 lines)
       privy.tsx (68 lines)
     app.ts (67 lines)
     chains.ts (30 lines)
     contracts.ts (18 lines)
-    tenant.ts (32 lines)
+    tenant.ts (41 lines)
   contexts/
     AuthStrategyContext.tsx (20 lines)
     TimerContext.tsx (102 lines)
@@ -114,6 +115,7 @@ src/
       useStepBasics.ts (82 lines)
     ui/
       useClickOutside.ts (26 lines)
+      useOnboarding.ts (90 lines)
       usePageSwipe.ts (19 lines)
     user/
       useAddressBook.ts (86 lines)
@@ -134,6 +136,6 @@ src/
     wallet.ts (24 lines)
 .env.example (24 lines)
 AGENTS.md (163 lines)
-package.json (81 lines)
-README.md (169 lines)
+package.json (82 lines)
+README.md (175 lines)
 ```
