@@ -38,26 +38,26 @@ This skill contains the following reference files:
 
 ## Statistics
 
-89 files | 10,142 lines
+91 files | 11,058 lines
 
 | Language | Files | Lines |
 |----------|------:|------:|
-| TypeScript | 46 | 3,787 |
-| TypeScript (TSX) | 28 | 3,281 |
-| Solidity | 8 | 2,220 |
-| Markdown | 3 | 467 |
-| JSON | 2 | 186 |
+| TypeScript | 46 | 3,754 |
+| TypeScript (TSX) | 29 | 3,370 |
+| Solidity | 10 | 3,256 |
+| Markdown | 3 | 395 |
 | EXAMPLE | 1 | 24 |
+| JSON | 1 | 82 |
 | CSS | 1 | 177 |
 
 **Largest files:**
-- `contracts/contracts/core/SliceV1.5.sol` (716 lines)
-- `contracts/contracts/core/SliceEscrowV1.5.sol` (471 lines)
-- `contracts/contracts/core/Slice.sol` (440 lines)
-- `contracts/contracts/fhe/SliceFHE.sol` (399 lines)
+- `contracts/src/core/SliceV1.5.sol` (719 lines)
+- `contracts/src/core/P2PTradeEscrow.sol` (572 lines)
+- `contracts/src/core/SliceEscrowV1.5.sol` (506 lines)
+- `contracts/src/fhe/SliceFHE.sol` (496 lines)
+- `contracts/src/core/Slice.sol` (486 lines)
 - `src/app/debug/page.tsx` (313 lines)
 - `src/app/disputes/[id]/execute/page.tsx` (303 lines)
 - `src/app/disputes/[id]/page.tsx` (271 lines)
 - `src/util/disputeAdapter.ts` (270 lines)
 - `src/hooks/disputes/useDisputeFinancials.ts` (221 lines)
-- `src/app/manage/page.tsx` (204 lines)

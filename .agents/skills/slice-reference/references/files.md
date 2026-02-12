@@ -1,6 +1,852 @@
 # Files
 
-## File: contracts/contracts/core/Slice.sol
+## File: contracts/script/DeploySlice.s.sol
+````solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import {Script} from "forge-std/Script.sol";
+import {console2} from "forge-std/console2.sol";
+
+import {Slice} from "../src/core/Slice.sol";
+import {MockUSDC} from "../src/mocks/MockUSDC.sol";
+
+contract DeploySliceScript is Script {
+    uint256 internal constant BASE_CHAIN_ID = 8453;
+    uint256 internal constant BASE_SEPOLIA_CHAIN_ID = 84532;
+
+    address internal constant BASE_USDC =
+        0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    address internal constant BASE_SEPOLIA_USDC =
+        0x672B6F3A85d697195eCe0ef318924D034122B2bb;
+
+    function run() external {
+        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 chainId = block.chainid;
+        address usdcAddressOverride = vm.envOr("USDC_ADDRESS", address(0));
+
+        console2.log("Deploying Slice on chain:", chainId);
+
+        address usdcAddress = _resolveUsdc(
+            deployerPk,
+            chainId,
+            usdcAddressOverride
+        );
+
+        vm.startBroadcast(deployerPk);
+        Slice slice = new Slice(usdcAddress);
+        vm.stopBroadcast();
+
+        console2.log("Slice deployed at:", address(slice));
+        console2.log("USDC used:", usdcAddress);
+    }
+
+    function _resolveUsdc(
+        uint256 deployerPk,
+        uint256 chainId,
+        address usdcAddressOverride
+    ) internal returns (address usdcAddress) {
+        if (usdcAddressOverride != address(0)) {
+            return usdcAddressOverride;
+        }
+
+        if (chainId == BASE_CHAIN_ID) {
+            return BASE_USDC;
+        }
+
+        if (chainId == BASE_SEPOLIA_CHAIN_ID) {
+            return BASE_SEPOLIA_USDC;
+        }
+
+        vm.startBroadcast(deployerPk);
+        MockUSDC mock = new MockUSDC();
+        vm.stopBroadcast();
+
+        console2.log("MockUSDC deployed at:", address(mock));
+        return address(mock);
+    }
+}
+````
+
+## File: contracts/script/SeedSlice.s.sol
+````solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import {Script} from "forge-std/Script.sol";
+import {console2} from "forge-std/console2.sol";
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Slice} from "../src/core/Slice.sol";
+import {MockUSDC} from "../src/mocks/MockUSDC.sol";
+
+contract SeedSliceScript is Script {
+    uint256 internal constant BASE_CHAIN_ID = 8453;
+    uint256 internal constant BASE_SEPOLIA_CHAIN_ID = 84532;
+
+    address internal constant BASE_USDC =
+        0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    address internal constant BASE_SEPOLIA_USDC =
+        0x672B6F3A85d697195eCe0ef318924D034122B2bb;
+
+    uint256 internal constant USDC_DECIMALS = 1e6;
+    uint256 internal constant SEED_STAKE = 1 * USDC_DECIMALS;
+    uint256 internal constant SEED_MIN_DEFENDER_BALANCE = 100 * USDC_DECIMALS;
+    uint256 internal constant ONE_WEEK = 7 days;
+
+    struct SeedCase {
+        string category;
+        string ipfsHash;
+    }
+
+    function run() external {
+        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 defenderPk = vm.envUint("DEFENDER_PRIVATE_KEY");
+        address sliceAddress = vm.envAddress("SLICE_ADDRESS");
+
+        address usdcOverride = vm.envOr("USDC_ADDRESS", address(0));
+        address usdcAddress = _resolveUsdcAddress(block.chainid, usdcOverride);
+
+        bool isMockUsdc = block.chainid != BASE_CHAIN_ID &&
+            block.chainid != BASE_SEPOLIA_CHAIN_ID;
+
+        console2.log("Seeding Slice at:", sliceAddress);
+        console2.log("Using USDC at:", usdcAddress);
+
+        _seedDisputes(
+            Slice(sliceAddress),
+            usdcAddress,
+            deployerPk,
+            defenderPk,
+            isMockUsdc
+        );
+    }
+
+    function _resolveUsdcAddress(
+        uint256 chainId,
+        address usdcOverride
+    ) internal pure returns (address) {
+        if (usdcOverride != address(0)) {
+            return usdcOverride;
+        }
+
+        if (chainId == BASE_CHAIN_ID) {
+            return BASE_USDC;
+        }
+
+        if (chainId == BASE_SEPOLIA_CHAIN_ID) {
+            return BASE_SEPOLIA_USDC;
+        }
+
+        revert("USDC_ADDRESS required for non-Base networks");
+    }
+
+    function _seedDisputes(
+        Slice slice,
+        address usdcAddress,
+        uint256 deployerPk,
+        uint256 defenderPk,
+        bool isMockUsdc
+    ) internal {
+        address deployer = vm.addr(deployerPk);
+        address defender = vm.addr(defenderPk);
+        IERC20 usdc = IERC20(usdcAddress);
+
+        _ensureEth(deployerPk, defender);
+        _ensureDefenderUsdc(
+            usdc,
+            usdcAddress,
+            deployerPk,
+            defender,
+            isMockUsdc
+        );
+
+        SeedCase[] memory cases = _seedCases();
+
+        uint256 requiredAllowance = SEED_STAKE * cases.length;
+        _ensureApproval(usdc, deployerPk, address(slice), requiredAllowance);
+        _ensureApproval(usdc, defenderPk, address(slice), requiredAllowance);
+
+        vm.startBroadcast(deployerPk);
+        for (uint256 i = 0; i < cases.length; i++) {
+            Slice.DisputeConfig memory config = Slice.DisputeConfig({
+                claimer: deployer,
+                defender: defender,
+                category: cases[i].category,
+                ipfsHash: cases[i].ipfsHash,
+                jurorsRequired: 1,
+                paySeconds: ONE_WEEK,
+                evidenceSeconds: ONE_WEEK,
+                commitSeconds: ONE_WEEK,
+                revealSeconds: ONE_WEEK
+            });
+
+            uint256 disputeId = slice.createDispute(config);
+            slice.payDispute(disputeId);
+
+            vm.stopBroadcast();
+            vm.startBroadcast(defenderPk);
+            slice.payDispute(disputeId);
+            vm.stopBroadcast();
+
+            console2.log("Seeded dispute id:", disputeId);
+            vm.startBroadcast(deployerPk);
+        }
+        vm.stopBroadcast();
+    }
+
+    function _ensureEth(uint256 deployerPk, address recipient) internal {
+        if (recipient.balance >= 0.0001 ether) {
+            return;
+        }
+
+        vm.startBroadcast(deployerPk);
+        (bool sent, ) = payable(recipient).call{value: 0.001 ether}("");
+        vm.stopBroadcast();
+        require(sent, "Failed to fund defender with ETH");
+    }
+
+    function _ensureDefenderUsdc(
+        IERC20 usdc,
+        address usdcAddress,
+        uint256 deployerPk,
+        address defender,
+        bool isMockUsdc
+    ) internal {
+        uint256 defenderBalance = usdc.balanceOf(defender);
+        if (defenderBalance >= SEED_MIN_DEFENDER_BALANCE) {
+            return;
+        }
+
+        uint256 deficit = SEED_MIN_DEFENDER_BALANCE - defenderBalance;
+
+        vm.startBroadcast(deployerPk);
+        if (isMockUsdc) {
+            MockUSDC(usdcAddress).mint(defender, deficit);
+        } else {
+            bool success = usdc.transfer(defender, deficit);
+            require(success, "Failed to transfer USDC to defender");
+        }
+        vm.stopBroadcast();
+    }
+
+    function _ensureApproval(
+        IERC20 usdc,
+        uint256 ownerPk,
+        address spender,
+        uint256 amount
+    ) internal {
+        address owner = vm.addr(ownerPk);
+        uint256 allowance = usdc.allowance(owner, spender);
+
+        if (allowance >= amount) {
+            return;
+        }
+
+        vm.startBroadcast(ownerPk);
+        bool success = usdc.approve(spender, type(uint256).max);
+        vm.stopBroadcast();
+        require(success, "USDC approve failed");
+    }
+
+    function _seedCases() internal pure returns (SeedCase[] memory cases) {
+        string
+            memory rootCid = "bafybeifa6gsnklvyvepp45ilf4ngc5o3ndydq7zxcdgrfybxs6flts6mdi";
+
+        cases = new SeedCase[](3);
+        cases[0] = SeedCase({
+            category: "Freelance",
+            ipfsHash: string.concat(rootCid, "/freelance.json")
+        });
+        cases[1] = SeedCase({
+            category: "P2P Trade",
+            ipfsHash: string.concat(rootCid, "/p2p.json")
+        });
+        cases[2] = SeedCase({
+            category: "Marketplace",
+            ipfsHash: string.concat(rootCid, "/marketplace.json")
+        });
+    }
+}
+````
+
+## File: contracts/src/core/P2PTradeEscrow.sol
+````solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+
+import {ISlice} from "../interfaces/ISlice.sol";
+import {IArbitrable} from "../interfaces/IArbitrable.sol";
+
+contract P2PTradeEscrow is
+    AccessControl,
+    ReentrancyGuard,
+    Pausable,
+    IArbitrable
+{
+    using SafeERC20 for IERC20;
+
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+
+    uint256 public constant MAX_DURATION = 30 days;
+    uint256 public constant FILLER_PAYMENT_TIMEOUT = 30 minutes;
+    uint256 public constant FEE_TIMEOUT = 1 days;
+
+    uint256 public constant PAY_DURATION = 1 days;
+    uint256 public constant EVIDENCE_DURATION = 1 days;
+    uint256 public constant COMMIT_DURATION = 2 days;
+    uint256 public constant REVEAL_DURATION = 1 days;
+
+    enum FiatCurrency {
+        USD,
+        EUR,
+        BRL,
+        MXN,
+        OTHER
+    }
+
+    enum PaymentMethod {
+        BANK_TRANSFER,
+        CARD,
+        CASH,
+        MOBILE_MONEY,
+        OTHER
+    }
+
+    enum OrderStatus {
+        NONE,
+        AWAITING_FILLER,
+        AWAITING_PAYMENT,
+        AWAITING_CONFIRMATION,
+        DISPUTED,
+        COMPLETED,
+        REFUNDED,
+        CANCELLED
+    }
+
+    struct Order {
+        FiatCurrency fiatCurrency;
+        PaymentMethod paymentMethod;
+        bool fromCrypto;
+        uint256 amount;
+        uint256 exchangeRate;
+        uint256 deadline;
+        uint256 fiatTransferDeadline;
+        address creator;
+        address filler;
+        address token;
+        OrderStatus status;
+        uint256 sliceDisputeId;
+        address claimer;
+        address defender;
+        bool creatorFeePaid;
+        bool fillerFeePaid;
+        uint256 feesCollected;
+        uint256 firstFeePaymentTime;
+    }
+
+    error InvalidAddress();
+    error InvalidAmount();
+    error InvalidDuration();
+    error InvalidSender();
+    error InvalidOrderStatus();
+    error OrderExpired();
+    error FiatTransferNotExpired();
+    error OrderNotFound();
+    error NotParty();
+    error FeeAlreadyPaid();
+    error FeeTimeoutNotReached();
+    error InvalidFeeTimeoutState();
+    error OnlySlice();
+    error DisputeNotInitialized();
+    error InvalidEvidence();
+    error InvalidJurorCount();
+    error InactiveCourt();
+
+    mapping(uint256 => Order) public orders;
+    uint256 public orderCount;
+
+    mapping(uint256 => uint256) public orderToDisputeId;
+    mapping(uint256 => uint256) public disputeToOrderId;
+
+    address public immutable usdc;
+    ISlice public immutable slice;
+    IERC20 public immutable arbitrationToken;
+
+    string public courtCategory;
+    uint256 public jurorsRequired;
+
+    event OrderCreated(
+        uint256 indexed orderId,
+        address indexed creator,
+        uint256 amount,
+        FiatCurrency fiatCurrency,
+        PaymentMethod paymentMethod,
+        bool fromCrypto
+    );
+    event OrderCancelled(uint256 indexed orderId, address indexed cancelledBy);
+    event FillerFound(uint256 indexed orderId, address indexed filler);
+    event FiatPaymentSubmitted(
+        uint256 indexed orderId,
+        address indexed submittedBy
+    );
+    event FiatTransferTimeout(uint256 indexed orderId);
+    event FiatPaymentConfirmed(
+        uint256 indexed orderId,
+        address indexed confirmer
+    );
+    event CryptoPaymentRefunded(
+        uint256 indexed orderId,
+        address indexed refundedBy
+    );
+    event FiatPaymentDisputed(
+        uint256 indexed orderId,
+        address indexed disputedBy
+    );
+
+    event SliceDisputeCreated(
+        uint256 indexed orderId,
+        uint256 indexed disputeId,
+        address indexed claimer,
+        address defender,
+        string evidenceIpfs
+    );
+    event EvidenceSubmittedToSlice(
+        uint256 indexed orderId,
+        uint256 indexed disputeId,
+        address indexed party,
+        string ipfsHash
+    );
+    event ArbitrationFeePaid(
+        uint256 indexed orderId,
+        address indexed payer,
+        uint256 amount
+    );
+    event SliceDisputeActivated(
+        uint256 indexed orderId,
+        uint256 indexed disputeId
+    );
+    event FeeTimeoutClaimed(uint256 indexed orderId, address indexed winner);
+    event SliceRulingReceived(
+        uint256 indexed orderId,
+        uint256 indexed disputeId,
+        uint256 ruling,
+        address winner
+    );
+
+    constructor(
+        address _usdc,
+        address _slice,
+        string memory _courtCategory,
+        uint256 _jurorsRequired
+    ) {
+        if (_usdc == address(0) || _slice == address(0))
+            revert InvalidAddress();
+
+        usdc = _usdc;
+        slice = ISlice(_slice);
+        arbitrationToken = ISlice(_slice).stakingToken();
+
+        if (
+            _jurorsRequired == 0 ||
+            _jurorsRequired > ISlice(_slice).MAX_JURORS()
+        ) {
+            revert InvalidJurorCount();
+        }
+
+        ISlice.CourtConfig memory config = ISlice(_slice).courtConfigs(
+            _courtCategory
+        );
+        if (!config.active) revert InactiveCourt();
+
+        courtCategory = _courtCategory;
+        jurorsRequired = _jurorsRequired;
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+    }
+
+    modifier onlyExistingOrder(uint256 orderId) {
+        if (orders[orderId].status == OrderStatus.NONE) revert OrderNotFound();
+        _;
+    }
+
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
+    function createOrder(
+        FiatCurrency fiatCurrency,
+        PaymentMethod paymentMethod,
+        bool fromCrypto,
+        uint256 amount,
+        uint256 exchangeRate,
+        uint256 duration
+    ) external whenNotPaused {
+        if (amount == 0 || exchangeRate == 0) revert InvalidAmount();
+        if (duration > MAX_DURATION) revert InvalidDuration();
+
+        uint256 orderId = orderCount;
+        orderCount++;
+
+        Order storage order = orders[orderId];
+        order.fiatCurrency = fiatCurrency;
+        order.paymentMethod = paymentMethod;
+        order.fromCrypto = fromCrypto;
+        order.amount = amount;
+        order.exchangeRate = exchangeRate;
+        order.deadline = block.timestamp + duration;
+        order.fiatTransferDeadline = 0;
+        order.creator = msg.sender;
+        order.filler = address(0);
+        order.token = usdc;
+        order.status = OrderStatus.AWAITING_FILLER;
+
+        if (fromCrypto) {
+            IERC20(usdc).safeTransferFrom(msg.sender, address(this), amount);
+        }
+
+        emit OrderCreated(
+            orderId,
+            msg.sender,
+            amount,
+            fiatCurrency,
+            paymentMethod,
+            fromCrypto
+        );
+    }
+
+    function cancelOrder(
+        uint256 orderId
+    ) external nonReentrant whenNotPaused onlyExistingOrder(orderId) {
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.AWAITING_FILLER)
+            revert InvalidOrderStatus();
+        if (msg.sender != order.creator) revert InvalidSender();
+
+        order.status = OrderStatus.CANCELLED;
+
+        if (order.fromCrypto) {
+            IERC20(usdc).safeTransfer(order.creator, order.amount);
+        }
+
+        emit OrderCancelled(orderId, msg.sender);
+    }
+
+    function takeOrder(
+        uint256 orderId
+    ) external nonReentrant whenNotPaused onlyExistingOrder(orderId) {
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.AWAITING_FILLER)
+            revert InvalidOrderStatus();
+        if (msg.sender == order.creator) revert InvalidSender();
+        if (order.deadline <= block.timestamp) revert OrderExpired();
+
+        if (!order.fromCrypto) {
+            IERC20(usdc).safeTransferFrom(
+                msg.sender,
+                address(this),
+                order.amount
+            );
+        }
+
+        order.filler = msg.sender;
+        order.status = OrderStatus.AWAITING_PAYMENT;
+        order.fiatTransferDeadline = block.timestamp + FILLER_PAYMENT_TIMEOUT;
+
+        emit FillerFound(orderId, msg.sender);
+    }
+
+    function submitFiatPayment(
+        uint256 orderId
+    ) external nonReentrant whenNotPaused onlyExistingOrder(orderId) {
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.AWAITING_PAYMENT)
+            revert InvalidOrderStatus();
+
+        if (order.fromCrypto) {
+            if (msg.sender != order.filler) revert InvalidSender();
+        } else {
+            if (msg.sender != order.creator) revert InvalidSender();
+        }
+
+        order.status = OrderStatus.AWAITING_CONFIRMATION;
+        emit FiatPaymentSubmitted(orderId, msg.sender);
+    }
+
+    function executeFiatTransferTimeout(
+        uint256 orderId
+    ) external nonReentrant whenNotPaused onlyExistingOrder(orderId) {
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.AWAITING_PAYMENT)
+            revert InvalidOrderStatus();
+        if (order.fiatTransferDeadline >= block.timestamp)
+            revert FiatTransferNotExpired();
+
+        if (order.fromCrypto) {
+            if (msg.sender != order.creator) revert InvalidSender();
+        } else {
+            if (msg.sender != order.filler) revert InvalidSender();
+
+            IERC20(usdc).safeTransfer(order.filler, order.amount);
+        }
+
+        order.status = OrderStatus.AWAITING_FILLER;
+        order.filler = address(0);
+        order.fiatTransferDeadline = 0;
+
+        emit FiatTransferTimeout(orderId);
+    }
+
+    function confirmFiatPayment(
+        uint256 orderId
+    ) external nonReentrant whenNotPaused onlyExistingOrder(orderId) {
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.AWAITING_CONFIRMATION)
+            revert InvalidOrderStatus();
+
+        if (order.fromCrypto) {
+            if (msg.sender != order.creator) revert InvalidSender();
+            IERC20(usdc).safeTransfer(order.filler, order.amount);
+        } else {
+            if (msg.sender != order.filler) revert InvalidSender();
+            IERC20(usdc).safeTransfer(order.creator, order.amount);
+        }
+
+        order.status = OrderStatus.COMPLETED;
+        emit FiatPaymentConfirmed(orderId, msg.sender);
+    }
+
+    function disputeFiatPayment(
+        uint256 orderId,
+        string calldata evidenceIpfs
+    ) external nonReentrant whenNotPaused onlyExistingOrder(orderId) {
+        if (bytes(evidenceIpfs).length == 0) revert InvalidEvidence();
+
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.AWAITING_CONFIRMATION)
+            revert InvalidOrderStatus();
+
+        if (!order.fromCrypto) {
+            if (msg.sender != order.creator) revert InvalidSender();
+            order.claimer = order.creator;
+            order.defender = order.filler;
+        } else {
+            if (msg.sender != order.filler) revert InvalidSender();
+            order.claimer = order.filler;
+            order.defender = order.creator;
+        }
+
+        ISlice.CreateDisputeParams memory params = ISlice.CreateDisputeParams({
+            claimer: order.claimer,
+            defender: order.defender,
+            category: courtCategory,
+            ipfsHash: evidenceIpfs,
+            jurorsRequired: jurorsRequired,
+            paySeconds: PAY_DURATION,
+            evidenceSeconds: EVIDENCE_DURATION,
+            commitSeconds: COMMIT_DURATION,
+            revealSeconds: REVEAL_DURATION
+        });
+
+        uint256 disputeId = slice.createDispute(params);
+
+        order.status = OrderStatus.DISPUTED;
+        order.sliceDisputeId = disputeId;
+
+        orderToDisputeId[orderId] = disputeId;
+        disputeToOrderId[disputeId] = orderId;
+
+        emit FiatPaymentDisputed(orderId, msg.sender);
+        emit SliceDisputeCreated(
+            orderId,
+            disputeId,
+            order.claimer,
+            order.defender,
+            evidenceIpfs
+        );
+    }
+
+    function submitEvidence(
+        uint256 orderId,
+        string calldata evidenceIpfs
+    ) external whenNotPaused onlyExistingOrder(orderId) {
+        if (bytes(evidenceIpfs).length == 0) revert InvalidEvidence();
+
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.DISPUTED) revert InvalidOrderStatus();
+        if (msg.sender != order.creator && msg.sender != order.filler)
+            revert NotParty();
+        if (order.sliceDisputeId == 0) revert DisputeNotInitialized();
+
+        slice.submitEvidence(order.sliceDisputeId, evidenceIpfs);
+        emit EvidenceSubmittedToSlice(
+            orderId,
+            order.sliceDisputeId,
+            msg.sender,
+            evidenceIpfs
+        );
+    }
+
+    function payArbitrationFee(
+        uint256 orderId
+    ) external nonReentrant whenNotPaused onlyExistingOrder(orderId) {
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.DISPUTED) revert InvalidOrderStatus();
+        if (order.sliceDisputeId == 0) revert DisputeNotInitialized();
+
+        uint256 cost = slice.getDisputeCost(order.sliceDisputeId);
+
+        if (msg.sender == order.creator) {
+            if (order.creatorFeePaid) revert FeeAlreadyPaid();
+            order.creatorFeePaid = true;
+        } else if (msg.sender == order.filler) {
+            if (order.fillerFeePaid) revert FeeAlreadyPaid();
+            order.fillerFeePaid = true;
+        } else {
+            revert NotParty();
+        }
+
+        if (order.firstFeePaymentTime == 0) {
+            order.firstFeePaymentTime = block.timestamp;
+        }
+
+        arbitrationToken.safeTransferFrom(msg.sender, address(this), cost);
+        order.feesCollected += cost;
+
+        emit ArbitrationFeePaid(orderId, msg.sender, cost);
+
+        if (order.creatorFeePaid && order.fillerFeePaid) {
+            _activateSliceDispute(orderId);
+        }
+    }
+
+    function timeoutOpponent(
+        uint256 orderId
+    ) external nonReentrant whenNotPaused onlyExistingOrder(orderId) {
+        Order storage order = orders[orderId];
+        if (order.status != OrderStatus.DISPUTED) revert InvalidOrderStatus();
+        if (order.firstFeePaymentTime == 0) revert InvalidFeeTimeoutState();
+        if (block.timestamp <= order.firstFeePaymentTime + FEE_TIMEOUT)
+            revert FeeTimeoutNotReached();
+        if (order.creatorFeePaid == order.fillerFeePaid)
+            revert InvalidFeeTimeoutState();
+
+        address winner = order.creatorFeePaid ? order.creator : order.filler;
+
+        order.status = (winner == order.claimer)
+            ? OrderStatus.COMPLETED
+            : OrderStatus.REFUNDED;
+
+        if (order.feesCollected > 0) {
+            arbitrationToken.safeTransfer(winner, order.feesCollected);
+            order.feesCollected = 0;
+        }
+
+        IERC20(usdc).safeTransfer(winner, order.amount);
+        emit FeeTimeoutClaimed(orderId, winner);
+
+        if (winner == order.claimer) {
+            emit FiatPaymentConfirmed(orderId, msg.sender);
+        } else {
+            emit CryptoPaymentRefunded(orderId, msg.sender);
+        }
+    }
+
+    function getArbitrationCost(
+        uint256 orderId
+    ) external view onlyExistingOrder(orderId) returns (uint256) {
+        uint256 disputeId = orders[orderId].sliceDisputeId;
+        if (disputeId == 0) revert DisputeNotInitialized();
+        return slice.getDisputeCost(disputeId);
+    }
+
+    function getFeeTimeoutStatus(
+        uint256 orderId
+    )
+        external
+        view
+        onlyExistingOrder(orderId)
+        returns (
+            bool canTimeout,
+            uint256 timeRemaining,
+            address potentialWinner
+        )
+    {
+        Order storage order = orders[orderId];
+
+        if (
+            order.status != OrderStatus.DISPUTED ||
+            order.firstFeePaymentTime == 0
+        ) {
+            return (false, 0, address(0));
+        }
+
+        if (order.creatorFeePaid == order.fillerFeePaid) {
+            return (false, 0, address(0));
+        }
+
+        uint256 timeoutDeadline = order.firstFeePaymentTime + FEE_TIMEOUT;
+        potentialWinner = order.creatorFeePaid ? order.creator : order.filler;
+
+        if (block.timestamp > timeoutDeadline) {
+            return (true, 0, potentialWinner);
+        }
+
+        return (false, timeoutDeadline - block.timestamp, potentialWinner);
+    }
+
+    function rule(
+        uint256 disputeId,
+        uint256 ruling
+    ) external override nonReentrant {
+        if (msg.sender != address(slice)) revert OnlySlice();
+
+        uint256 orderId = disputeToOrderId[disputeId];
+        Order storage order = orders[orderId];
+
+        if (order.status != OrderStatus.DISPUTED) revert InvalidOrderStatus();
+        if (order.sliceDisputeId != disputeId) revert DisputeNotInitialized();
+
+        address winner = ruling == 1 ? order.claimer : order.defender;
+        order.status = (winner == order.claimer)
+            ? OrderStatus.COMPLETED
+            : OrderStatus.REFUNDED;
+
+        IERC20(usdc).safeTransfer(winner, order.amount);
+
+        emit SliceRulingReceived(orderId, disputeId, ruling, winner);
+        if (winner == order.claimer) {
+            emit FiatPaymentConfirmed(orderId, msg.sender);
+        } else {
+            emit CryptoPaymentRefunded(orderId, msg.sender);
+        }
+    }
+
+    function _activateSliceDispute(uint256 orderId) internal {
+        Order storage order = orders[orderId];
+        uint256 totalFees = order.feesCollected;
+
+        arbitrationToken.forceApprove(address(slice), totalFees);
+        slice.payDispute(order.sliceDisputeId);
+
+        order.feesCollected = 0;
+        emit SliceDisputeActivated(orderId, order.sliceDisputeId);
+    }
+}
+````
+
+## File: contracts/src/core/Slice.sol
 ````solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
@@ -103,7 +949,11 @@ contract Slice {
 
     event DisputeCreated(uint256 indexed id, address claimer, address defender);
     event FundsDeposited(uint256 indexed id, address role, uint256 amount);
-    event EvidenceSubmitted(uint256 indexed id, address indexed party, string ipfsHash);
+    event EvidenceSubmitted(
+        uint256 indexed id,
+        address indexed party,
+        string ipfsHash
+    );
     event JurorJoined(uint256 indexed id, address juror);
     event StatusChanged(uint256 indexed id, DisputeStatus newStatus);
     event VoteCommitted(uint256 indexed id, address juror);
@@ -119,9 +969,14 @@ contract Slice {
     // 1. DISPUTE CREATION
     // ============================================
 
-    function createDispute(DisputeConfig calldata _config) external returns (uint256) {
+    function createDispute(
+        DisputeConfig calldata _config
+    ) external returns (uint256) {
         require(msg.sender != _config.defender, "Self-dispute not allowed");
-        require(_config.claimer != _config.defender, "Claimer cannot be Defender");
+        require(
+            _config.claimer != _config.defender,
+            "Claimer cannot be Defender"
+        );
 
         disputeCount++;
         uint256 id = disputeCount;
@@ -170,7 +1025,11 @@ contract Slice {
             revert("Only disputants can pay");
         }
 
-        bool success = stakingToken.transferFrom(msg.sender, address(this), d.requiredStake);
+        bool success = stakingToken.transferFrom(
+            msg.sender,
+            address(this),
+            d.requiredStake
+        );
         require(success, "Transfer failed");
 
         emit FundsDeposited(_id, msg.sender, d.requiredStake);
@@ -189,7 +1048,10 @@ contract Slice {
         require(d.status != DisputeStatus.Finished, "Dispute finished");
         require(d.status != DisputeStatus.Reveal, "Evidence closed");
         require(block.timestamp <= d.evidenceDeadline, "Deadline passed");
-        require(msg.sender == d.claimer || msg.sender == d.defender, "Only parties can submit");
+        require(
+            msg.sender == d.claimer || msg.sender == d.defender,
+            "Only parties can submit"
+        );
 
         emit EvidenceSubmitted(_id, msg.sender, _ipfsHash);
     }
@@ -208,7 +1070,11 @@ contract Slice {
         require(_amount <= MAX_STAKE, "Stake too high");
 
         // 1. Random Selection
-        uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender)));
+        uint256 seed = uint256(
+            keccak256(
+                abi.encodePacked(block.timestamp, block.prevrandao, msg.sender)
+            )
+        );
         uint256 index = seed % openDisputeIds.length;
         uint256 id = openDisputeIds[index];
 
@@ -217,11 +1083,18 @@ contract Slice {
         // 2. Safety Checks (Expired, Finished, or Conflict of Interest)
         require(block.timestamp < d.commitDeadline, "Dispute expired");
         require(d.status != DisputeStatus.Finished, "Dispute finished");
-        require(msg.sender != d.claimer && msg.sender != d.defender, "Conflict: Party cannot be juror");
+        require(
+            msg.sender != d.claimer && msg.sender != d.defender,
+            "Conflict: Party cannot be juror"
+        );
         require(!_isJuror(id, msg.sender), "Already a juror");
 
         // 3. Stake Transfer
-        bool success = stakingToken.transferFrom(msg.sender, address(this), _amount);
+        bool success = stakingToken.transferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
         require(success, "Transfer failed");
 
         // 4. Assign Juror
@@ -246,14 +1119,20 @@ contract Slice {
         require(d.status == DisputeStatus.Commit, "Not voting phase");
         require(block.timestamp <= d.commitDeadline, "Voting ended");
         require(_isJuror(_id, msg.sender), "Not a juror");
-        require(commitments[_id][msg.sender] == bytes32(0), "Already committed");
+        require(
+            commitments[_id][msg.sender] == bytes32(0),
+            "Already committed"
+        );
 
         commitments[_id][msg.sender] = _commitment;
         d.commitsCount++;
         emit VoteCommitted(_id, msg.sender);
 
         // Auto-advance if everyone voted
-        if (disputeJurors[_id].length == d.jurorsRequired && d.commitsCount == d.jurorsRequired) {
+        if (
+            disputeJurors[_id].length == d.jurorsRequired &&
+            d.commitsCount == d.jurorsRequired
+        ) {
             d.status = DisputeStatus.Reveal;
             emit StatusChanged(_id, DisputeStatus.Reveal);
         }
@@ -263,7 +1142,10 @@ contract Slice {
         Dispute storage d = disputeStore[_id];
 
         // Graceful rollover if deadline passed but status didn't update
-        if (d.status == DisputeStatus.Commit && block.timestamp > d.commitDeadline) {
+        if (
+            d.status == DisputeStatus.Commit &&
+            block.timestamp > d.commitDeadline
+        ) {
             d.status = DisputeStatus.Reveal;
         }
 
@@ -289,12 +1171,16 @@ contract Slice {
     function executeRuling(uint256 _id) external {
         Dispute storage d = disputeStore[_id];
 
-        if (d.status == DisputeStatus.Commit && block.timestamp > d.commitDeadline) {
+        if (
+            d.status == DisputeStatus.Commit &&
+            block.timestamp > d.commitDeadline
+        ) {
             d.status = DisputeStatus.Reveal;
         }
 
         bool timePassed = block.timestamp > d.revealDeadline;
-        bool allRevealed = (d.commitsCount > 0 && d.commitsCount == d.revealsCount);
+        bool allRevealed = (d.commitsCount > 0 &&
+            d.commitsCount == d.revealsCount);
 
         require(d.status == DisputeStatus.Reveal, "Wrong phase");
         require(timePassed || allRevealed, "Cannot execute yet");
@@ -334,11 +1220,15 @@ contract Slice {
         return disputeStore[_id];
     }
 
-    function getJurorDisputes(address _user) external view returns (uint256[] memory) {
+    function getJurorDisputes(
+        address _user
+    ) external view returns (uint256[] memory) {
         return jurorDisputes[_user];
     }
 
-    function getUserDisputes(address _user) external view returns (uint256[] memory) {
+    function getUserDisputes(
+        address _user
+    ) external view returns (uint256[] memory) {
         return userDisputes[_user];
     }
 
@@ -423,7 +1313,8 @@ contract Slice {
             address j = jurors[i];
             jurorStats[j].totalDisputes++;
 
-            bool isWinner = hasRevealed[_id][j] && revealedVotes[_id][j] == winningChoice;
+            bool isWinner = hasRevealed[_id][j] &&
+                revealedVotes[_id][j] == winningChoice;
 
             if (isWinner) {
                 jurorStats[j].coherentVotes++;
@@ -431,7 +1322,8 @@ contract Slice {
 
                 if (totalWinningStake > 0) {
                     // Reward = Stake + (Stake/TotalWinningStake * LosingPool)
-                    uint256 myShare = (myStake * totalLosingStake) / totalWinningStake;
+                    uint256 myShare = (myStake * totalLosingStake) /
+                        totalWinningStake;
                     jurorStats[j].totalEarnings += myShare;
                     balances[j] += (myStake + myShare);
                 } else {
@@ -444,57 +1336,1240 @@ contract Slice {
 }
 ````
 
-## File: contracts/contracts/fhe/FHECounter.sol
+## File: contracts/src/core/SliceEscrowV1.5.sol
 ````solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.19;
 
-import {FHE, euint32, externalEuint32} from "@fhevm/solidity/lib/FHE.sol";
-import {ZamaEthereumConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @title A simple FHE counter contract
-/// @author fhevm-hardhat-template
-/// @notice A very basic example contract showing how to work with encrypted data using FHEVM.
-contract FHECounter is ZamaEthereumConfig {
-    euint32 private _count;
+// --- INTERFACES ---
 
-    /// @notice Returns the current count
-    /// @return The current encrypted count
-    function getCount() external view returns (euint32) {
-        return _count;
+interface ISlice {
+    struct CourtConfig {
+        bool active;
+        uint256 feePerJuror;
+        uint256 partyStake;
+        uint256 jurorRewardShare;
+        uint256 minJurorStake;
+        uint256 maxJurorStake;
+        uint256 minVoteDuration;
+        uint256 maxVoteDuration;
+        uint256 alpha;
     }
 
-    /// @notice Increments the counter by a specified encrypted value.
-    /// @param inputEuint32 the encrypted input value
-    /// @param inputProof the input proof
-    /// @dev This example omits overflow/underflow checks for simplicity and readability.
-    /// In a production contract, proper range checks should be implemented.
-    function increment(externalEuint32 inputEuint32, bytes calldata inputProof) external {
-        euint32 encryptedEuint32 = FHE.fromExternal(inputEuint32, inputProof);
-
-        _count = FHE.add(_count, encryptedEuint32);
-
-        FHE.allowThis(_count);
-        FHE.allow(_count, msg.sender);
+    struct CreateDisputeParams {
+        address claimer;
+        address defender;
+        string category;
+        string ipfsHash;
+        uint256 jurorsRequired;
+        uint256 paySeconds;
+        uint256 evidenceSeconds;
+        uint256 commitSeconds;
+        uint256 revealSeconds;
     }
 
-    /// @notice Decrements the counter by a specified encrypted value.
-    /// @param inputEuint32 the encrypted input value
-    /// @param inputProof the input proof
-    /// @dev This example omits overflow/underflow checks for simplicity and readability.
-    /// In a production contract, proper range checks should be implemented.
-    function decrement(externalEuint32 inputEuint32, bytes calldata inputProof) external {
-        euint32 encryptedEuint32 = FHE.fromExternal(inputEuint32, inputProof);
+    function createDispute(
+        CreateDisputeParams calldata _params
+    ) external returns (uint256);
 
-        _count = FHE.sub(_count, encryptedEuint32);
+    function payDispute(uint256 _id) external;
 
-        FHE.allowThis(_count);
-        FHE.allow(_count, msg.sender);
+    function courtConfigs(
+        string memory _category
+    ) external view returns (CourtConfig memory);
+
+    function stakingToken() external view returns (IERC20);
+
+    function getDisputeCost(uint256 _id) external view returns (uint256);
+
+    // Getters
+    function MAX_JURORS() external view returns (uint256);
+}
+
+interface IArbitrable {
+    function rule(uint256 _disputeId, uint256 _ruling) external;
+}
+
+/**
+ * @title SliceEscrow (The Arbitrable)
+ * @author Slice Coding Expert
+ * @notice A Universal Escrow "wrapper" that turns Slice V1.5 into a secure P2P payment system.
+ *
+ * ======================================================================================
+ * 1. ARCHITECTURE: THE "SAFE BOX" PATTERN
+ * ======================================================================================
+ * Users (Frontends/EOAs) cannot easily receive callbacks from Slice.
+ * This contract acts as a programmable "Safe Box" that sits between the User and Slice.
+ *
+ * - Happy Path (No Dispute):
+ * Buyer deposits Money -> Safe Box holds it -> Buyer clicks "Release" -> Seller gets paid.
+ * (Slice is never involved, saving gas and fees).
+ *
+ * - Sad Path (Dispute):
+ * Buyer/Seller flags issue -> Safe Box freezes funds -> Calls Slice -> Slice rules -> Safe Box obeys.
+ *
+ * ======================================================================================
+ * 2. ASSET SEPARATION (Principal vs. Fees)
+ * ======================================================================================
+ * We separate the "Value being moved" from the "Cost of Justice".
+ *
+ * [A] PRINCIPAL (Held in THIS Contract)
+ * --------------------------------------------------------------------------------------
+ * This is the transaction value (e.g., 1,000 USDC for a laptop).
+ * - It is locked here upon creation.
+ * - It NEVER leaves this contract until:
+ * a) Buyer releases it manually.
+ * b) Slice triggers rule() to force a release.
+ *
+ * [B] ARBITRATION COST (Sent to SLICE Contract)
+ * --------------------------------------------------------------------------------------
+ * If a dispute arises, BOTH parties must pay the "Cost of Justice" to proceed.
+ * This ensures the loser pays for the arbitration.
+ *
+ * Cost Per Party = (JurorsRequired × FeePerJuror) + PartyStake
+ *
+ * - Funds flow: User -> SliceEscrow -> Slice.
+ * - FEE TIMEOUT: If one party pays but the other doesn't within the timeout,
+ *   the paying party wins by default.
+ *
+ * ======================================================================================
+ * 3. TOKEN SEPARATION (Principal vs. Staking)
+ * ======================================================================================
+ * The Principal token (e.g., PEPE, ETH, any ERC20) can differ from the Staking token
+ * used by Slice (e.g., USDC). This contract handles both independently.
+ *
+ * ======================================================================================
+ * 4. THE "TRIANGLE OF TRUST" FLOW
+ * ======================================================================================
+ * 1. [Escrow] raiseDispute():
+ * - Creates a "Draft" dispute in Slice.
+ * - Status: "Created" (Waiting for fees).
+ *
+ * 2. [Escrow] payArbitrationFee():
+ * - Collects Fee+Stake from Buyer & Seller (in Slice's staking token).
+ * - Once BOTH pay, calls slice.payDispute().
+ * - Status: "Active/Commit" (Jurors can now draft).
+ * - FEE TIMEOUT: If opponent doesn't pay within timeout, paying party wins.
+ *
+ * 3. [Slice] executeRuling():
+ * - Jurors vote. Winner is decided.
+ * - Slice calls IArbitrable.rule() on THIS contract.
+ *
+ * 4. [Escrow] rule():
+ * - Unlocks the Principal (1,000 USDC) to the Winner.
+ */
+contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20; // Usage
+
+    enum Status {
+        Active,
+        Disputed,
+        Resolved
+    }
+
+    enum Side {
+        None,
+        Buyer,
+        Seller
+    }
+
+    struct Transaction {
+        address buyer;
+        address seller;
+        address token; // The currency of the PRINCIPAL payment (e.g. PEPE, WETH)
+        uint256 amount; // The principal payment amount
+        // Dispute Data
+        string category; // Which Slice Court to use (e.g. "Tech")
+        uint256 jurors; // How many jurors needed (e.g. 3)
+        uint256 sliceDisputeId;
+        Status status;
+        // Fee Tracking (Who has paid the arbitration fees?)
+        bool buyerFeePaid;
+        bool sellerFeePaid;
+        uint256 feesCollected;
+        // Fee Timeout Tracking (prevents deadlock if opponent refuses to pay)
+        uint256 firstFeePaymentTime; // When the first party paid their fee
+    }
+
+    ISlice public immutable slice;
+
+    // Fee timeout constant (24 hours)
+    uint256 public constant FEE_TIMEOUT = 1 days;
+
+    // Dispute timeline constants (used when creating disputes in Slice)
+    uint256 public constant PAY_DURATION = 1 days;
+    uint256 public constant EVIDENCE_DURATION = 1 days;
+    uint256 public constant COMMIT_DURATION = 2 days;
+    uint256 public constant REVEAL_DURATION = 1 days;
+
+    // Counter for internal Transaction IDs
+    uint256 public txCount;
+    mapping(uint256 => Transaction) public transactions;
+
+    // Mapping from Slice Dispute ID -> Internal Transaction ID
+    mapping(uint256 => uint256) public disputeToTx;
+
+    // Events
+    event TransactionCreated(
+        uint256 indexed txId,
+        address indexed buyer,
+        address indexed seller,
+        uint256 amount
+    );
+    event FundsReleased(uint256 indexed txId, address to);
+    event DisputeRaised(uint256 indexed txId, address raisedBy);
+    event FeesDeposited(uint256 indexed txId, address party, uint256 amount);
+    event DisputeActivated(uint256 indexed txId, uint256 sliceDisputeId);
+    event FeeTimeoutClaimed(uint256 indexed txId, address winner);
+
+    constructor(address _slice) Ownable(msg.sender) {
+        slice = ISlice(_slice);
+    }
+
+    // ============================================
+    // 1. CREATE TRANSACTION (Happy Path Start)
+    // ============================================
+
+    function createTransaction(
+        address _seller,
+        address _token,
+        uint256 _amount,
+        string calldata _category,
+        uint256 _jurors
+    ) external nonReentrant returns (uint256) {
+        require(_amount > 0, "Amount must be > 0");
+        require(_seller != msg.sender, "Cannot pay self");
+
+        ISlice.CourtConfig memory config = slice.courtConfigs(_category);
+        require(config.active, "Court is not active");
+        require(
+            _jurors > 0 && _jurors <= slice.MAX_JURORS(),
+            "Invalid number of jurors"
+        );
+
+        // 1. Pull the Principal (The Payment)
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+
+        txCount++;
+        uint256 txId = txCount;
+
+        transactions[txId] = Transaction({
+            buyer: msg.sender,
+            seller: _seller,
+            token: _token,
+            amount: _amount,
+            category: _category,
+            jurors: _jurors,
+            sliceDisputeId: 0,
+            status: Status.Active,
+            buyerFeePaid: false,
+            sellerFeePaid: false,
+            feesCollected: 0,
+            firstFeePaymentTime: 0
+        });
+
+        emit TransactionCreated(txId, msg.sender, _seller, _amount);
+        return txId;
+    }
+
+    // ============================================
+    // 2. MANUAL RESOLUTION (No Slice needed)
+    // ============================================
+
+    /**
+     * @notice Buyer is happy and releases funds to Seller.
+     */
+    function release(uint256 _txId) external nonReentrant {
+        Transaction storage txn = transactions[_txId];
+        require(msg.sender == txn.buyer, "Only buyer");
+        require(txn.status == Status.Active, "Wrong status");
+
+        txn.status = Status.Resolved;
+        IERC20(txn.token).safeTransfer(txn.seller, txn.amount);
+
+        emit FundsReleased(_txId, txn.seller);
+    }
+
+    /**
+     * @notice Seller refunds the Buyer.
+     */
+    function refund(uint256 _txId) external nonReentrant {
+        Transaction storage txn = transactions[_txId];
+        require(msg.sender == txn.seller, "Only seller");
+        require(txn.status == Status.Active, "Wrong status");
+
+        txn.status = Status.Resolved;
+        IERC20(txn.token).safeTransfer(txn.buyer, txn.amount);
+
+        emit FundsReleased(_txId, txn.buyer);
+    }
+
+    // ============================================
+    // 3. DISPUTE ESCALATION
+    // ============================================
+
+    /**
+     * @notice Either party can flag a dispute.
+     * @dev This freezes the state to 'Disputed' but doesn't call Slice yet.
+     * Both parties must pay fees first.
+     */
+    function raiseDispute(
+        uint256 _txId,
+        string calldata _evidenceIpfs
+    ) external nonReentrant {
+        Transaction storage txn = transactions[_txId];
+        require(txn.status == Status.Active, "Not active");
+        require(
+            msg.sender == txn.buyer || msg.sender == txn.seller,
+            "Not party"
+        );
+
+        txn.status = Status.Disputed;
+
+        // 1. Create the Dispute in Slice (Status: Created, Waiting for Payment)
+        // We pass THIS contract as the 'Arbitrated', but register the Buyer/Seller addresses
+        ISlice.CreateDisputeParams memory params = ISlice.CreateDisputeParams({
+            claimer: txn.buyer,
+            defender: txn.seller,
+            category: txn.category,
+            ipfsHash: _evidenceIpfs,
+            jurorsRequired: txn.jurors,
+            paySeconds: PAY_DURATION,
+            evidenceSeconds: EVIDENCE_DURATION,
+            commitSeconds: COMMIT_DURATION,
+            revealSeconds: REVEAL_DURATION
+        });
+
+        uint256 sliceId = slice.createDispute(params);
+
+        txn.sliceDisputeId = sliceId;
+        disputeToTx[sliceId] = _txId;
+
+        emit DisputeRaised(_txId, msg.sender);
+    }
+
+    /**
+     * @notice Parties pay the Arbitration Fee + Stake to this contract.
+     * @dev Uses Slice's staking token (not the principal token) for fees.
+     * This allows trades in any token while paying arbitration in USDC.
+     */
+    function payArbitrationFee(uint256 _txId) external nonReentrant {
+        Transaction storage txn = transactions[_txId];
+        require(txn.status == Status.Disputed, "Not disputed");
+        require(txn.sliceDisputeId != 0, "Dispute not initialized");
+
+        // Calculate Cost using court config
+        uint256 cost = slice.getDisputeCost(txn.sliceDisputeId);
+
+        // Get Slice's staking token (e.g., USDC) - separate from principal token
+        IERC20 stakingToken = slice.stakingToken();
+
+        // Determine who is paying
+        if (msg.sender == txn.buyer) {
+            require(!txn.buyerFeePaid, "Already paid");
+            txn.buyerFeePaid = true;
+        } else if (msg.sender == txn.seller) {
+            require(!txn.sellerFeePaid, "Already paid");
+            txn.sellerFeePaid = true;
+        } else {
+            revert("Not party");
+        }
+
+        // Start timeout timer if this is the first fee payment
+        if (txn.firstFeePaymentTime == 0) {
+            txn.firstFeePaymentTime = block.timestamp;
+        }
+
+        // Pull tokens using Slice's staking token (not txn.token)
+        stakingToken.safeTransferFrom(msg.sender, address(this), cost);
+        txn.feesCollected += cost;
+
+        emit FeesDeposited(_txId, msg.sender, cost);
+
+        // If both paid, push funds to Slice
+        if (txn.buyerFeePaid && txn.sellerFeePaid) {
+            _activateSliceDispute(_txId, txn.feesCollected);
+        }
+    }
+
+    function _activateSliceDispute(uint256 _txId, uint256 _totalFees) internal {
+        Transaction storage txn = transactions[_txId];
+
+        // Use Slice's staking token for approval (not txn.token)
+        IERC20 stakingToken = slice.stakingToken();
+
+        // Approve Slice to pull the fees
+        stakingToken.forceApprove(address(slice), _totalFees);
+
+        // Call Slice to change status from Created -> Commit
+        // Slice V1.5 allows 'Arbitrated' (this contract) to pay
+        slice.payDispute(txn.sliceDisputeId);
+
+        emit DisputeActivated(_txId, txn.sliceDisputeId);
+    }
+
+    // ============================================
+    // 3B. FEE TIMEOUT (Prevents Deadlock)
+    // ============================================
+
+    /**
+     * @notice Claim victory if the opponent failed to pay arbitration fees in time.
+     * @dev CRITICAL Prevents the "Fee Standoff" attack where one party refuses
+     * to pay fees, locking funds indefinitely.
+     *
+     * Attack Vector (Before Fix):
+     * 1. Buyer flags dispute and pays fee
+     * 2. Seller refuses to pay fee
+     * 3. Dispute never activates, funds locked forever
+     *
+     * Solution: If one party pays and the other doesn't within FEE_TIMEOUT,
+     * the paying party automatically wins.
+     */
+    function timeoutOpponent(uint256 _txId) external nonReentrant {
+        Transaction storage txn = transactions[_txId];
+        require(txn.status == Status.Disputed, "Not disputed");
+        require(txn.firstFeePaymentTime > 0, "No fees paid yet");
+        require(
+            block.timestamp > txn.firstFeePaymentTime + FEE_TIMEOUT,
+            "Timeout not reached"
+        );
+
+        // Exactly one party must have paid (XOR condition)
+        require(
+            txn.buyerFeePaid != txn.sellerFeePaid,
+            "Both paid or neither paid"
+        );
+
+        IERC20 stakingToken = slice.stakingToken();
+
+        txn.status = Status.Resolved;
+
+        // Case 1: Buyer paid, Seller didn't -> Buyer wins
+        if (txn.buyerFeePaid && !txn.sellerFeePaid) {
+            // Refund Buyer's arbitration fee (in staking token)
+            stakingToken.safeTransfer(txn.buyer, txn.feesCollected);
+            // Release Principal to Buyer (in principal token)
+            IERC20(txn.token).safeTransfer(txn.buyer, txn.amount);
+
+            emit FeeTimeoutClaimed(_txId, txn.buyer);
+            emit FundsReleased(_txId, txn.buyer);
+        }
+        // Case 2: Seller paid, Buyer didn't -> Seller wins
+        else if (txn.sellerFeePaid && !txn.buyerFeePaid) {
+            // Refund Seller's arbitration fee (in staking token)
+            stakingToken.safeTransfer(txn.seller, txn.feesCollected);
+            // Release Principal to Seller (in principal token)
+            IERC20(txn.token).safeTransfer(txn.seller, txn.amount);
+
+            emit FeeTimeoutClaimed(_txId, txn.seller);
+            emit FundsReleased(_txId, txn.seller);
+        }
+    }
+
+    /**
+     * @notice Check if fee timeout can be claimed for a transaction.
+     * @param _txId The transaction ID.
+     * @return canTimeout Whether timeout can be claimed.
+     * @return timeRemaining Seconds until timeout (0 if already claimable).
+     * @return potentialWinner Address that would win if timeout is claimed.
+     */
+    function getFeeTimeoutStatus(
+        uint256 _txId
+    )
+        external
+        view
+        returns (
+            bool canTimeout,
+            uint256 timeRemaining,
+            address potentialWinner
+        )
+    {
+        Transaction storage txn = transactions[_txId];
+
+        if (txn.status != Status.Disputed || txn.firstFeePaymentTime == 0) {
+            return (false, 0, address(0));
+        }
+
+        // Both paid or neither paid - no timeout possible
+        if (txn.buyerFeePaid == txn.sellerFeePaid) {
+            return (false, 0, address(0));
+        }
+
+        uint256 timeoutDeadline = txn.firstFeePaymentTime + FEE_TIMEOUT;
+
+        if (block.timestamp > timeoutDeadline) {
+            potentialWinner = txn.buyerFeePaid ? txn.buyer : txn.seller;
+            return (true, 0, potentialWinner);
+        } else {
+            potentialWinner = txn.buyerFeePaid ? txn.buyer : txn.seller;
+            return (false, timeoutDeadline - block.timestamp, potentialWinner);
+        }
+    }
+
+    // ============================================
+    // 4. CALLBACK (The Ruler)
+    // ============================================
+
+    function rule(
+        uint256 _disputeId,
+        uint256 _ruling
+    ) external override nonReentrant {
+        require(msg.sender == address(slice), "Only Slice");
+
+        uint256 txId = disputeToTx[_disputeId];
+        Transaction storage txn = transactions[txId];
+        require(txn.status == Status.Disputed, "Not disputed");
+
+        txn.status = Status.Resolved;
+        address winner;
+
+        if (_ruling == 1) {
+            // Ruling 1 = Claimer (Buyer) wins
+            winner = txn.buyer;
+        } else {
+            // Ruling 0 = Defender (Seller) wins
+            winner = txn.seller;
+        }
+
+        // Release the PRINCIPAL amount.
+        // (Note: The Arbitration Fees/Stakes were already handled inside Slice.sol.
+        // Slice sent the winner their deposit + bonus directly. We only manage the Principal here.)
+        IERC20(txn.token).safeTransfer(winner, txn.amount);
+
+        emit FundsReleased(txId, winner);
     }
 }
 ````
 
-## File: contracts/contracts/fhe/SliceFHE.sol
+## File: contracts/src/core/SliceV1.5.sol
+````solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+/**
+ * @title IArbitrable
+ * @notice Interface for contracts that wish to use Slice for dispute resolution.
+ */
+interface IArbitrable {
+    /**
+     * @dev Called by Slice to enforce the ruling.
+     * @param _disputeId The ID of the dispute in Slice.
+     * @param _ruling The ruling (0 or 1).
+     */
+    function rule(uint256 _disputeId, uint256 _ruling) external;
+}
+
+// TODO:
+// - Change from a Pull Model (drawDispute: Juror selects active dispute)
+// to a Push Model (drawJurors: Dispute selects passive jurors)
+// - Implement chainlink VRF
+
+/**
+ * @title Slice Protocol V1.5 (The Arbitrator)
+ * @notice A neutral, scalable, on-chain dispute resolution protocol.
+ *
+ * ======================================================================================
+ * 1. ARCHITECTURE: PUSH & FRAGMENTATION
+ * ======================================================================================
+ * - Multi-Court: Disputes are fragmented into categories (e.g., "Tech", "Commerce").
+ * Jurors stake specific courts, ensuring domain expertise.
+ * - Push Pattern: Slice does NOT hold the principal assets (e.g., the NFT or 1000 ETH).
+ * Slice only holds the STAKES. The External Contract (Arbitrable) holds the ASSETS.
+ * When a ruling is executed, Slice calls `rule(id, winner)` on the external contract.
+ *
+ * ======================================================================================
+ * 2. ECONOMIC MODEL: THE "WATERFALL"
+ * ======================================================================================
+ * The protocol distinguishes between "Wages" (Fee) and "Penalties" (Stake).
+ *
+ * [A] DEPOSIT FORMULA (Cost to Create/Defend)
+ * --------------------------------------------------------------------------------------
+ * Parties must pay for the workers (Jurors) AND put up a penalty bond.
+ *
+ * Total Deposit = (JurorsRequired * FeePerJuror) + PartyStake
+ *
+ * Where:
+ * - FeePerJuror: 100% goes to jurors (Gas + Wage).
+ * - PartyStake:  The "Skin in the Game" penalty.
+ *
+ * [B] SETTLEMENT FORMULA (Where the money goes)
+ * --------------------------------------------------------------------------------------
+ * When a ruling is made, the Loser's "Fee" pays the jurors.
+ * The Loser's "PartyStake" is split between the Winner and the Jurors.
+ *
+ * LoserStakeBonus = PartyStake * (100% - JurorRewardShare)
+ * JurorStakeBonus = PartyStake * JurorRewardShare
+ *
+ * 1. Winner Payout = WinnerDeposit + LoserStakeBonus
+ * (Winner gets their full money back + a bonus for being right)
+ *
+ * 2. Juror Pot     = (JurorsRequired * FeePerJuror) + JurorStakeBonus
+ * (Jurors get their guaranteed wages + a high-yield bonus from the loser)
+ *
+ * ======================================================================================
+ * 3. RISK MODEL: ALPHA (α) PENALTY
+ * ======================================================================================
+ * Defines how much of a juror's stake is slashed for voting incoherently.
+ *
+ * [C] PENALTY FORMULA
+ * --------------------------------------------------------------------------------------
+ * Alpha (α): Configurable per court (0% to 100%, stored as basis points).
+ *
+ * Incoherent Penalty = JurorStake * α
+ * Juror Refund       = JurorStake - Incoherent Penalty
+ *
+ * - If α = 100%: Juror loses everything. (Binary/Objective disputes)
+ * - If α = 10%:  Juror loses 10%, gets 90% back. (Subjective disputes)
+ *
+ * [D] REWARD DISTRIBUTION
+ * --------------------------------------------------------------------------------------
+ * Coherent jurors (Winners) earn a share of the External Pot (Fees) AND the Internal Pot (Penalties).
+ *
+ * Share = JurorStake / TotalWinningStake
+ *
+ * Juror Payout = Principal + (ExternalPot * Share) + (TotalPenalties * Share)
+ */
+contract SliceV1_5 is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
+    // ============================================
+    // DATA STRUCTURES
+    // ============================================
+
+    enum DisputeStatus {
+        Created, // Waiting for payment
+        Evidence, // Paid. Evidence can be uploaded. NO VOTING.
+        Commit, // Evidence closed. Jurors commit hashes.
+        Reveal, // Commits closed. Jurors reveal votes.
+        Finished // Ruling executed.
+    }
+
+    struct CourtConfig {
+        bool active;
+        uint256 feePerJuror; // Wage per juror (paid by parties)
+        uint256 partyStake; // Extra penalty stake (paid by parties)
+        uint256 jurorRewardShare; // % of loser's stake that goes to jurors (Basis Points: 5000 = 50%)
+        uint256 minJurorStake; // Min stake to draft
+        uint256 maxJurorStake; // Sybil resistance cap
+        uint256 minVoteDuration; // Minimum seconds for commit/reveal phases
+        uint256 maxVoteDuration; // Maximum seconds for commit/reveal phases
+        uint256 alpha; // Incoherence Penalty (Basis Points: 10000 = 100% slashed)
+    }
+
+    struct Dispute {
+        uint256 id;
+        address arbitrated; // The contract that created the dispute (and receives callback)
+        address claimer;
+        address defender;
+        string category;
+        // --- Economic Snapshot (Immutable once created) ---
+        uint256 feePerJuror;
+        uint256 partyStake;
+        uint256 jurorRewardShare;
+        uint256 jurorsRequired;
+        uint256 alpha;
+        // --- State ---
+        string ipfsHash;
+        uint256 commitsCount;
+        uint256 revealsCount;
+        DisputeStatus status;
+        bool claimerPaid;
+        bool defenderPaid;
+        address winner;
+        // --- Phase Durations (Stored at creation, used to calculate deadlines at activation) ---
+        uint256 evidenceDuration;
+        uint256 commitDuration;
+        uint256 revealDuration;
+        // --- Timestamps (Calculated when dispute is activated via payDispute) ---
+        uint256 payDeadline;
+        uint256 evidenceDeadline;
+        uint256 commitDeadline;
+        uint256 revealDeadline;
+    }
+
+    struct JurorStats {
+        uint256 totalDisputes;
+        uint256 coherentVotes;
+        uint256 totalEarnings;
+    }
+
+    // ============================================
+    // CONSTANTS
+    // ============================================
+    uint256 public constant MAX_JURORS = 31;
+
+    // ============================================
+    // STATE VARIABLES
+    // ============================================
+
+    uint256 public disputeCount;
+    IERC20 public immutable stakingToken;
+    address public treasury;
+
+    // Court Configuration & Queues
+    mapping(string => CourtConfig) public courtConfigs;
+    mapping(string => uint256[]) public courtQueues;
+    mapping(uint256 => uint256) public idToQueueIndex;
+
+    // Core Data
+    mapping(uint256 => Dispute) internal disputeStore;
+    mapping(uint256 => address[]) public disputeJurors;
+    mapping(uint256 => mapping(address => bool)) internal isJurorInDispute;
+
+    // Voting
+    mapping(uint256 => mapping(address => bytes32)) public commitments;
+    mapping(uint256 => mapping(address => uint256)) public revealedVotes;
+    mapping(uint256 => mapping(address => bool)) public hasRevealed;
+
+    // Financials
+    mapping(uint256 => mapping(address => uint256)) public jurorStakes;
+    mapping(address => uint256) public balances;
+    mapping(address => JurorStats) public jurorStats;
+
+    // Indexing
+    mapping(address => uint256[]) private jurorDisputes;
+    mapping(address => uint256[]) private userDisputes;
+
+    // ============================================
+    // EVENTS
+    // ============================================
+
+    event DisputeCreated(uint256 indexed id, address indexed arbitrated, address claimer, address defender);
+    event CourtUpdated(string category, uint256 feePerJuror, uint256 alpha);
+    event FundsDeposited(uint256 indexed id, address role, uint256 amount);
+    event EvidenceSubmitted(uint256 indexed id, address indexed party, string ipfsHash);
+    event JurorJoined(uint256 indexed id, address juror, string category);
+    event StatusChanged(uint256 indexed id, DisputeStatus newStatus);
+    event VoteCommitted(uint256 indexed id, address juror);
+    event VoteRevealed(uint256 indexed id, address juror, uint256 vote);
+    event RulingExecuted(uint256 indexed id, address winner, uint256 amountWon);
+    event RulingSent(address indexed arbitrated, uint256 indexed disputeId, uint256 ruling);
+    event FundsWithdrawn(address indexed user, uint256 amount);
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
+
+    constructor(address _stakingToken, address _treasury) Ownable(msg.sender) {
+        stakingToken = IERC20(_stakingToken);
+        treasury = _treasury;
+
+        // Initialize "General" Court
+        courtConfigs["General"] = CourtConfig({
+            active: true,
+            feePerJuror: 5 * 10 ** 6, // 5 USDC
+            partyStake: 50 * 10 ** 6, // 50 USDC
+            jurorRewardShare: 5000, // 50%
+            minJurorStake: 10 * 10 ** 6, // 10 USDC
+            maxJurorStake: 1000 * 10 ** 6, // 1000 USDC
+            minVoteDuration: 3600, // 1 Hour
+            maxVoteDuration: 604800, // 1 Week
+            alpha: 10000 // 100% Penalty
+        });
+    }
+
+    // ============================================
+    // ADMIN: COURT MANAGEMENT
+    // ============================================
+
+    function setCourt(string memory _category, CourtConfig memory _config) external onlyOwner {
+        require(_config.jurorRewardShare <= 10000, "Share > 100%");
+        require(_config.alpha <= 10000, "Alpha > 100%");
+        require(_config.minVoteDuration <= _config.maxVoteDuration, "Invalid duration range");
+
+        courtConfigs[_category] = _config;
+        emit CourtUpdated(_category, _config.feePerJuror, _config.alpha);
+    }
+
+    /**
+     * @notice Update the treasury address for governance rewards.
+     * @param _treasury The new treasury address.
+     */
+    function setTreasury(address _treasury) external onlyOwner {
+        require(_treasury != address(0), "Invalid treasury");
+        address oldTreasury = treasury;
+        treasury = _treasury;
+        emit TreasuryUpdated(oldTreasury, _treasury);
+    }
+
+    // ============================================
+    // 1. DISPUTE LIFECYCLE: CREATION
+    // ============================================
+
+    struct CreateDisputeParams {
+        address claimer;
+        address defender;
+        string category;
+        string ipfsHash;
+        uint256 jurorsRequired;
+        uint256 paySeconds;
+        uint256 evidenceSeconds;
+        uint256 commitSeconds;
+        uint256 revealSeconds;
+    }
+
+    /**
+     * @notice Create a dispute with custom timelines.
+     * @param _params Struct containing all dispute creation parameters.
+     */
+    function createDispute(CreateDisputeParams calldata _params) external returns (uint256) {
+        // Validate addresses
+        require(_params.claimer != address(0), "Claimer cannot be zero address");
+        require(_params.defender != address(0), "Defender cannot be zero address");
+        require(msg.sender != _params.defender, "Self-dispute not allowed");
+        require(_params.claimer != _params.defender, "Claimer cannot be Defender");
+        
+        CourtConfig memory cc = courtConfigs[_params.category];
+        require(cc.active, "Court inactive");
+        require(_params.jurorsRequired > 0 && _params.jurorsRequired <= MAX_JURORS, "Invalid juror count");
+
+        // Validate Timelines against Court Guardrails
+        require(
+            _params.commitSeconds >= cc.minVoteDuration && _params.commitSeconds <= cc.maxVoteDuration,
+            "Commit duration OOB"
+        );
+        require(
+            _params.revealSeconds >= cc.minVoteDuration && _params.revealSeconds <= cc.maxVoteDuration,
+            "Reveal duration OOB"
+        );
+        require(_params.paySeconds >= 1 hours, "Pay time too short");
+        require(_params.evidenceSeconds >= 1 hours, "Evidence time too short");
+
+        disputeCount++;
+        uint256 id = disputeCount;
+
+        Dispute storage d = disputeStore[id];
+        d.id = id;
+        d.arbitrated = msg.sender;
+        d.claimer = _params.claimer;
+        d.defender = _params.defender;
+        d.category = _params.category;
+
+        // Snapshot Economics
+        d.feePerJuror = cc.feePerJuror;
+        d.partyStake = cc.partyStake;
+        d.jurorRewardShare = cc.jurorRewardShare;
+        d.jurorsRequired = _params.jurorsRequired;
+        d.alpha = cc.alpha;
+
+        d.ipfsHash = _params.ipfsHash;
+        d.status = DisputeStatus.Created;
+
+        // Store Phase Durations (Deadlines calculated at activation in payDispute)
+        d.evidenceDuration = _params.evidenceSeconds;
+        d.commitDuration = _params.commitSeconds;
+        d.revealDuration = _params.revealSeconds;
+
+        // Only set pay deadline at creation (the only deadline that matters before activation)
+        d.payDeadline = block.timestamp + _params.paySeconds;
+
+        userDisputes[_params.claimer].push(id);
+        userDisputes[_params.defender].push(id);
+
+        emit DisputeCreated(id, msg.sender, _params.claimer, _params.defender);
+        return id;
+    }
+
+    function getDisputeCost(uint256 _id) public view returns (uint256) {
+        Dispute memory d = disputeStore[_id];
+        return (d.feePerJuror * d.jurorsRequired) + d.partyStake;
+    }
+
+    function payDispute(uint256 _id) external {
+        Dispute storage d = disputeStore[_id];
+        require(d.status == DisputeStatus.Created, "Payment closed");
+        require(block.timestamp <= d.payDeadline, "Deadline passed");
+
+        bool isClaimer = msg.sender == d.claimer;
+        bool isDefender = msg.sender == d.defender;
+        bool isArbitrated = msg.sender == d.arbitrated && d.arbitrated != address(0);
+
+        require(isClaimer || isDefender || isArbitrated, "Not authorized");
+
+        uint256 cost = getDisputeCost(_id);
+        uint256 amountToPay = cost; // Default to single party cost
+
+        // Update payment status
+        if (isClaimer) {
+            require(!d.claimerPaid, "Already paid");
+            d.claimerPaid = true;
+        } else if (isDefender) {
+            require(!d.defenderPaid, "Already paid");
+            d.defenderPaid = true;
+        } else if (isArbitrated) {
+            // Escrow/Contract pays for both sides logic
+            d.claimerPaid = true;
+            d.defenderPaid = true;
+
+            amountToPay = cost * 2;
+        }
+
+        // Use SafeERC20 to prevent reverts with USDT
+        stakingToken.safeTransferFrom(msg.sender, address(this), amountToPay);
+
+        emit FundsDeposited(_id, msg.sender, amountToPay);
+
+        // Advance state when both parties have paid
+        if (d.claimerPaid && d.defenderPaid) {
+            d.status = DisputeStatus.Evidence;
+
+            // Calculate deadlines relative to NOW (Activation Time)
+            // This prevents "Expired on Arrival" disputes where phases have
+            // effectively zero time if payment happens late in the pay window
+            d.evidenceDeadline = block.timestamp + d.evidenceDuration;
+            d.commitDeadline = d.evidenceDeadline + d.commitDuration;
+            d.revealDeadline = d.commitDeadline + d.revealDuration;
+
+            _addToCourtQueue(d.category, _id);
+            emit StatusChanged(_id, DisputeStatus.Evidence);
+        }
+    }
+
+    /**
+     * @notice Allow parties to submit additional evidence during the evidence phase.
+     */
+    function submitEvidence(uint256 _id, string calldata _ipfsHash) external {
+        Dispute storage d = disputeStore[_id];
+
+        // Check Status
+        require(d.status == DisputeStatus.Evidence || d.status == DisputeStatus.Created, "Evidence closed");
+
+        // Check Timestamps (Evidence Phase is a sub-phase of Commit in V1.5 logic)
+        if (d.status == DisputeStatus.Evidence) {
+            require(block.timestamp <= d.evidenceDeadline, "Deadline passed");
+        }
+
+        // Access Control
+        require(
+            msg.sender == d.claimer || msg.sender == d.defender || msg.sender == d.arbitrated,
+            "Only parties can submit"
+        );
+
+        // We do not overwrite the original ipfsHash (the "root" case file).
+        // Instead, we emit an event that the Indexer/Subgraph will pick up
+        // to build the timeline of evidence.
+        emit EvidenceSubmitted(_id, msg.sender, _ipfsHash);
+    }
+
+    // ============================================
+    // 2. MATCHMAKING & JUROR SELECTION
+    // ============================================
+
+    function drawDispute(uint256 _amount, string calldata _category) external nonReentrant {
+        CourtConfig memory cc = courtConfigs[_category];
+        require(cc.active, "Court inactive");
+        require(_amount >= cc.minJurorStake, "Stake too low");
+        require(_amount <= cc.maxJurorStake, "Stake too high");
+
+        uint256[] storage queue = courtQueues[_category];
+        require(queue.length > 0, "No disputes pending");
+
+        // Random Selection (VRF recommended for Mainnet, simplified here)
+        uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender)));
+        uint256 index = seed % queue.length;
+        uint256 id = queue[index];
+
+        Dispute storage d = disputeStore[id];
+
+        require(block.timestamp < d.commitDeadline, "Expired");
+        require(msg.sender != d.claimer && msg.sender != d.defender, "Conflict of interest");
+        require(!_isJuror(id, msg.sender), "Already a juror");
+
+        // Safe transfer
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+
+        disputeJurors[id].push(msg.sender);
+        isJurorInDispute[id][msg.sender] = true;
+        jurorStakes[id][msg.sender] = _amount;
+        jurorDisputes[msg.sender].push(id);
+
+        emit JurorJoined(id, msg.sender, _category);
+
+        if (disputeJurors[id].length >= d.jurorsRequired) {
+            _removeFromCourtQueue(_category, index);
+        }
+    }
+
+    // ============================================
+    // 3. VOTING
+    // ============================================
+
+    function commitVote(uint256 _id, bytes32 _commitment) external {
+        Dispute storage d = disputeStore[_id];
+
+        // LAZY TRANSITION: Evidence -> Commit
+        // If we are in Evidence phase but time has passed, effectively move to Commit
+        if (d.status == DisputeStatus.Evidence && block.timestamp > d.evidenceDeadline) {
+            d.status = DisputeStatus.Commit;
+            emit StatusChanged(_id, DisputeStatus.Commit);
+        }
+
+        require(d.status == DisputeStatus.Commit, "Wrong phase");
+        require(block.timestamp <= d.commitDeadline, "Voting ended");
+        require(_isJuror(_id, msg.sender), "Not juror");
+        require(commitments[_id][msg.sender] == bytes32(0), "Already committed");
+
+        commitments[_id][msg.sender] = _commitment;
+        d.commitsCount++;
+        emit VoteCommitted(_id, msg.sender);
+
+        if (disputeJurors[_id].length == d.jurorsRequired && d.commitsCount == d.jurorsRequired) {
+            d.status = DisputeStatus.Reveal;
+            emit StatusChanged(_id, DisputeStatus.Reveal);
+        }
+    }
+
+    function revealVote(uint256 _id, uint256 _vote, uint256 _salt) external {
+        Dispute storage d = disputeStore[_id];
+
+        if (d.status == DisputeStatus.Commit && block.timestamp > d.commitDeadline) {
+            d.status = DisputeStatus.Reveal;
+        }
+
+        require(d.status == DisputeStatus.Reveal, "Wrong phase");
+        require(_isJuror(_id, msg.sender), "Not juror");
+        require(!hasRevealed[_id][msg.sender], "Already revealed");
+
+        bytes32 verify = keccak256(abi.encodePacked(_vote, _salt));
+        require(verify == commitments[_id][msg.sender], "Hash mismatch");
+
+        revealedVotes[_id][msg.sender] = _vote;
+        hasRevealed[_id][msg.sender] = true;
+        d.revealsCount++;
+
+        emit VoteRevealed(_id, msg.sender, _vote);
+    }
+
+    // ============================================
+    // 4. RULING & SETTLEMENT
+    // ============================================
+
+    function executeRuling(uint256 _id) external nonReentrant {
+        Dispute storage d = disputeStore[_id];
+
+        // Lazy Phase Transitions
+        if (d.status == DisputeStatus.Commit && block.timestamp > d.commitDeadline) {
+            d.status = DisputeStatus.Reveal;
+        }
+
+        bool timePassed = block.timestamp > d.revealDeadline;
+        bool allRevealed = (d.commitsCount > 0 && d.commitsCount == d.revealsCount);
+
+        require(d.status == DisputeStatus.Reveal, "Wrong phase");
+        require(timePassed || allRevealed, "Cannot execute");
+
+        // Determine Winner (Handle No Jurors)
+        uint256 winningChoice;
+        address winnerAddr;
+
+        if (disputeJurors[_id].length == 0) {
+            // NO JURORS: Default to Defender (Presumption of Innocence)
+            winningChoice = 0;
+            winnerAddr = d.defender;
+        } else {
+            // NORMAL: Count votes
+            winningChoice = _determineWinner(_id);
+            winnerAddr = winningChoice == 1 ? d.claimer : d.defender;
+        }
+
+        d.winner = winnerAddr;
+        d.status = DisputeStatus.Finished;
+
+        // Remove from Court Queue if incomplete
+        // (If it was full, it was already removed in drawDispute)
+        if (disputeJurors[_id].length < d.jurorsRequired) {
+            uint256 idx = idToQueueIndex[_id];
+            uint256[] storage queue = courtQueues[d.category];
+
+            // 1. Ensure queue has elements (length > idx)
+            // 2. Ensure the ID at that index is actually THIS dispute
+            if (queue.length > idx && queue[idx] == _id) {
+                _removeFromCourtQueue(d.category, idx);
+            }
+        }
+        _settleFinances(_id, winningChoice, winnerAddr);
+
+        // Callback (External)
+        if (d.arbitrated != address(0)) {
+            try IArbitrable(d.arbitrated).rule(_id, winningChoice) {
+                emit RulingSent(d.arbitrated, _id, winningChoice);
+            } catch {
+                // Emit event to signal callback failure, but ruling is preserved
+            }
+        }
+
+        emit RulingExecuted(_id, winnerAddr, 0);
+    }
+
+    function _settleFinances(uint256 _id, uint256 _winningChoice, address _winnerAddr) internal {
+        Dispute storage d = disputeStore[_id];
+
+        // Calculate Surplus (Unused Wages)
+        uint256 actualJurors = disputeJurors[_id].length;
+        uint256 budgetPerJuror = d.feePerJuror; // e.g. 5 USDC
+
+        uint256 totalBudgetedFees = budgetPerJuror * d.jurorsRequired;
+        uint256 actualFeesNeeded = budgetPerJuror * actualJurors;
+        uint256 unusedFees = totalBudgetedFees - actualFeesNeeded;
+
+        // Parties Settlement
+        uint256 totalDeposit = (d.feePerJuror * d.jurorsRequired) + d.partyStake;
+        uint256 loserStakeBonus = (d.partyStake * (10000 - d.jurorRewardShare)) / 10000;
+
+        balances[_winnerAddr] += totalDeposit + loserStakeBonus + unusedFees;
+
+        // Juror Pot Calculation
+        uint256 jurorStakeBonus = d.partyStake - loserStakeBonus;
+        uint256 externalPot = actualFeesNeeded + jurorStakeBonus;
+
+        // Distribute to Jurors (with Alpha logic)
+        if (actualJurors > 0) {
+            _distributeJurorRewards(_id, _winningChoice, externalPot);
+        } else {
+            // If 0 jurors, the externalPot goes to winner (no one else to pay)
+            balances[_winnerAddr] += externalPot;
+        }
+    }
+
+    function _distributeJurorRewards(uint256 _id, uint256 winningChoice, uint256 _externalPot) internal {
+        Dispute storage d = disputeStore[_id];
+        address[] memory jurors = disputeJurors[_id];
+
+        uint256 totalWinningJurorStake = 0;
+        uint256 totalPenaltyCollected = 0;
+
+        // Pass 1: Collect Penalties
+        for (uint i = 0; i < jurors.length; i++) {
+            address j = jurors[i];
+            uint256 s = jurorStakes[_id][j];
+
+            bool isCorrect = hasRevealed[_id][j] && revealedVotes[_id][j] == winningChoice;
+
+            if (isCorrect) {
+                totalWinningJurorStake += s;
+            } else {
+                uint256 penalty = (s * d.alpha) / 10000;
+                totalPenaltyCollected += penalty;
+
+                uint256 remainder = s - penalty;
+                if (remainder > 0) {
+                    balances[j] += remainder;
+                }
+            }
+            jurorStats[j].totalDisputes++;
+        }
+
+        if (totalWinningJurorStake > 0) {
+            // Pass 2: Pay Winners
+            for (uint i = 0; i < jurors.length; i++) {
+                address j = jurors[i];
+                bool isCorrect = hasRevealed[_id][j] && revealedVotes[_id][j] == winningChoice;
+
+                if (isCorrect) {
+                    uint256 myStake = jurorStakes[_id][j];
+
+                    balances[j] += myStake; // Return Principal
+
+                    uint256 penaltyShare = (myStake * totalPenaltyCollected) / totalWinningJurorStake;
+                    uint256 externalShare = (myStake * _externalPot) / totalWinningJurorStake;
+
+                    uint256 totalProfit = penaltyShare + externalShare;
+                    balances[j] += totalProfit;
+
+                    jurorStats[j].coherentVotes++;
+                    jurorStats[j].totalEarnings += totalProfit;
+                }
+            }
+        } else {
+            // "Reward Black Hole" Edge Case: All jurors voted incoherently
+            // External pot to winner; penalties to treasury (not to default winner)
+            balances[d.winner] += _externalPot;
+
+            // Penalties collected from incoherent jurors go to governance treasury
+            if (totalPenaltyCollected > 0 && treasury != address(0)) {
+                balances[treasury] += totalPenaltyCollected;
+            }
+            // If no treasury set, penalties remain in contract (effectively burned)
+        }
+    }
+
+    // ============================================
+    // INTERNAL HELPERS
+    // ============================================
+
+    function _determineWinner(uint256 _id) internal view returns (uint256) {
+        uint256 votes0 = 0;
+        uint256 votes1 = 0;
+        address[] memory jurors = disputeJurors[_id];
+        for (uint i = 0; i < jurors.length; i++) {
+            address j = jurors[i];
+            if (hasRevealed[_id][j]) {
+                uint256 w = jurorStakes[_id][j];
+                if (revealedVotes[_id][j] == 0) votes0 += w;
+                else if (revealedVotes[_id][j] == 1) votes1 += w;
+            }
+        }
+        return votes1 > votes0 ? 1 : 0;
+    }
+
+    function _addToCourtQueue(string memory _category, uint256 _id) internal {
+        courtQueues[_category].push(_id);
+        idToQueueIndex[_id] = courtQueues[_category].length - 1;
+    }
+
+    function _removeFromCourtQueue(string memory _category, uint256 _index) internal {
+        uint256[] storage queue = courtQueues[_category];
+        uint256 lastId = queue[queue.length - 1];
+        uint256 idToRemove = queue[_index];
+        if (_index != queue.length - 1) {
+            queue[_index] = lastId;
+            idToQueueIndex[lastId] = _index;
+        }
+        queue.pop();
+        delete idToQueueIndex[idToRemove];
+    }
+
+    function _isJuror(uint256 _id, address _user) internal view returns (bool) {
+        return isJurorInDispute[_id][_user];
+    }
+
+    function withdraw(address _token) external nonReentrant {
+        uint256 amount = balances[msg.sender];
+        require(amount > 0, "No funds");
+        require(_token == address(stakingToken), "Wrong token");
+
+        balances[msg.sender] = 0;
+        stakingToken.safeTransfer(msg.sender, amount);
+        emit FundsWithdrawn(msg.sender, amount);
+    }
+
+    // View Helpers
+    function disputes(uint256 _id) external view returns (Dispute memory) {
+        return disputeStore[_id];
+    }
+
+    function getJurorDisputes(address _user) external view returns (uint256[] memory) {
+        return jurorDisputes[_user];
+    }
+
+    function getUserDisputes(address _user) external view returns (uint256[] memory) {
+        return userDisputes[_user];
+    }
+
+    function disputeCountView() external view returns (uint256) {
+        return disputeCount;
+    }
+}
+````
+
+## File: contracts/src/fhe/SliceFHE.sol
 ````solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
@@ -503,11 +2578,12 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { FHE, ebool, externalEbool } from "@fhevm/solidity/lib/FHE.sol";
-import { ZamaEthereumConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
+import {TFHE, ebool, einput} from "@fhevm/lib/TFHE.sol";
+import {SepoliaZamaFHEVMConfig} from "@fhevm/config/ZamaFHEVMConfig.sol";
+import {GatewayCaller} from "@fhevm/gateway/GatewayCaller.sol";
+import {Gateway} from "@fhevm/gateway/lib/Gateway.sol";
 
-
-contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
+contract SliceFHE is SepoliaZamaFHEVMConfig, GatewayCaller, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     IERC20 public stakingToken;
@@ -535,6 +2611,9 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
         uint256 revealDeadline;
         bool majorityWinner;
         uint256 commitmentCount;
+        uint256 decryptedCount;
+        uint256 trueVotes;
+        uint256 falseVotes;
         // Vote tracking mappings stored within dispute
         mapping(address => ebool) commitments;
         mapping(address => uint256) revealedVotes;
@@ -561,36 +2640,71 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
 
     // Event declarations
     event DisputeCreated(uint256 indexed id, address claimer, address defender);
-    event EvidenceSubmitted(uint256 indexed id, address indexed party, string ipfsHash);
+    event EvidenceSubmitted(
+        uint256 indexed id,
+        address indexed party,
+        string ipfsHash
+    );
     event JurorJoined(uint256 indexed id, address juror);
     event VoteCommitted(uint256 indexed id, address juror);
     event StatusChanged(uint256 indexed id, DisputeStatus newStatus);
     event VoteRevealed(uint256 indexed id, address juror, uint256 vote);
     event Withdrawn(address indexed user, uint256 amount);
     event Staked(address indexed user, uint256 amount);
-    event RewardsDistributed(uint256 indexed id, address[] jurors, uint256 totalReward);
+    event RewardsDistributed(
+        uint256 indexed id,
+        address[] jurors,
+        uint256 totalReward
+    );
+    event RevealDecryptionRequested(
+        uint256 indexed id,
+        uint256 indexed requestId,
+        address indexed juror
+    );
 
     mapping(uint256 => Dispute) public disputes; // Dispute id => Dispute
     mapping(address => UserStats) public userStats; // Address => UserStats
+    mapping(uint256 => uint256) public requestToDispute; // request id => dispute id
+    mapping(uint256 => address) public requestToJuror; // request id => juror address
 
-    constructor(address _stakingToken) Ownable(msg.sender) {
+    constructor(address _stakingToken, address _gateway) Ownable(msg.sender) {
+        require(_stakingToken != address(0), "Staking token cannot be 0");
+        require(_gateway != address(0), "Gateway cannot be 0");
         stakingToken = IERC20(_stakingToken);
+        Gateway.setGateway(_gateway);
     }
 
     // ===============================
     // =       Core Functions       =
     // ===============================
 
-    function createDispute(DisputeConfig calldata _config) external nonReentrant returns (uint256) {
+    function createDispute(
+        DisputeConfig calldata _config
+    ) external nonReentrant returns (uint256) {
         require(_config.claimer != address(0), "Claimer cannot be 0 address");
         require(_config.defender != address(0), "Defender cannot be 0 address");
         require(_config.paySeconds > 0, "Pay seconds must be greater than 0");
-        require(_config.evidenceSeconds > 0, "Evidence seconds must be greater than 0");
-        require(_config.commitSeconds > 0, "Commit seconds must be greater than 0");
-        require(_config.revealSeconds > 0, "Reveal seconds must be greater than 0");
+        require(
+            _config.evidenceSeconds > 0,
+            "Evidence seconds must be greater than 0"
+        );
+        require(
+            _config.commitSeconds > 0,
+            "Commit seconds must be greater than 0"
+        );
+        require(
+            _config.revealSeconds > 0,
+            "Reveal seconds must be greater than 0"
+        );
         require(msg.sender != _config.defender, "Self-dispute not allowed");
-        require(_config.claimer != _config.defender, "Claimer cannot be Defender");
-        require(_config.jurorsRequired > 0, "Jurors required must be greater than 0");
+        require(
+            _config.claimer != _config.defender,
+            "Claimer cannot be Defender"
+        );
+        require(
+            _config.jurorsRequired > 0,
+            "Jurors required must be greater than 0"
+        );
 
         uint256 stakeRequired = stakePerJuror * _config.jurorsRequired;
 
@@ -623,8 +2737,14 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
     function submitEvidence(uint256 _id, string calldata _ipfsHash) external {
         Dispute storage dispute = disputes[_id];
         require(dispute.status == DisputeStatus.Created, "Dispute not created");
-        require(block.timestamp < dispute.evidenceDeadline, "Evidence deadline passed");
-        require(msg.sender == dispute.claimer || msg.sender == dispute.defender, "Not allowed to submit evidence");
+        require(
+            block.timestamp < dispute.evidenceDeadline,
+            "Evidence deadline passed"
+        );
+        require(
+            msg.sender == dispute.claimer || msg.sender == dispute.defender,
+            "Not allowed to submit evidence"
+        );
 
         dispute.ipfsHash = _ipfsHash;
 
@@ -633,18 +2753,30 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
 
     function payDispute(uint256 _id) external nonReentrant {}
 
-    function joinDispute(uint256 _id, uint256 /* _amount */) external nonReentrant {
+    function joinDispute(
+        uint256 _id,
+        uint256 /* _amount */
+    ) external nonReentrant {
         Dispute storage dispute = disputes[_id];
 
         require(dispute.status == DisputeStatus.Created, "Dispute not created");
-        require(dispute.jurors.length < dispute.jurorsRequired, "Jurors required reached");
-        require(msg.sender != dispute.claimer && msg.sender != dispute.defender, "Not allowed to join dispute");
+        require(
+            dispute.jurors.length < dispute.jurorsRequired,
+            "Jurors required reached"
+        );
+        require(
+            msg.sender != dispute.claimer && msg.sender != dispute.defender,
+            "Not allowed to join dispute"
+        );
 
         // Renamed from 'userStats' to 'stats' to avoid shadowing the state variable
         UserStats storage stats = userStats[msg.sender];
 
         uint256 totalToStake = dispute.stakeRequired;
-        require(stats.totalStaked - stats.stakeInDisputes >= totalToStake, "Not enough staked"); // Check if the user has enough staked to join the dispute
+        require(
+            stats.totalStaked - stats.stakeInDisputes >= totalToStake,
+            "Not enough staked"
+        ); // Check if the user has enough staked to join the dispute
         stats.stakeInDisputes += totalToStake;
         stats.activeDisputes.push(_id);
 
@@ -652,15 +2784,21 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
         emit JurorJoined(_id, msg.sender);
     }
 
-    function commitVote(uint256 _id, externalEbool vote, bytes calldata voteProof) external {
+    function commitVote(
+        uint256 _id,
+        einput vote,
+        bytes calldata voteProof
+    ) external {
         Dispute storage dispute = disputes[_id];
 
         require(dispute.status == DisputeStatus.Voting, "Dispute not voting");
-        require(block.timestamp < dispute.commitDeadline, "Commit deadline passed");
-        // The dispute jurors must include the voter
+        require(
+            block.timestamp < dispute.commitDeadline,
+            "Commit deadline passed"
+        );
 
         bool found = false;
-        for (uint i = 0; i < dispute.jurors.length; i++) {
+        for (uint256 i = 0; i < dispute.jurors.length; i++) {
             if (dispute.jurors[i] == msg.sender) {
                 found = true;
                 break;
@@ -668,146 +2806,190 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
         }
 
         require(found, "Not a juror");
-        require(!FHE.isInitialized(dispute.commitments[msg.sender]), "Already voted");
+        require(
+            !TFHE.isInitialized(dispute.commitments[msg.sender]),
+            "Already voted"
+        );
 
-        ebool encryptedVote = FHE.fromExternal(vote, voteProof);
-        FHE.allowThis(encryptedVote);  // Grant contract permission for future decryption
+        ebool encryptedVote = TFHE.asEbool(vote, voteProof);
+        TFHE.allowThis(encryptedVote);
         dispute.commitments[msg.sender] = encryptedVote;
         dispute.commitmentCount++;
 
         emit VoteCommitted(_id, msg.sender);
     }
 
-    /// @notice Transition dispute to revealing phase and make votes publicly decryptable
-    /// @dev Called after commit deadline passes. Makes all encrypted votes publicly decryptable
-    ///      so that any client can decrypt them off-chain using the relayer-sdk
+    /// @notice Transition dispute to revealing phase and request vote decryptions via Gateway
+    /// @dev Called after commit deadline passes. Decryption requests are sent and ruling is finalized
+    ///      asynchronously from the Gateway callback once all votes are decrypted and verified.
     /// @param _id The dispute ID
     function startRevealPhase(uint256 _id) external nonReentrant {
         Dispute storage dispute = disputes[_id];
 
-        require(dispute.status == DisputeStatus.Voting, "Dispute not in voting");
-        require(block.timestamp >= dispute.commitDeadline, "Commit deadline not passed");
+        require(
+            dispute.status == DisputeStatus.Voting,
+            "Dispute not in voting"
+        );
+        require(
+            block.timestamp >= dispute.commitDeadline,
+            "Commit deadline not passed"
+        );
         require(dispute.commitmentCount > 0, "No commitments to decrypt");
 
-        // Transition to Revealing status
         dispute.status = DisputeStatus.Revealing;
         emit StatusChanged(_id, DisputeStatus.Revealing);
 
-        // Mark all commitments as publicly decryptable
-        // This allows any client to decrypt them off-chain using relayer-sdk
-        for (uint i = 0; i < dispute.jurors.length; i++) {
-            if (FHE.isInitialized(dispute.commitments[dispute.jurors[i]])) {
-                FHE.makePubliclyDecryptable(dispute.commitments[dispute.jurors[i]]);
+        for (uint256 i = 0; i < dispute.jurors.length; i++) {
+            address juror = dispute.jurors[i];
+
+            if (!TFHE.isInitialized(dispute.commitments[juror])) {
+                continue;
             }
+
+            uint256[] memory handles = new uint256[](1);
+            handles[0] = Gateway.toUint256(dispute.commitments[juror]);
+
+            uint256 requestId = Gateway.requestDecryption(
+                handles,
+                this.fulfillVoteDecryption.selector,
+                0,
+                dispute.revealDeadline,
+                true
+            );
+
+            saveRequestedHandles(requestId, handles);
+            requestToDispute[requestId] = _id;
+            requestToJuror[requestId] = juror;
+
+            emit RevealDecryptionRequested(_id, requestId, juror);
         }
     }
 
-    /// @notice Get the commitment handles for a dispute (for off-chain decryption)
-    /// @param _id The dispute ID
-    /// @return handles Array of bytes32 handles for use with relayer-sdk publicDecrypt
-    function getCommitmentHandles(uint256 _id) external view returns (bytes32[] memory handles) {
+    function getCommitmentHandles(
+        uint256 _id
+    ) external view returns (bytes32[] memory handles) {
         Dispute storage dispute = disputes[_id];
-        
-        // Count initialized commitments
+
         uint256 count = 0;
-        for (uint i = 0; i < dispute.jurors.length; i++) {
-            if (FHE.isInitialized(dispute.commitments[dispute.jurors[i]])) {
+        for (uint256 i = 0; i < dispute.jurors.length; i++) {
+            if (TFHE.isInitialized(dispute.commitments[dispute.jurors[i]])) {
                 count++;
             }
         }
-        
-        // Build handles array
+
         handles = new bytes32[](count);
         uint256 idx = 0;
-        for (uint i = 0; i < dispute.jurors.length; i++) {
-            if (FHE.isInitialized(dispute.commitments[dispute.jurors[i]])) {
-                handles[idx] = FHE.toBytes32(dispute.commitments[dispute.jurors[i]]);
+        for (uint256 i = 0; i < dispute.jurors.length; i++) {
+            if (TFHE.isInitialized(dispute.commitments[dispute.jurors[i]])) {
+                handles[idx] = bytes32(
+                    ebool.unwrap(dispute.commitments[dispute.jurors[i]])
+                );
                 idx++;
             }
         }
     }
 
-    /// @notice Execute ruling with decrypted votes (client submits after off-chain decryption)
-    /// @dev Client must first call relayer-sdk publicDecrypt() with handles from getCommitmentHandles()
-    ///      then submit the abiEncodedCleartexts and decryptionProof here
-    /// @param _id The dispute ID  
-    /// @param abiEncodedCleartexts ABI-encoded decrypted vote values from relayer-sdk
-    /// @param decryptionProof Cryptographic proof from KMS via relayer-sdk
     function executeRuling(
         uint256 _id,
         bytes calldata abiEncodedCleartexts,
         bytes calldata decryptionProof
-    ) external nonReentrant {
-        Dispute storage dispute = disputes[_id];
+    ) external pure {
+        _id;
+        abiEncodedCleartexts;
+        decryptionProof;
+        revert("Ruling is finalized asynchronously by Gateway callback");
+    }
 
-        require(dispute.status == DisputeStatus.Revealing, "Dispute not in revealing");
-        require(block.timestamp < dispute.revealDeadline, "Reveal deadline passed");
-        
-        // Build handles array for signature verification
-        bytes32[] memory handles = new bytes32[](dispute.jurors.length);
-        uint256 handleCount = 0;
-        for (uint i = 0; i < dispute.jurors.length; i++) {
-            if (FHE.isInitialized(dispute.commitments[dispute.jurors[i]])) {
-                handles[handleCount] = FHE.toBytes32(dispute.commitments[dispute.jurors[i]]);
-                handleCount++;
+    function fulfillVoteDecryption(
+        uint256 requestId,
+        bool vote,
+        bytes[] memory signatures
+    ) external onlyGateway returns (bool) {
+        uint256 disputeId = requestToDispute[requestId];
+        require(disputeId != 0, "Unknown decryption request");
+
+        Dispute storage dispute = disputes[disputeId];
+        require(
+            dispute.status == DisputeStatus.Revealing,
+            "Dispute not in revealing"
+        );
+
+        require(requestToJuror[requestId] != address(0), "Invalid juror request");
+        require(
+            dispute.revealedVotes[requestToJuror[requestId]] == 0,
+            "Vote already revealed"
+        );
+
+        require(
+            Gateway.verifySignatures(loadRequestedHandles(requestId), signatures),
+            "KMS did not verify this decryption result"
+        );
+
+        dispute.revealedVotes[requestToJuror[requestId]] = vote ? 2 : 1;
+        dispute.decryptedCount++;
+        if (vote) {
+            dispute.trueVotes++;
+        } else {
+            dispute.falseVotes++;
+        }
+
+        delete requestToDispute[requestId];
+        delete requestToJuror[requestId];
+
+        if (dispute.decryptedCount == dispute.commitmentCount) {
+            _finalizeDisputeFromDecryptions(disputeId);
+        }
+
+        return vote;
+    }
+
+    function _finalizeDisputeFromDecryptions(uint256 disputeId) internal {
+        Dispute storage dispute = disputes[disputeId];
+        dispute.majorityWinner = dispute.trueVotes > dispute.falseVotes;
+
+        bool[] memory votes = new bool[](dispute.commitmentCount);
+        uint256 voteIndex = 0;
+        for (uint256 i = 0; i < dispute.jurors.length; i++) {
+            address juror = dispute.jurors[i];
+            if (!TFHE.isInitialized(dispute.commitments[juror])) {
+                continue;
             }
-        }
-        bytes32[] memory actualHandles = new bytes32[](handleCount);
-        for (uint i = 0; i < handleCount; i++) {
-            actualHandles[i] = handles[i];
-        }
-        
-        // Verify the decryption proof from KMS
-        FHE.checkSignatures(actualHandles, abiEncodedCleartexts, decryptionProof);
 
-        // Decode the decrypted votes
-        bool[] memory votes = abi.decode(abiEncodedCleartexts, (bool[]));
-        require(votes.length == handleCount, "Vote count mismatch");
-
-        // Tally votes
-        uint256 trueVotes = 0;
-        uint256 falseVotes = 0;
-        for (uint i = 0; i < votes.length; i++) {
-            if (votes[i]) trueVotes++;
-            else falseVotes++;
+            uint256 revealedValue = dispute.revealedVotes[juror];
+            require(revealedValue != 0, "Missing decrypted vote");
+            votes[voteIndex] = revealedValue == 2;
+            voteIndex++;
         }
 
-        // Determine majority winner
-        dispute.majorityWinner = trueVotes > falseVotes;
-
-        // Distribute rewards based on decrypted votes
-        _distributeRewards(_id, votes);
-
-        // Finalize dispute
+        _distributeRewards(disputeId, votes);
         dispute.status = DisputeStatus.Finished;
-        emit StatusChanged(_id, DisputeStatus.Finished);
+        emit StatusChanged(disputeId, DisputeStatus.Finished);
     }
 
-    // Leaving legacy function for compatibility - redirects to new flow
-    function revealVote(uint256 /* _id */, uint256 /* _vote */, uint256 /* _salt */) external pure {
-        revert("Use startRevealPhase() then executeRuling() with decrypted votes");
+    function revealVote(
+        uint256 /* _id */,
+        uint256 /* _vote */,
+        uint256 /* _salt */
+    ) external pure {
+        revert(
+            "Use startRevealPhase(); ruling finalizes asynchronously via Gateway callback"
+        );
     }
 
-    /// @notice Internal function to distribute rewards after decryption
-    /// @param _id The dispute ID
-    /// @param votes Array of decrypted vote values
     function _distributeRewards(uint256 _id, bool[] memory votes) internal {
         Dispute storage dispute = disputes[_id];
-        
+
         uint256 totalReward = 0;
         uint256 voteIndex = 0;
 
-        // Iterate through the jurors and distribute the rewards or slash the stake
-        for (uint i = 0; i < dispute.jurors.length; i++) {
-            if (FHE.isInitialized(dispute.commitments[dispute.jurors[i]])) {
+        for (uint256 i = 0; i < dispute.jurors.length; i++) {
+            if (TFHE.isInitialized(dispute.commitments[dispute.jurors[i]])) {
                 bool vote = votes[voteIndex];
                 voteIndex++;
-                
+
                 if (vote == dispute.majorityWinner) {
-                    // Add to winners array (storage - supports .push())
                     dispute.winners.push(dispute.jurors[i]);
                 } else {
-                    // Slash the stake and add to total reward pool
                     uint256 requiredStake = dispute.stakeRequired;
                     UserStats storage stats = userStats[dispute.jurors[i]];
                     stats.totalStaked -= requiredStake;
@@ -817,25 +2999,21 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
             }
         }
 
-        // Distribute rewards to winners
         if (dispute.winners.length > 0) {
             uint256 rewardPerWinner = totalReward / dispute.winners.length;
-            for (uint i = 0; i < dispute.winners.length; i++) {
+            for (uint256 i = 0; i < dispute.winners.length; i++) {
                 UserStats storage stats = userStats[dispute.winners[i]];
                 stats.totalStaked += rewardPerWinner;
             }
         }
 
-        // Emit the event
         emit RewardsDistributed(_id, dispute.winners, totalReward);
     }
 
     function withdraw() external nonReentrant {
-        // Renamed from 'userStats' to 'stats' to avoid shadowing the state variable
         UserStats storage stats = userStats[msg.sender];
         require(stats.totalStaked > 0, "No staked");
 
-        // The user can withdraw the amount he has not staked in disputes
         uint256 amountToWithdraw = stats.totalStaked - stats.stakeInDisputes;
         stakingToken.safeTransfer(msg.sender, amountToWithdraw);
         stats.totalStaked = stats.stakeInDisputes;
@@ -845,7 +3023,6 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
     function stake(uint256 _amount) external nonReentrant {
         require(_amount > 0, "Amount must be greater than 0");
 
-        // Renamed from 'userStats' to 'stats' to avoid shadowing the state variable
         UserStats storage stats = userStats[msg.sender];
 
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -858,21 +3035,22 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
     // =       Admin Functions       =
     // ===============================
 
-    /// @notice Set the stake required per juror for disputes
-    /// @param _stakePerJuror The amount of tokens required per juror
     function setStakePerJuror(uint256 _stakePerJuror) external onlyOwner {
         stakePerJuror = _stakePerJuror;
     }
 
-    /// @notice Transition dispute from Created to Voting status
-    /// @dev Can only be called when all required jurors have joined
-    /// @param _id The dispute ID
     function startVotingPhase(uint256 _id) external {
         Dispute storage dispute = disputes[_id];
-        
-        require(dispute.status == DisputeStatus.Created, "Dispute not in created status");
-        require(dispute.jurors.length == dispute.jurorsRequired, "Not all jurors joined");
-        
+
+        require(
+            dispute.status == DisputeStatus.Created,
+            "Dispute not in created status"
+        );
+        require(
+            dispute.jurors.length == dispute.jurorsRequired,
+            "Not all jurors joined"
+        );
+
         dispute.status = DisputeStatus.Voting;
         emit StatusChanged(_id, DisputeStatus.Voting);
     }
@@ -881,23 +3059,17 @@ contract SliceFHE is ZamaEthereumConfig, Ownable, ReentrancyGuard {
     // =       View Functions        =
     // ===============================
 
-    /// @notice Get the jurors for a dispute
-    /// @param _id The dispute ID
-    /// @return Array of juror addresses
     function getJurors(uint256 _id) external view returns (address[] memory) {
         return disputes[_id].jurors;
     }
 
-    /// @notice Get the winners of a dispute
-    /// @param _id The dispute ID
-    /// @return Array of winner addresses
     function getWinners(uint256 _id) external view returns (address[] memory) {
         return disputes[_id].winners;
     }
 }
 ````
 
-## File: contracts/contracts/interfaces/IArbitrable.sol
+## File: contracts/src/interfaces/IArbitrable.sol
 ````solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
@@ -907,7 +3079,7 @@ interface IArbitrable {
 }
 ````
 
-## File: contracts/contracts/interfaces/ISlice.sol
+## File: contracts/src/interfaces/ISlice.sol
 ````solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
@@ -918,6 +3090,7 @@ interface ISlice {
     // --- Enums & Structs ---
     enum DisputeStatus {
         Created,
+        Evidence,
         Commit,
         Reveal,
         Finished
@@ -985,7 +3158,12 @@ interface ISlice {
     }
 
     // --- Events ---
-    event DisputeCreated(uint256 indexed id, address indexed arbitrated, address claimer, address defender);
+    event DisputeCreated(
+        uint256 indexed id,
+        address indexed arbitrated,
+        address claimer,
+        address defender
+    );
     event CourtUpdated(string category, uint256 feePerJuror, uint256 alpha);
     event FundsDeposited(uint256 indexed id, address role, uint256 amount);
     event JurorJoined(uint256 indexed id, address juror, string category);
@@ -993,51 +3171,112 @@ interface ISlice {
     event VoteCommitted(uint256 indexed id, address juror);
     event VoteRevealed(uint256 indexed id, address juror, uint256 vote);
     event RulingExecuted(uint256 indexed id, address winner, uint256 amountWon);
-    event RulingSent(address indexed arbitrated, uint256 indexed disputeId, uint256 ruling);
+    event RulingSent(
+        address indexed arbitrated,
+        uint256 indexed disputeId,
+        uint256 ruling
+    );
     event FundsWithdrawn(address indexed user, uint256 amount);
-    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
+    event TreasuryUpdated(
+        address indexed oldTreasury,
+        address indexed newTreasury
+    );
 
     // --- State Variable Getters ---
     function disputeCount() external view returns (uint256);
+
     function stakingToken() external view returns (IERC20);
+
     function treasury() external view returns (address);
+
     function MAX_JURORS() external view returns (uint256);
 
     // --- Court & Queue Getters ---
-    function courtConfigs(string memory _category) external view returns (CourtConfig memory);
-    function courtQueues(string memory _category, uint256 _index) external view returns (uint256);
+    function courtConfigs(
+        string memory _category
+    ) external view returns (CourtConfig memory);
+
+    function courtQueues(
+        string memory _category,
+        uint256 _index
+    ) external view returns (uint256);
+
     function idToQueueIndex(uint256 _id) external view returns (uint256);
 
     // --- Mapping Getters ---
-    function disputeJurors(uint256 _id, uint256 _index) external view returns (address);
-    function commitments(uint256 _id, address _juror) external view returns (bytes32);
-    function revealedVotes(uint256 _id, address _juror) external view returns (uint256);
-    function hasRevealed(uint256 _id, address _juror) external view returns (bool);
-    function jurorStakes(uint256 _id, address _juror) external view returns (uint256);
+    function disputeJurors(
+        uint256 _id,
+        uint256 _index
+    ) external view returns (address);
+
+    function commitments(
+        uint256 _id,
+        address _juror
+    ) external view returns (bytes32);
+
+    function revealedVotes(
+        uint256 _id,
+        address _juror
+    ) external view returns (uint256);
+
+    function hasRevealed(
+        uint256 _id,
+        address _juror
+    ) external view returns (bool);
+
+    function jurorStakes(
+        uint256 _id,
+        address _juror
+    ) external view returns (uint256);
+
     function balances(address _user) external view returns (uint256);
-    function jurorStats(address _juror) external view returns (uint256 totalDisputes, uint256 coherentVotes, uint256 totalEarnings);
+
+    function jurorStats(
+        address _juror
+    )
+        external
+        view
+        returns (
+            uint256 totalDisputes,
+            uint256 coherentVotes,
+            uint256 totalEarnings
+        );
 
     // --- View Functions ---
     function disputes(uint256 _id) external view returns (Dispute memory);
+
     function getDisputeCost(uint256 _id) external view returns (uint256);
 
     // --- Admin Functions ---
-    function setCourt(string memory _category, CourtConfig memory _config) external;
+    function setCourt(
+        string memory _category,
+        CourtConfig memory _config
+    ) external;
+
     function setTreasury(address _treasury) external;
 
     // --- Core Functions ---
-    function createDispute(CreateDisputeParams calldata _params) external returns (uint256);
+    function createDispute(
+        CreateDisputeParams calldata _params
+    ) external returns (uint256);
 
     function payDispute(uint256 _id) external;
+
+    function submitEvidence(uint256 _id, string calldata _ipfsHash) external;
+
     function drawDispute(uint256 _amount, string calldata _category) external;
+
     function commitVote(uint256 _id, bytes32 _commitment) external;
+
     function revealVote(uint256 _id, uint256 _vote, uint256 _salt) external;
+
     function executeRuling(uint256 _id) external;
+
     function withdraw(address _token) external;
 }
 ````
 
-## File: contracts/contracts/mocks/MockUSDC.sol
+## File: contracts/src/mocks/MockUSDC.sol
 ````solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
@@ -1055,254 +3294,6 @@ contract MockUSDC is ERC20 {
         return 6;
     }
 }
-````
-
-## File: contracts/package.json
-````json
-{
-  "name": "fhevm-hardhat-template",
-  "description": "Hardhat-based template for developing FHEVM Solidity smart contracts",
-  "version": "0.3.0-3",
-  "engines": {
-    "node": ">=20",
-    "npm": ">=7.0.0"
-  },
-  "license": "BSD-3-Clause-Clear",
-  "homepage": "https://github.com/zama-ai/fhevm-hardhat-template/README.md",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/zama-ai/fhevm-hardhat-template.git"
-  },
-  "keywords": [
-    "fhevm",
-    "zama",
-    "eth",
-    "ethereum",
-    "dapps",
-    "wallet",
-    "web3",
-    "typescript",
-    "hardhat"
-  ],
-  "dependencies": {
-    "@fhevm/solidity": "^0.10.0",
-    "@openzeppelin/contracts": "^5.4.0",
-    "encrypted-types": "^0.0.4"
-  },
-  "devDependencies": {
-    "@fhevm/hardhat-plugin": "^0.3.0-3",
-    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
-    "@nomicfoundation/hardhat-ethers": "^3.1.0",
-    "@nomicfoundation/hardhat-network-helpers": "^1.1.0",
-    "@nomicfoundation/hardhat-verify": "^2.1.0",
-    "@typechain/ethers-v6": "^0.5.1",
-    "@typechain/hardhat": "^9.1.0",
-    "@types/chai": "^4.3.20",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.8",
-    "@typescript-eslint/eslint-plugin": "^8.37.0",
-    "@typescript-eslint/parser": "^8.37.0",
-    "@zama-fhe/relayer-sdk": "^0.3.0-6",
-    "chai": "^4.5.0",
-    "chai-as-promised": "^8.0.1",
-    "cross-env": "^7.0.3",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.0",
-    "ethers": "^6.15.0",
-    "hardhat": "^2.26.0",
-    "hardhat-deploy": "^0.11.45",
-    "hardhat-gas-reporter": "^2.3.0",
-    "mocha": "^11.7.1",
-    "prettier": "^3.6.2",
-    "prettier-plugin-solidity": "^2.1.0",
-    "rimraf": "^6.0.1",
-    "solhint": "^6.0.0",
-    "solidity-coverage": "^0.8.16",
-    "ts-generator": "^0.1.1",
-    "ts-node": "^10.9.2",
-    "typechain": "^8.3.2",
-    "typescript": "^5.8.3"
-  },
-  "files": [
-    "contracts"
-  ],
-  "scripts": {
-    "clean": "rimraf ./fhevmTemp ./artifacts ./cache ./coverage ./types ./coverage.json ./dist && npm run typechain",
-    "compile": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile",
-    "coverage": "cross-env SOLIDITY_COVERAGE=true hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"test/**/*.ts\" && npm run typechain",
-    "lint": "npm run lint:sol && npm run lint:ts && npm run prettier:check",
-    "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
-    "lint:ts": "eslint --ignore-path ./.eslintignore --ext .js,.ts .",
-    "postcompile": "npm run typechain",
-    "prettier:check": "prettier --check \"**/*.{js,json,md,sol,ts,yml}\"",
-    "prettier:write": "prettier --write \"**/*.{js,json,md,sol,ts,yml}\"",
-    "test": "hardhat test",
-    "test:sepolia": "hardhat test --network sepolia",
-    "build:ts": "tsc --project tsconfig.json",
-    "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
-    "chain": "hardhat node --network hardhat --no-deploy",
-    "deploy:localhost": "hardhat deploy --network localhost",
-    "deploy:sepolia": "hardhat deploy --network sepolia",
-    "verify:sepolia": "hardhat verify --network sepolia"
-  },
-  "overrides": {
-    "ws@>=7.0.0 <7.5.10": ">=7.5.10",
-    "axios@>=1.3.2 <=1.7.3": ">=1.7.4",
-    "elliptic@>=4.0.0 <=6.5.6": ">=6.5.7",
-    "elliptic@>=2.0.0 <=6.5.6": ">=6.5.7",
-    "elliptic@>=5.2.1 <=6.5.6": ">=6.5.7",
-    "micromatch@<4.0.8": ">=4.0.8",
-    "elliptic@<6.6.0": ">=6.6.0",
-    "elliptic@<6.5.6": ">=6.5.6",
-    "undici@>=6.0.0 <6.21.1": ">=6.21.1 <7.0.0",
-    "undici@>=4.5.0 <5.28.5": ">=5.28.5 <6.0.0",
-    "elliptic@<=6.6.0": ">=6.6.1",
-    "tar-fs@>=2.0.0 <2.1.2": ">=2.1.2",
-    "axios@>=1.0.0 <1.8.2": ">=1.8.2",
-    "axios@<0.29.1": ">=0.29.1",
-    "cookie@<0.7.0": ">=0.7.0",
-    "minimatch": "^3.1.2"
-  }
-}
-````
-
-## File: contracts/README.md
-````markdown
-# Slice Protocol ⚖️
-
-**The Neutral, On-Chain Dispute Resolution Protocol.**
-
-Slice is an oracle for justice. It produces reliable rulings for external contracts through a trustless mechanism of random juror selection, commit-reveal voting, and crypto-economic staking.
-
-This repository contains the **Hardhat** development environment for the Slice smart contracts.
-
----
-
-## Protocol Roadmap & Versioning
-
-We are currently operating on **Slice V1.1**. While V1.5 and FHE files exist in the repository for development purposes, they are **not yet deployed to production**.
-
-### Active: Slice V1.1 (`Slice.sol`)
-* **Status:** **LIVE** on Base Mainnet & Sepolia.
-* **Mechanism:** Active Drafting. Jurors manually "draw" disputes from an open queue.
-* **Staking:** Per-dispute staking (Jurors lock funds only when they join a specific case).
-* **Randomness:** `prevrandao` + Blockhash (Simple implementation).
-
-### Development: Slice V1.5 (`SliceV1.5.sol`)
-* **Status:** **DRAFT / EXPERIMENTAL**. Do not use in production yet.
-* **Mechanism:** Passive Global Staking & Push Architecture.
-* **Economic Security:** High Assurance Model. If selected, the juror's *entire* staked balance moves to the dispute.
-* **Escrow Wrapper:** Includes `SliceEscrowV1.5.sol` for secure P2P payments.
-* **Planned Rollout:** Phase 3/4.
-
-### Long-Term: FHE Privacy (Zama Integration)
-* **Goal:** Fully private voting and evidence handling using Fully Homomorphic Encryption (FHE).
-* **Template:** This project is initialized using the **Zama FHEVM template** to ensure our foundation is ready for this future privacy layer when the time comes.
-
----
-
-## Prerequisites
-
-* **Node.js**: Version 20 or higher
-* **pnpm**: Package manager
-
-```bash
-npm install -g pnpm
-```
-
----
-
-## Installation & Setup
-
-### 1. Install dependencies
-
-```bash
-pnpm install
-```
-
-### 2. Environment Variables
-
-Create a `.env` file or set variables via the CLI:
-
-```bash
-pnpm hardhat vars set MNEMONIC
-pnpm hardhat vars set INFURA_API_KEY
-pnpm hardhat vars set ETHERSCAN_API_KEY # Optional: for verification
-```
-
-### 3. Compile Contracts
-
-```bash
-pnpm run compile
-```
-
-### 4. Run Tests
-
-```bash
-pnpm run test
-```
-
----
-
-## ⛓ Deployment
-
-### Local Network (Hardhat Network)
-
-```bash
-# Start the node
-pnpm hardhat node
-
-# Deploy (in a separate terminal)
-pnpm hardhat deploy --network localhost
-```
-
-### Testnet (Sepolia)
-
-```bash
-# Deploy
-pnpm hardhat deploy --network sepolia
-
-# Verify
-pnpm hardhat verify --network sepolia <CONTRACT_ADDRESS>
-```
-
----
-
-## 📁 Project Structure
-
-```
-contracts/
-├── contracts/
-│   ├── core/
-│   │   ├── Slice.sol            # 🟢 LIVE: V1.1 Logic (Active Draft System)
-│   │   ├── SliceV1.5.sol        # 🚧 BETA: V1.5 Logic (Passive Staking - DO NOT DEPLOY)
-│   │   └── SliceEscrowV1.5.sol  # 🚧 BETA: Escrow Wrapper for V1.5
-│   ├── fhe/                     # FHE Privacy Experiments (Future V2)
-│   └── interfaces/              # Shared interfaces
-├── deploy/                      # Hardhat deploy scripts
-├── test/                        # Mocha/Chai tests
-└── hardhat.config.ts            # Network & Compiler config
-```
-
----
-
-## 📜 Scripts
-
-| Script | Description |
-|--------|-------------|
-| `pnpm run compile` | Compiles Solidity contracts |
-| `pnpm run test` | Runs the full test suite |
-| `pnpm run coverage` | Generates code coverage report |
-| `pnpm run lint` | Runs Solhint and ESLint |
-| `pnpm run clean` | Removes artifacts and cache |
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-**Built for Justice.**
 ````
 
 ## File: src/app/.well-known/farcaster.json/route.ts
@@ -4190,177 +6181,65 @@ NEXT_PUBLIC_BASE_SLICE_CONTRACT=
 NEXT_PUBLIC_BASE_SEPOLIA_SLICE_CONTRACT=""
 ````
 
-## File: README.md
+## File: contracts/README.md
 ````markdown
-# ⚖️ Slice Protocol Application
+## Slice Smart Contracts (Foundry)
 
-This project is the frontend implementation for **Slice**, a **Real-Time Dispute Resolution Protocol** built on Next.js. It features a **multi-tenant architecture** capable of running as a standalone PWA or as an embedded MiniApp across various wallet ecosystems (Base, Beexo).
+This directory contains the Slice protocol Solidity contracts and integration examples, built with Foundry.
 
-**🔗 Live Demo**: [Testnet](https://dev.slicehub.xyz) | [Mainnet](https://app.slicehub.xyz)
+### Core Contracts
 
----
+- `src/core/SliceV1.5.sol`: Slice arbitrator contract (court config, dispute lifecycle, juror commit/reveal, settlement).
+- `src/core/SliceEscrowV1.5.sol`: escrow-style arbitrable reference.
+- `src/core/P2PTradeEscrow.sol`: P2P integration example using Slice as the only dispute resolver.
 
-## ⚡ What is Slice?
+### Interfaces
 
-**Slice** is a **decentralized, real-time dispute resolution protocol**. It acts as a **neutral truth oracle** that resolves disputes quickly and trustlessly through **randomly selected jurors** and **economic incentives**.
+- `src/interfaces/ISlice.sol`: Slice integration interface.
+- `src/interfaces/IArbitrable.sol`: callback interface used by Slice (`rule(disputeId, ruling)`).
 
-We are building the **"Uber for Justice"**:
-* **Decentralized & Trustless:** No central authority controls the outcome.
-* **Fast & Scalable:** Designed for real-time applications, offering quick rulings compared to traditional courts.
-* **Gamified Justice:** Jurors enter the Dispute Resolution Market via an **intuitive and entertaining App/MiniApp**.
-* **Earn by Ruling:** Users stake tokens to become jurors and **earn money** by correctly reviewing evidence and voting on disputes.
+### Build and Test
 
----
-
-## 🏗️ Architecture: Multi-Tenant & Strategy Pattern
-
-This application uses a **Strategy Pattern** to manage wallet connections and SDK interactions. Instead of a single monolithic connection logic, we use an abstraction layer that selects the appropriate **Adapter** based on the runtime environment (detected via subdomains and SDK presence).
-
-### 1. Connection Strategies
-
-We support two active connection strategies (with Lemon planned):
-
-| Strategy | Description | Used By |
-|----------|-------------|---------|
-| **Wagmi SW** | Uses Smart Wallets (Coinbase/Safe) via Privy & Wagmi. | **PWA**, **Base** |
-| **Wagmi EOA** | Uses standard Injected (EOA) connectors. | **Beexo** |
-| *(Planned)* Lemon SDK | Native `@lemoncash/mini-app-sdk`. | Lemon |
-
-### 2. Supported MiniApps & Environments
-
-The application behaves differently depending on the access point (Subdomain) and injected providers.
-
-| Platform | Subdomain | Connection Strategy | Auth Type |
-|----------|-----------|---------------------|-----------|
-| **Standard PWA** | `app.` | **Wagmi SW** | Social / Email / Wallet |
-| **Base MiniApp** | `base.` | **Wagmi SW** | Coinbase Smart Wallet |
-| **Beexo** | `beexo.` | **Wagmi EOA** | Injected Provider (Beexo) |
-| **Lemon (planned)** | `lemon.` | Lemon SDK | Native Lemon Auth |
-
----
-
-## 🚀 Try Slice Now
-
-Experience the future of decentralized justice on **Base**:
-
-* **Testnet Demo**: [dev.slicehub.xyz](https://dev.slicehub.xyz) – (Base Sepolia)
-* **Mainnet App**: [app.slicehub.xyz](https://app.slicehub.xyz) – (Base)
-
----
-
-## ⚖️ How It Works (The Juror Flow)
-
-1. **Enter the Market:** Users open the Slice App or MiniApp and **stake USDC** to join the juror pool.
-2. **Get Drafted:** When a dispute arises, jurors are randomly selected (Drafted) to review the case.
-3. **Review & Vote:** Jurors analyze the evidence provided by both parties and vote privately on the outcome.
-4. **Earn Rewards:** If their vote aligns with the majority consensus, they **earn fees** from the losing party.
-5. **Justice Served:** The protocol aggregates the votes and executes the ruling on-chain instantly.
-
----
-
-## 🔌 Integration Guide (For Developers)
-
-Integrating Slice into your protocol is as simple as 1-2-3:
-
-### 1. Create a Dispute
-Call `slice.createDispute(defender, category, ipfsHash, jurorsRequired)` from your contract.
-
-### 2. Wait for Ruling
-Slice handles the juror selection, voting, and consensus off-chain and on-chain.
-
-### 3. Read the Verdict
-Once the dispute status is `Executed`, read the `winner` address from the `disputes` mapping and execute your logic.
-
----
-
-## 📍 Deployed Contracts
-
-| Network | Slice Core | USDC Token |
-|---------|------------|------------|
-| **Base Sepolia** | `0xD8A10bD25e0E5dAD717372fA0C66d3a59a425e4D` | `0x5dEaC602762362FE5f135FA5904351916053cF70` |
-| **Base Mainnet** | `0xD8A10bD25e0E5dAD717372fA0C66d3a59a425e4D` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-
----
-
-## 🚀 Getting Started
-
-### 1. Configure Environment
-
-Rename `.env.example` to `.env.local` and add your keys.
-
-```bash
-NEXT_PUBLIC_APP_ENV="development" # or 'production'
-
-# Pinata / IPFS Config
-NEXT_PUBLIC_PINATA_JWT="your_pinata_jwt"
-NEXT_PUBLIC_PINATA_GATEWAY_URL="your_gateway_url"
-
-# Privy Config (For PWA / Base)
-NEXT_PUBLIC_PRIVY_APP_ID="your_privy_app_id"
-NEXT_PUBLIC_PRIVY_CLIENT_ID="your_privy_client_id"
-
-# Contracts
-NEXT_PUBLIC_BASE_SLICE_CONTRACT="0x..."
-NEXT_PUBLIC_BASE_USDC_CONTRACT="0x..."
+```sh
+forge build
+forge test
 ```
 
-### 2. Install Dependencies
+### Integration Example (P2P)
 
-```bash
-pnpm install
+`P2PTradeEscrow` demonstrates a complete Arbitrable integration pattern:
+- Creates disputes in Slice with `createDispute(CreateDisputeParams)`.
+- Supports evidence submission through a contract-level wrapper.
+- Collects arbitration fees in `slice.stakingToken()` and activates disputes via `payDispute`.
+- Handles fee timeout anti-deadlock if one side refuses to fund.
+- Finalizes principal settlement in `rule(disputeId, ruling)` callback.
+
+Ruling semantics:
+- `ruling == 1`: claimer wins.
+- `ruling == 0`: defender wins.
+
+See integration tests in `test/integration/P2PTradeEscrow.integration.t.sol`.
+
+### Scripts
+
+Deploy and seed scripts are under `script/`:
+
+- `script/DeploySlice.s.sol`
+- `script/SeedSlice.s.sol`
+
+Example usage:
+
+```sh
+export DEPLOYER_PRIVATE_KEY=deployer_private_key
+forge script script/DeploySlice.s.sol:DeploySliceScript --rpc-url <your_rpc_url> --broadcast
 ```
 
-### 3. Run Development Server
-
-```bash
-pnpm run dev
+```sh
+export DEPLOYER_PRIVATE_KEY=deployer_private_key
+export DEFENDER_PRIVATE_KEY=defender_private_key
+export SLICE_ADDRESS=deployed_slice_address
+forge script script/SeedSlice.s.sol:SeedSliceScript --rpc-url <your_rpc_url> --broadcast
 ```
-
-* **PWA Mode:** `http://localhost:3000`
-* **MiniApp Mode:** Use the native testing environment provided by the wallet SDK.
-
----
-
-## ⚙️ Application Configuration
-
-The `src/config/` and `src/adapters/` directories manage the multi-environment logic.
-
-### Abstraction Layer (`src/adapters/`)
-
-We abstract wallet interactions behind a common interface:
-
-* **`useWalletAdapter`** – Selects the active strategy based on environment.
-* **`WagmiAdapter`** – Wraps Wagmi hooks (Smart Wallets or EOA).
-* *(Planned)* **`LemonAdapter`** – Will wrap `@lemoncash/mini-app-sdk`.
-
-### Chain Configuration (`src/config/chains.ts`)
-
-* Exports `SUPPORTED_CHAINS` mapping Wagmi `Chain` objects to contract addresses.
-* Defaults based on `NEXT_PUBLIC_APP_ENV`.
-
----
-
-## 🔧 Smart Contract Development
-
-The `contracts/` directory contains the Solidity smart contracts using **Hardhat** and **Viem**.
-
-### Commands
-
-```bash
-pnpm hardhat compile
-pnpm hardhat test
-pnpm hardhat run scripts/deploy.ts --network baseSepolia
-```
-
----
-
-## 🗺️ Roadmap
-
-* [x] Phase 1 – Foundation (Core Protocol, Web UI)
-* [x] Phase 2 – Architecture Overhaul (Strategy Pattern, Multi-Tenant SDKs)
-* [ ] Phase 3 – MiniApp Expansion (Live integration with Lemon, Beexo)
-* [ ] Phase 4 – Slice V1.5 Migration (Passive Global Staking)
-* [ ] Phase 5 – Specialized Courts & DAO Governance
 ````
 
 ## File: src/app/disputes/[id]/loading.tsx
@@ -4396,88 +6275,83 @@ export default function JurorAssignLoading() {
 }
 ````
 
-## File: src/app/providers.tsx
+## File: src/config/adapters/farcaster.tsx
 ````typescript
 "use client";
 
 import { ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TimerProvider } from "@/contexts/TimerContext";
-import { Tenant } from "@/config/tenant";
-import * as Privy from "@/config/adapters/privy";
-import * as Beexo from "@/config/adapters/beexo";
-import * as Coinbase from "@/config/adapters/coinbase";
+import {
+  cookieStorage,
+  createConfig,
+  createStorage,
+  WagmiProvider,
+  useAccount,
+  useConnect,
+  useDisconnect,
+} from "wagmi";
+import { baseAccount } from "wagmi/connectors";
+import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
+import { activeChains, transports } from "@/config/chains";
+import { AuthStrategyProvider } from "@/contexts/AuthStrategyContext";
 
-interface Props {
-  children: ReactNode;
-  tenant: Tenant;
-  initialState?: any;
-}
-
-// Create QueryClient singleton outside component to persist cache across renders
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes - data stays fresh
-      gcTime: 1000 * 60 * 30, // 30 minutes - garbage collection time
-    },
-  },
+export const farcasterConfig = createConfig({
+  chains: activeChains,
+  transports,
+  connectors: [
+    farcasterMiniApp(),
+    baseAccount({
+      appName: "Slice",
+      appLogoUrl: "/images/slice-logo-light.svg",
+    }),
+  ],
+  storage: createStorage({ storage: cookieStorage }),
+  ssr: true,
 });
 
-// Shared providers used across all tenants
-function SharedProviders({ children }: { children: ReactNode }) {
+export function FarcasterProviderTree({
+  children,
+  initialState,
+}: {
+  children: ReactNode;
+  initialState?: any;
+}) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TimerProvider>{children}</TimerProvider>
-    </QueryClientProvider>
+    <WagmiProvider config={farcasterConfig} initialState={initialState}>
+      {children}
+    </WagmiProvider>
   );
 }
 
-export default function ContextProvider({
-  children,
-  tenant,
-  initialState,
-}: Props) {
-  // Select adapter based on tenant
-  let tenantProvider: ReactNode;
+export function FarcasterAuthAdapter({ children }: { children: ReactNode }) {
+  const { connectAsync, connectors } = useConnect();
+  const { disconnectAsync } = useDisconnect();
+  const { isConnected } = useAccount();
 
-  switch (tenant) {
-    case Tenant.PRIVY:
-      tenantProvider = (
-        <Privy.PrivyProviderTree initialState={initialState}>
-          <Privy.PrivyAuthAdapter>{children}</Privy.PrivyAuthAdapter>
-        </Privy.PrivyProviderTree>
-      );
-      break;
+  return (
+    <AuthStrategyProvider
+      value={{
+        isAuthenticated: isConnected,
+        connect: async () => {
+          const connector =
+            connectors.find(
+              (x) =>
+                x.type === "farcasterMiniApp" ||
+                x.id === "farcasterMiniApp" ||
+                x.id.toLowerCase().includes("farcaster"),
+            ) ||
+            connectors.find((x) => x.type === "baseAccount") ||
+            connectors[0];
 
-    case Tenant.BEEXO:
-      tenantProvider = (
-        <Beexo.BeexoProviderTree initialState={initialState}>
-          <Beexo.BeexoAuthAdapter>{children}</Beexo.BeexoAuthAdapter>
-        </Beexo.BeexoProviderTree>
-      );
-      break;
-
-    case Tenant.BASE:
-      tenantProvider = (
-        <Coinbase.CoinbaseProviderTree initialState={initialState}>
-          <Coinbase.CoinbaseAuthAdapter>
-            {children}
-          </Coinbase.CoinbaseAuthAdapter>
-        </Coinbase.CoinbaseProviderTree>
-      );
-      break;
-
-    default:
-      // Default to PRIVY
-      tenantProvider = (
-        <Privy.PrivyProviderTree initialState={initialState}>
-          <Privy.PrivyAuthAdapter>{children}</Privy.PrivyAuthAdapter>
-        </Privy.PrivyProviderTree>
-      );
-  }
-
-  return <SharedProviders>{tenantProvider}</SharedProviders>;
+          if (connector) {
+            await connectAsync({ connector });
+          }
+        },
+        disconnect: async () => disconnectAsync(),
+      }}
+    >
+      {children}
+    </AuthStrategyProvider>
+  );
 }
 ````
 
@@ -4945,6 +6819,100 @@ export function useMyDisputes() {
 }
 ````
 
+## File: src/hooks/ui/useOnboarding.ts
+````typescript
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+const ONBOARDING_KEY_PREFIX = "slice_onboarding_completed_v1";
+export const ONBOARDING_REPLAY_EVENT = "slice:onboarding:replay";
+
+export function getOnboardingStorageKey(address: string) {
+  return `${ONBOARDING_KEY_PREFIX}:${address.toLowerCase()}`;
+}
+
+export function resetOnboarding(address?: string) {
+  if (typeof window === "undefined") return;
+
+  if (address) {
+    localStorage.removeItem(getOnboardingStorageKey(address));
+    return;
+  }
+
+  const keysToDelete: string[] = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key?.startsWith(ONBOARDING_KEY_PREFIX)) {
+      keysToDelete.push(key);
+    }
+  }
+
+  keysToDelete.forEach((key) => localStorage.removeItem(key));
+}
+
+export function useOnboarding(address?: string, isConnected?: boolean) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState(0);
+
+  const storageKey = useMemo(() => {
+    if (!address) return null;
+    return getOnboardingStorageKey(address);
+  }, [address]);
+
+  useEffect(() => {
+    if (!isConnected || !storageKey) {
+      const resetTimer = window.setTimeout(() => {
+        setIsOpen(false);
+        setStep(0);
+      }, 0);
+      return () => window.clearTimeout(resetTimer);
+    }
+
+    const hasCompleted = localStorage.getItem(storageKey) === "true";
+    if (!hasCompleted) {
+      const openTimer = window.setTimeout(() => setIsOpen(true), 600);
+      return () => window.clearTimeout(openTimer);
+    }
+
+    const closeTimer = window.setTimeout(() => setIsOpen(false), 0);
+    return () => window.clearTimeout(closeTimer);
+  }, [isConnected, storageKey]);
+
+  const complete = useCallback(() => {
+    if (storageKey) {
+      localStorage.setItem(storageKey, "true");
+    }
+    setIsOpen(false);
+    setStep(0);
+  }, [storageKey]);
+
+  const next = useCallback((totalSteps: number) => {
+    setStep((current) => {
+      if (current >= totalSteps - 1) {
+        return current;
+      }
+      return current + 1;
+    });
+  }, []);
+
+  const open = useCallback(() => {
+    setStep(0);
+    setIsOpen(true);
+  }, []);
+
+  return {
+    isOpen,
+    step,
+    setStep,
+    next,
+    open,
+    complete,
+    skip: complete,
+  };
+}
+````
+
 ## File: src/hooks/voting/useReveal.ts
 ````typescript
 import { useState, useEffect } from "react";
@@ -5281,89 +7249,183 @@ These values must be provided via your local environment configuration mechanism
 **This file is authoritative. Any architectural change must update this document.**
 ````
 
-## File: package.json
-````json
-{
-  "name": "slice-app",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "tsc && eslint .",
-    "format": "npx prettier --write ."
-  },
-  "dependencies": {
-    "@base-org/account": "^2.5.1",
-    "@base-org/account-ui": "^1.0.1",
-    "@coinbase/onchainkit": "^1.1.2",
-    "@ducanh2912/next-pwa": "^10.2.9",
-    "@farcaster/miniapp-sdk": "^0.2.1",
-    "@farcaster/quick-auth": "^0.0.8",
-    "@privy-io/react-auth": "^3.9.1",
-    "@privy-io/wagmi": "^2.1.2",
-    "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-popover": "^1.1.15",
-    "@radix-ui/react-slider": "^1.3.6",
-    "@radix-ui/react-slot": "^1.2.4",
-    "@radix-ui/react-tabs": "^1.1.13",
-    "@tanstack/react-query": "^5.59.20",
-    "@use-gesture/react": "^10.3.1",
-    "@yudiel/react-qr-scanner": "^2.5.0",
-    "axios": "^1.13.2",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lottie-react": "^2.4.1",
-    "lucide-react": "^0.556.0",
-    "motion": "^12.23.26",
-    "next": "16.1.1",
-    "next-themes": "^0.4.6",
-    "permissionless": "^0.2.57",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-qr-code": "^2.0.18",
-    "sonner": "^2.0.7",
-    "tailwind-merge": "^3.4.0",
-    "viem": "^2.31.3",
-    "wagmi": "^2.12.31",
-    "xo-connect": "^2.1.3",
-    "zustand": "^5.0.11"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
-    "@eslint/js": "^9.39.2",
-    "@next/eslint-plugin-next": "^16.1.3",
-    "@nomicfoundation/hardhat-ignition": "^3.0.6",
-    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.1",
-    "@tailwindcss/postcss": "^4.1.17",
-    "@types/node": "^22.8.5",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@typescript-eslint/eslint-plugin": "^8.53.0",
-    "@typescript-eslint/parser": "^8.53.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.1",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "forge-std": "github:foundry-rs/forge-std#v1.9.4",
-    "globals": "^17.0.0",
-    "hardhat": "^3.1.0",
-    "knip": "^5.77.2",
-    "tailwindcss": "^4.1.17",
-    "tw-animate-css": "^1.4.0",
-    "typescript": "^5.8.3"
-  },
-  "ignoreScripts": [
-    "sharp",
-    "unrs-resolver"
-  ],
-  "trustedDependencies": [
-    "sharp",
-    "unrs-resolver"
-  ]
-}
+## File: README.md
+````markdown
+# ⚖️ Slice Protocol Application
+
+This project is the frontend implementation for **Slice**, a **Real-Time Dispute Resolution Protocol** built on Next.js. It features a **multi-tenant architecture** capable of running as a standalone PWA or as an embedded MiniApp across various wallet ecosystems (Base, Beexo).
+
+**🔗 Live Demo**: [Testnet](https://dev.slicehub.xyz) | [Mainnet](https://app.slicehub.xyz)
+
+---
+
+## ⚡ What is Slice?
+
+**Slice** is a **decentralized, real-time dispute resolution protocol**. It acts as a **neutral truth oracle** that resolves disputes quickly and trustlessly through **randomly selected jurors** and **economic incentives**.
+
+We are building the **"Uber for Justice"**:
+* **Decentralized & Trustless:** No central authority controls the outcome.
+* **Fast & Scalable:** Designed for real-time applications, offering quick rulings compared to traditional courts.
+* **Gamified Justice:** Jurors enter the Dispute Resolution Market via an **intuitive and entertaining App/MiniApp**.
+* **Earn by Ruling:** Users stake tokens to become jurors and **earn money** by correctly reviewing evidence and voting on disputes.
+
+---
+
+## 🏗️ Architecture: Multi-Tenant & Strategy Pattern
+
+This application uses a **Strategy Pattern** to manage wallet connections and SDK interactions. Instead of a single monolithic connection logic, we use an abstraction layer that selects the appropriate **Adapter** based on the runtime environment (detected via subdomains and SDK presence).
+
+### 1. Connection Strategies
+
+We support two active connection strategies (with Lemon planned):
+
+| Strategy | Description | Used By |
+|----------|-------------|---------|
+| **Wagmi SW** | Uses Smart Wallets (Coinbase/Safe) via Privy & Wagmi. | **PWA**, **Base** |
+| **Wagmi EOA** | Uses standard Injected (EOA) connectors. | **Beexo** |
+| *(Planned)* Lemon SDK | Native `@lemoncash/mini-app-sdk`. | Lemon |
+
+### 2. Supported MiniApps & Environments
+
+The application behaves differently depending on the access point (Subdomain) and injected providers.
+
+| Platform | Subdomain | Connection Strategy | Auth Type |
+|----------|-----------|---------------------|-----------|
+| **Standard PWA** | `app.` | **Wagmi SW** | Social / Email / Wallet |
+| **Base MiniApp** | `base.` | **Wagmi SW** | Coinbase Smart Wallet |
+| **Beexo** | `beexo.` | **Wagmi EOA** | Injected Provider (Beexo) |
+| **Lemon (planned)** | `lemon.` | Lemon SDK | Native Lemon Auth |
+
+---
+
+## 🚀 Try Slice Now
+
+Experience the future of decentralized justice on **Base**:
+
+* **Testnet Demo**: [dev.slicehub.xyz](https://dev.slicehub.xyz) – (Base Sepolia)
+* **Mainnet App**: [app.slicehub.xyz](https://app.slicehub.xyz) – (Base)
+
+---
+
+## ⚖️ How It Works (The Juror Flow)
+
+1. **Enter the Market:** Users open the Slice App or MiniApp and **stake USDC** to join the juror pool.
+2. **Get Drafted:** When a dispute arises, jurors are randomly selected (Drafted) to review the case.
+3. **Review & Vote:** Jurors analyze the evidence provided by both parties and vote privately on the outcome.
+4. **Earn Rewards:** If their vote aligns with the majority consensus, they **earn fees** from the losing party.
+5. **Justice Served:** The protocol aggregates the votes and executes the ruling on-chain instantly.
+
+---
+
+## 🔌 Integration Guide (For Developers)
+
+Integrating Slice V1.5 into your protocol follows an Arbitrable/Arbitrator flow:
+
+### 1. Create a Dispute
+From your arbitrable contract, call `slice.createDispute(CreateDisputeParams)` and store your local-case to `disputeId` mapping.
+
+### 2. Fund and progress the dispute
+Parties pay arbitration costs in `slice.stakingToken()` through `payDispute(disputeId)`. During the dispute, parties can submit evidence through `submitEvidence`.
+
+### 3. Settle via callback
+Slice calls `IArbitrable.rule(disputeId, ruling)` on your contract when finalized. In Slice V1.5, `ruling == 1` means claimer wins and `ruling == 0` means defender wins.
+
+Reference implementation:
+- `slice_sc/src/core/P2PTradeEscrow.sol`
+- `slice_sc/test/integration/P2PTradeEscrow.integration.t.sol`
+
+---
+
+## 📍 Deployed Contracts
+
+| Network | Slice Core | USDC Token |
+|---------|------------|------------|
+| **Base Sepolia** | `0xD8A10bD25e0E5dAD717372fA0C66d3a59a425e4D` | `0x5dEaC602762362FE5f135FA5904351916053cF70` |
+| **Base Mainnet** | `0xD8A10bD25e0E5dAD717372fA0C66d3a59a425e4D` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+
+---
+
+## 🚀 Getting Started
+
+### 1. Configure Environment
+
+Rename `.env.example` to `.env.local` and add your keys.
+
+```bash
+NEXT_PUBLIC_APP_ENV="development" # or 'production'
+
+# Pinata / IPFS Config
+NEXT_PUBLIC_PINATA_JWT="your_pinata_jwt"
+NEXT_PUBLIC_PINATA_GATEWAY_URL="your_gateway_url"
+
+# Privy Config (For PWA / Base)
+NEXT_PUBLIC_PRIVY_APP_ID="your_privy_app_id"
+NEXT_PUBLIC_PRIVY_CLIENT_ID="your_privy_client_id"
+
+# Contracts
+NEXT_PUBLIC_BASE_SLICE_CONTRACT="0x..."
+NEXT_PUBLIC_BASE_USDC_CONTRACT="0x..."
+```
+
+### 2. Install Dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Run Development Server
+
+```bash
+pnpm run dev
+```
+
+* **PWA Mode:** `http://localhost:3000`
+* **MiniApp Mode:** Use the native testing environment provided by the wallet SDK.
+
+---
+
+## ⚙️ Application Configuration
+
+The `src/config/` and `src/adapters/` directories manage the multi-environment logic.
+
+### Abstraction Layer (`src/adapters/`)
+
+We abstract wallet interactions behind a common interface:
+
+* **`useWalletAdapter`** – Selects the active strategy based on environment.
+* **`WagmiAdapter`** – Wraps Wagmi hooks (Smart Wallets or EOA).
+* *(Planned)* **`LemonAdapter`** – Will wrap `@lemoncash/mini-app-sdk`.
+
+### Chain Configuration (`src/config/chains.ts`)
+
+* Exports `SUPPORTED_CHAINS` mapping Wagmi `Chain` objects to contract addresses.
+* Defaults based on `NEXT_PUBLIC_APP_ENV`.
+
+---
+
+## 🔧 Smart Contract Development
+
+Solidity contracts are in `slice_sc/` and use **Foundry**.
+
+### Commands
+
+```bash
+cd slice_sc
+forge build
+forge test
+```
+
+For contract deployment and seeding scripts, see `slice_sc/README.md`.
+
+---
+
+## 🗺️ Roadmap
+
+* [x] Phase 1 – Foundation (Core Protocol, Web UI)
+* [x] Phase 2 – Architecture Overhaul (Strategy Pattern, Multi-Tenant SDKs)
+* [ ] Phase 3 – MiniApp Expansion (Live integration with Lemon, Beexo)
+* [ ] Phase 4 – Slice V1.5 Migration (Passive Global Staking)
+* [ ] Phase 5 – Specialized Courts & DAO Governance
 ````
 
 ## File: src/app/not-found.tsx
@@ -5435,40 +7497,98 @@ export default function NotFound() {
 }
 ````
 
-## File: src/config/tenant.ts
+## File: src/app/providers.tsx
 ````typescript
-export enum Tenant {
-  PRIVY = "privy", // Privy Strategy (Default)
-  BASE = "base", // Base Strategy (Coinbase)
-  BEEXO = "beexo", // Beexo Strategy (MiniApp)
+"use client";
+
+import { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TimerProvider } from "@/contexts/TimerContext";
+import { Tenant } from "@/config/tenant";
+import * as Privy from "@/config/adapters/privy";
+import * as Beexo from "@/config/adapters/beexo";
+import * as Coinbase from "@/config/adapters/coinbase";
+import * as Farcaster from "@/config/adapters/farcaster";
+
+interface Props {
+  children: ReactNode;
+  tenant: Tenant;
+  initialState?: any;
 }
 
-const PRIVY_SUBDOMAINS = ["frame.", "privy.", "app."];
-const BASE_SUBDOMAINS = ["base.", "web."];
-const BEEXO_SUBDOMAINS = ["beexo.", "mini."];
+// Create QueryClient singleton outside component to persist cache across renders
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes - data stays fresh
+      gcTime: 1000 * 60 * 30, // 30 minutes - garbage collection time
+    },
+  },
+});
 
-export const getTenantFromHost = (host: string | null): Tenant => {
-  if (!host) return Tenant.PRIVY;
+// Shared providers used across all tenants
+function SharedProviders({ children }: { children: ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TimerProvider>{children}</TimerProvider>
+    </QueryClientProvider>
+  );
+}
 
-  const hostname = host.split(":")[0];
+export default function ContextProvider({
+  children,
+  tenant,
+  initialState,
+}: Props) {
+  // Select adapter based on tenant
+  let tenantProvider: ReactNode;
 
-  if (BEEXO_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
-    return Tenant.BEEXO;
+  switch (tenant) {
+    case Tenant.PRIVY:
+      tenantProvider = (
+        <Privy.PrivyProviderTree initialState={initialState}>
+          <Privy.PrivyAuthAdapter>{children}</Privy.PrivyAuthAdapter>
+        </Privy.PrivyProviderTree>
+      );
+      break;
+
+    case Tenant.BEEXO:
+      tenantProvider = (
+        <Beexo.BeexoProviderTree initialState={initialState}>
+          <Beexo.BeexoAuthAdapter>{children}</Beexo.BeexoAuthAdapter>
+        </Beexo.BeexoProviderTree>
+      );
+      break;
+
+    case Tenant.FARCASTER:
+      tenantProvider = (
+        <Farcaster.FarcasterProviderTree initialState={initialState}>
+          <Farcaster.FarcasterAuthAdapter>{children}</Farcaster.FarcasterAuthAdapter>
+        </Farcaster.FarcasterProviderTree>
+      );
+      break;
+
+    case Tenant.COINBASE:
+      tenantProvider = (
+        <Coinbase.CoinbaseProviderTree initialState={initialState}>
+          <Coinbase.CoinbaseAuthAdapter>
+            {children}
+          </Coinbase.CoinbaseAuthAdapter>
+        </Coinbase.CoinbaseProviderTree>
+      );
+      break;
+
+    default:
+      // Default to PRIVY
+      tenantProvider = (
+        <Privy.PrivyProviderTree initialState={initialState}>
+          <Privy.PrivyAuthAdapter>{children}</Privy.PrivyAuthAdapter>
+        </Privy.PrivyProviderTree>
+      );
   }
 
-  // Use Base for specific subdomains
-  if (BASE_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
-    return Tenant.BASE;
-  }
-
-  // Use Privy for specific subdomains
-  if (PRIVY_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
-    return Tenant.PRIVY;
-  }
-
-  // Default is PRIVY
-  return Tenant.PRIVY;
-};
+  return <SharedProviders>{tenantProvider}</SharedProviders>;
+}
 ````
 
 ## File: src/hooks/actions/useSendNative.ts
@@ -5808,860 +7928,90 @@ export async function transformDisputeData(
 }
 ````
 
-## File: contracts/contracts/core/SliceV1.5.sol
-````solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
-
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
-/**
- * @title IArbitrable
- * @notice Interface for contracts that wish to use Slice for dispute resolution.
- */
-interface IArbitrable {
-    /**
-     * @dev Called by Slice to enforce the ruling.
-     * @param _disputeId The ID of the dispute in Slice.
-     * @param _ruling The ruling (0 or 1).
-     */
-    function rule(uint256 _disputeId, uint256 _ruling) external;
+## File: package.json
+````json
+{
+  "name": "slice-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc && eslint .",
+    "format": "npx prettier --write ."
+  },
+  "dependencies": {
+    "@base-org/account": "^2.5.1",
+    "@base-org/account-ui": "^1.0.1",
+    "@coinbase/onchainkit": "^1.1.2",
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@farcaster/miniapp-sdk": "^0.2.1",
+    "@farcaster/miniapp-wagmi-connector": "^1.1.0",
+    "@farcaster/quick-auth": "^0.0.8",
+    "@privy-io/react-auth": "^3.9.1",
+    "@privy-io/wagmi": "^2.1.2",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-slider": "^1.3.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@tanstack/react-query": "^5.59.20",
+    "@use-gesture/react": "^10.3.1",
+    "@yudiel/react-qr-scanner": "^2.5.0",
+    "axios": "^1.13.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lottie-react": "^2.4.1",
+    "lucide-react": "^0.556.0",
+    "motion": "^12.23.26",
+    "next": "16.1.1",
+    "next-themes": "^0.4.6",
+    "permissionless": "^0.2.57",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-qr-code": "^2.0.18",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.4.0",
+    "viem": "^2.31.3",
+    "wagmi": "^2.12.31",
+    "xo-connect": "^2.1.3",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
+    "@next/eslint-plugin-next": "^16.1.3",
+    "@nomicfoundation/hardhat-ignition": "^3.0.6",
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.1",
+    "@tailwindcss/postcss": "^4.1.17",
+    "@types/node": "^22.8.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.4",
+    "globals": "^17.0.0",
+    "hardhat": "^3.1.0",
+    "knip": "^5.77.2",
+    "tailwindcss": "^4.1.17",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5.8.3"
+  },
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ]
 }
-
-// TODO:
-// - Change from a Pull Model (drawDispute: Juror selects active dispute)
-// to a Push Model (drawJurors: Dispute selects passive jurors)
-// - Implement chainlink VRF
-
-/**
- * @title Slice Protocol V1.5 (The Arbitrator)
- * @notice A neutral, scalable, on-chain dispute resolution protocol.
- *
- * ======================================================================================
- * 1. ARCHITECTURE: PUSH & FRAGMENTATION
- * ======================================================================================
- * - Multi-Court: Disputes are fragmented into categories (e.g., "Tech", "Commerce").
- * Jurors stake specific courts, ensuring domain expertise.
- * - Push Pattern: Slice does NOT hold the principal assets (e.g., the NFT or 1000 ETH).
- * Slice only holds the STAKES. The External Contract (Arbitrable) holds the ASSETS.
- * When a ruling is executed, Slice calls `rule(id, winner)` on the external contract.
- *
- * ======================================================================================
- * 2. ECONOMIC MODEL: THE "WATERFALL"
- * ======================================================================================
- * The protocol distinguishes between "Wages" (Fee) and "Penalties" (Stake).
- *
- * [A] DEPOSIT FORMULA (Cost to Create/Defend)
- * --------------------------------------------------------------------------------------
- * Parties must pay for the workers (Jurors) AND put up a penalty bond.
- *
- * Total Deposit = (JurorsRequired * FeePerJuror) + PartyStake
- *
- * Where:
- * - FeePerJuror: 100% goes to jurors (Gas + Wage).
- * - PartyStake:  The "Skin in the Game" penalty.
- *
- * [B] SETTLEMENT FORMULA (Where the money goes)
- * --------------------------------------------------------------------------------------
- * When a ruling is made, the Loser's "Fee" pays the jurors.
- * The Loser's "PartyStake" is split between the Winner and the Jurors.
- *
- * LoserStakeBonus = PartyStake * (100% - JurorRewardShare)
- * JurorStakeBonus = PartyStake * JurorRewardShare
- *
- * 1. Winner Payout = WinnerDeposit + LoserStakeBonus
- * (Winner gets their full money back + a bonus for being right)
- *
- * 2. Juror Pot     = (JurorsRequired * FeePerJuror) + JurorStakeBonus
- * (Jurors get their guaranteed wages + a high-yield bonus from the loser)
- *
- * ======================================================================================
- * 3. RISK MODEL: ALPHA (α) PENALTY
- * ======================================================================================
- * Defines how much of a juror's stake is slashed for voting incoherently.
- *
- * [C] PENALTY FORMULA
- * --------------------------------------------------------------------------------------
- * Alpha (α): Configurable per court (0% to 100%, stored as basis points).
- *
- * Incoherent Penalty = JurorStake * α
- * Juror Refund       = JurorStake - Incoherent Penalty
- *
- * - If α = 100%: Juror loses everything. (Binary/Objective disputes)
- * - If α = 10%:  Juror loses 10%, gets 90% back. (Subjective disputes)
- *
- * [D] REWARD DISTRIBUTION
- * --------------------------------------------------------------------------------------
- * Coherent jurors (Winners) earn a share of the External Pot (Fees) AND the Internal Pot (Penalties).
- *
- * Share = JurorStake / TotalWinningStake
- *
- * Juror Payout = Principal + (ExternalPot * Share) + (TotalPenalties * Share)
- */
-contract SliceV1_5 is Ownable, ReentrancyGuard {
-    using SafeERC20 for IERC20;
-
-    // ============================================
-    // DATA STRUCTURES
-    // ============================================
-
-    enum DisputeStatus {
-        Created, // Waiting for payment
-        Evidence, // Paid. Evidence can be uploaded. NO VOTING.
-        Commit, // Evidence closed. Jurors commit hashes.
-        Reveal, // Commits closed. Jurors reveal votes.
-        Finished // Ruling executed.
-    }
-
-    struct CourtConfig {
-        bool active;
-        uint256 feePerJuror; // Wage per juror (paid by parties)
-        uint256 partyStake; // Extra penalty stake (paid by parties)
-        uint256 jurorRewardShare; // % of loser's stake that goes to jurors (Basis Points: 5000 = 50%)
-        uint256 minJurorStake; // Min stake to draft
-        uint256 maxJurorStake; // Sybil resistance cap
-        uint256 minVoteDuration; // Minimum seconds for commit/reveal phases
-        uint256 maxVoteDuration; // Maximum seconds for commit/reveal phases
-        uint256 alpha; // Incoherence Penalty (Basis Points: 10000 = 100% slashed)
-    }
-
-    struct Dispute {
-        uint256 id;
-        address arbitrated; // The contract that created the dispute (and receives callback)
-        address claimer;
-        address defender;
-        string category;
-        // --- Economic Snapshot (Immutable once created) ---
-        uint256 feePerJuror;
-        uint256 partyStake;
-        uint256 jurorRewardShare;
-        uint256 jurorsRequired;
-        uint256 alpha;
-        // --- State ---
-        string ipfsHash;
-        uint256 commitsCount;
-        uint256 revealsCount;
-        DisputeStatus status;
-        bool claimerPaid;
-        bool defenderPaid;
-        address winner;
-        // --- Phase Durations (Stored at creation, used to calculate deadlines at activation) ---
-        uint256 evidenceDuration;
-        uint256 commitDuration;
-        uint256 revealDuration;
-        // --- Timestamps (Calculated when dispute is activated via payDispute) ---
-        uint256 payDeadline;
-        uint256 evidenceDeadline;
-        uint256 commitDeadline;
-        uint256 revealDeadline;
-    }
-
-    struct JurorStats {
-        uint256 totalDisputes;
-        uint256 coherentVotes;
-        uint256 totalEarnings;
-    }
-
-    // ============================================
-    // CONSTANTS
-    // ============================================
-    uint256 public constant MAX_JURORS = 31;
-
-    // ============================================
-    // STATE VARIABLES
-    // ============================================
-
-    uint256 public disputeCount;
-    IERC20 public immutable stakingToken;
-    address public treasury;
-
-    // Court Configuration & Queues
-    mapping(string => CourtConfig) public courtConfigs;
-    mapping(string => uint256[]) public courtQueues;
-    mapping(uint256 => uint256) public idToQueueIndex;
-
-    // Core Data
-    mapping(uint256 => Dispute) internal disputeStore;
-    mapping(uint256 => address[]) public disputeJurors;
-    mapping(uint256 => mapping(address => bool)) internal isJurorInDispute;
-
-    // Voting
-    mapping(uint256 => mapping(address => bytes32)) public commitments;
-    mapping(uint256 => mapping(address => uint256)) public revealedVotes;
-    mapping(uint256 => mapping(address => bool)) public hasRevealed;
-
-    // Financials
-    mapping(uint256 => mapping(address => uint256)) public jurorStakes;
-    mapping(address => uint256) public balances;
-    mapping(address => JurorStats) public jurorStats;
-
-    // Indexing
-    mapping(address => uint256[]) private jurorDisputes;
-    mapping(address => uint256[]) private userDisputes;
-
-    // ============================================
-    // EVENTS
-    // ============================================
-
-    event DisputeCreated(uint256 indexed id, address indexed arbitrated, address claimer, address defender);
-    event CourtUpdated(string category, uint256 feePerJuror, uint256 alpha);
-    event FundsDeposited(uint256 indexed id, address role, uint256 amount);
-    event EvidenceSubmitted(uint256 indexed id, address indexed party, string ipfsHash);
-    event JurorJoined(uint256 indexed id, address juror, string category);
-    event StatusChanged(uint256 indexed id, DisputeStatus newStatus);
-    event VoteCommitted(uint256 indexed id, address juror);
-    event VoteRevealed(uint256 indexed id, address juror, uint256 vote);
-    event RulingExecuted(uint256 indexed id, address winner, uint256 amountWon);
-    event RulingSent(address indexed arbitrated, uint256 indexed disputeId, uint256 ruling);
-    event FundsWithdrawn(address indexed user, uint256 amount);
-    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
-
-    constructor(address _stakingToken, address _treasury) Ownable(msg.sender) {
-        stakingToken = IERC20(_stakingToken);
-        treasury = _treasury;
-
-        // Initialize "General" Court
-        courtConfigs["General"] = CourtConfig({
-            active: true,
-            feePerJuror: 5 * 10 ** 6, // 5 USDC
-            partyStake: 50 * 10 ** 6, // 50 USDC
-            jurorRewardShare: 5000, // 50%
-            minJurorStake: 10 * 10 ** 6, // 10 USDC
-            maxJurorStake: 1000 * 10 ** 6, // 1000 USDC
-            minVoteDuration: 3600, // 1 Hour
-            maxVoteDuration: 604800, // 1 Week
-            alpha: 10000 // 100% Penalty
-        });
-    }
-
-    // ============================================
-    // ADMIN: COURT MANAGEMENT
-    // ============================================
-
-    function setCourt(string memory _category, CourtConfig memory _config) external onlyOwner {
-        require(_config.jurorRewardShare <= 10000, "Share > 100%");
-        require(_config.alpha <= 10000, "Alpha > 100%");
-        require(_config.minVoteDuration <= _config.maxVoteDuration, "Invalid duration range");
-
-        courtConfigs[_category] = _config;
-        emit CourtUpdated(_category, _config.feePerJuror, _config.alpha);
-    }
-
-    /**
-     * @notice Update the treasury address for governance rewards.
-     * @param _treasury The new treasury address.
-     */
-    function setTreasury(address _treasury) external onlyOwner {
-        require(_treasury != address(0), "Invalid treasury");
-        address oldTreasury = treasury;
-        treasury = _treasury;
-        emit TreasuryUpdated(oldTreasury, _treasury);
-    }
-
-    // ============================================
-    // 1. DISPUTE LIFECYCLE: CREATION
-    // ============================================
-
-    struct CreateDisputeParams {
-        address claimer;
-        address defender;
-        string category;
-        string ipfsHash;
-        uint256 jurorsRequired;
-        uint256 paySeconds;
-        uint256 evidenceSeconds;
-        uint256 commitSeconds;
-        uint256 revealSeconds;
-    }
-
-    /**
-     * @notice Create a dispute with custom timelines.
-     * @param _params Struct containing all dispute creation parameters.
-     */
-    function createDispute(CreateDisputeParams calldata _params) external returns (uint256) {
-        // Validate addresses
-        require(_params.claimer != address(0), "Claimer cannot be zero address");
-        require(_params.defender != address(0), "Defender cannot be zero address");
-        require(msg.sender != _params.defender, "Self-dispute not allowed");
-        require(_params.claimer != _params.defender, "Claimer cannot be Defender");
-        
-        CourtConfig memory cc = courtConfigs[_params.category];
-        require(cc.active, "Court inactive");
-        require(_params.jurorsRequired > 0 && _params.jurorsRequired <= MAX_JURORS, "Invalid juror count");
-
-        // Validate Timelines against Court Guardrails
-        require(
-            _params.commitSeconds >= cc.minVoteDuration && _params.commitSeconds <= cc.maxVoteDuration,
-            "Commit duration OOB"
-        );
-        require(
-            _params.revealSeconds >= cc.minVoteDuration && _params.revealSeconds <= cc.maxVoteDuration,
-            "Reveal duration OOB"
-        );
-        require(_params.paySeconds >= 1 hours, "Pay time too short");
-        require(_params.evidenceSeconds >= 1 hours, "Evidence time too short");
-
-        disputeCount++;
-        uint256 id = disputeCount;
-
-        Dispute storage d = disputeStore[id];
-        d.id = id;
-        d.arbitrated = msg.sender;
-        d.claimer = _params.claimer;
-        d.defender = _params.defender;
-        d.category = _params.category;
-
-        // Snapshot Economics
-        d.feePerJuror = cc.feePerJuror;
-        d.partyStake = cc.partyStake;
-        d.jurorRewardShare = cc.jurorRewardShare;
-        d.jurorsRequired = _params.jurorsRequired;
-        d.alpha = cc.alpha;
-
-        d.ipfsHash = _params.ipfsHash;
-        d.status = DisputeStatus.Created;
-
-        // Store Phase Durations (Deadlines calculated at activation in payDispute)
-        d.evidenceDuration = _params.evidenceSeconds;
-        d.commitDuration = _params.commitSeconds;
-        d.revealDuration = _params.revealSeconds;
-
-        // Only set pay deadline at creation (the only deadline that matters before activation)
-        d.payDeadline = block.timestamp + _params.paySeconds;
-
-        userDisputes[_params.claimer].push(id);
-        userDisputes[_params.defender].push(id);
-
-        emit DisputeCreated(id, msg.sender, _params.claimer, _params.defender);
-        return id;
-    }
-
-    function getDisputeCost(uint256 _id) public view returns (uint256) {
-        Dispute memory d = disputeStore[_id];
-        return (d.feePerJuror * d.jurorsRequired) + d.partyStake;
-    }
-
-    function payDispute(uint256 _id) external {
-        Dispute storage d = disputeStore[_id];
-        require(d.status == DisputeStatus.Created, "Payment closed");
-        require(block.timestamp <= d.payDeadline, "Deadline passed");
-
-        bool isClaimer = msg.sender == d.claimer;
-        bool isDefender = msg.sender == d.defender;
-        bool isArbitrated = msg.sender == d.arbitrated && d.arbitrated != address(0);
-
-        require(isClaimer || isDefender || isArbitrated, "Not authorized");
-
-        uint256 cost = getDisputeCost(_id);
-        uint256 amountToPay = cost; // Default to single party cost
-
-        // Update payment status
-        if (isClaimer) {
-            require(!d.claimerPaid, "Already paid");
-            d.claimerPaid = true;
-        } else if (isDefender) {
-            require(!d.defenderPaid, "Already paid");
-            d.defenderPaid = true;
-        } else if (isArbitrated) {
-            // Escrow/Contract pays for both sides logic
-            d.claimerPaid = true;
-            d.defenderPaid = true;
-
-            amountToPay = cost * 2;
-        }
-
-        // Use SafeERC20 to prevent reverts with USDT
-        stakingToken.safeTransferFrom(msg.sender, address(this), amountToPay);
-
-        emit FundsDeposited(_id, msg.sender, amountToPay);
-
-        // Advance state when both parties have paid
-        if (d.claimerPaid && d.defenderPaid) {
-            d.status = DisputeStatus.Evidence;
-
-            // Calculate deadlines relative to NOW (Activation Time)
-            // This prevents "Expired on Arrival" disputes where phases have
-            // effectively zero time if payment happens late in the pay window
-            d.evidenceDeadline = block.timestamp + d.evidenceDuration;
-            d.commitDeadline = d.evidenceDeadline + d.commitDuration;
-            d.revealDeadline = d.commitDeadline + d.revealDuration;
-
-            _addToCourtQueue(d.category, _id);
-            emit StatusChanged(_id, DisputeStatus.Evidence);
-        }
-    }
-
-    /**
-     * @notice Allow parties to submit additional evidence during the evidence phase.
-     */
-    function submitEvidence(uint256 _id, string calldata _ipfsHash) external {
-        Dispute storage d = disputeStore[_id];
-
-        // Check Status
-        require(d.status == DisputeStatus.Evidence || d.status == DisputeStatus.Created, "Evidence closed");
-
-        // Check Timestamps (Evidence Phase is a sub-phase of Commit in V1.5 logic)
-        if (d.status == DisputeStatus.Evidence) {
-            require(block.timestamp <= d.evidenceDeadline, "Deadline passed");
-        }
-
-        // Access Control
-        require(msg.sender == d.claimer || msg.sender == d.defender, "Only parties can submit");
-
-        // We do not overwrite the original ipfsHash (the "root" case file).
-        // Instead, we emit an event that the Indexer/Subgraph will pick up
-        // to build the timeline of evidence.
-        emit EvidenceSubmitted(_id, msg.sender, _ipfsHash);
-    }
-
-    // ============================================
-    // 2. MATCHMAKING & JUROR SELECTION
-    // ============================================
-
-    function drawDispute(uint256 _amount, string calldata _category) external nonReentrant {
-        CourtConfig memory cc = courtConfigs[_category];
-        require(cc.active, "Court inactive");
-        require(_amount >= cc.minJurorStake, "Stake too low");
-        require(_amount <= cc.maxJurorStake, "Stake too high");
-
-        uint256[] storage queue = courtQueues[_category];
-        require(queue.length > 0, "No disputes pending");
-
-        // Random Selection (VRF recommended for Mainnet, simplified here)
-        uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender)));
-        uint256 index = seed % queue.length;
-        uint256 id = queue[index];
-
-        Dispute storage d = disputeStore[id];
-
-        require(block.timestamp < d.commitDeadline, "Expired");
-        require(msg.sender != d.claimer && msg.sender != d.defender, "Conflict of interest");
-        require(!_isJuror(id, msg.sender), "Already a juror");
-
-        // Safe transfer
-        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
-
-        disputeJurors[id].push(msg.sender);
-        isJurorInDispute[id][msg.sender] = true;
-        jurorStakes[id][msg.sender] = _amount;
-        jurorDisputes[msg.sender].push(id);
-
-        emit JurorJoined(id, msg.sender, _category);
-
-        if (disputeJurors[id].length >= d.jurorsRequired) {
-            _removeFromCourtQueue(_category, index);
-        }
-    }
-
-    // ============================================
-    // 3. VOTING
-    // ============================================
-
-    function commitVote(uint256 _id, bytes32 _commitment) external {
-        Dispute storage d = disputeStore[_id];
-
-        // LAZY TRANSITION: Evidence -> Commit
-        // If we are in Evidence phase but time has passed, effectively move to Commit
-        if (d.status == DisputeStatus.Evidence && block.timestamp > d.evidenceDeadline) {
-            d.status = DisputeStatus.Commit;
-            emit StatusChanged(_id, DisputeStatus.Commit);
-        }
-
-        require(d.status == DisputeStatus.Commit, "Wrong phase");
-        require(block.timestamp <= d.commitDeadline, "Voting ended");
-        require(_isJuror(_id, msg.sender), "Not juror");
-        require(commitments[_id][msg.sender] == bytes32(0), "Already committed");
-
-        commitments[_id][msg.sender] = _commitment;
-        d.commitsCount++;
-        emit VoteCommitted(_id, msg.sender);
-
-        if (disputeJurors[_id].length == d.jurorsRequired && d.commitsCount == d.jurorsRequired) {
-            d.status = DisputeStatus.Reveal;
-            emit StatusChanged(_id, DisputeStatus.Reveal);
-        }
-    }
-
-    function revealVote(uint256 _id, uint256 _vote, uint256 _salt) external {
-        Dispute storage d = disputeStore[_id];
-
-        if (d.status == DisputeStatus.Commit && block.timestamp > d.commitDeadline) {
-            d.status = DisputeStatus.Reveal;
-        }
-
-        require(d.status == DisputeStatus.Reveal, "Wrong phase");
-        require(_isJuror(_id, msg.sender), "Not juror");
-        require(!hasRevealed[_id][msg.sender], "Already revealed");
-
-        bytes32 verify = keccak256(abi.encodePacked(_vote, _salt));
-        require(verify == commitments[_id][msg.sender], "Hash mismatch");
-
-        revealedVotes[_id][msg.sender] = _vote;
-        hasRevealed[_id][msg.sender] = true;
-        d.revealsCount++;
-
-        emit VoteRevealed(_id, msg.sender, _vote);
-    }
-
-    // ============================================
-    // 4. RULING & SETTLEMENT
-    // ============================================
-
-    function executeRuling(uint256 _id) external nonReentrant {
-        Dispute storage d = disputeStore[_id];
-
-        // Lazy Phase Transitions
-        if (d.status == DisputeStatus.Commit && block.timestamp > d.commitDeadline) {
-            d.status = DisputeStatus.Reveal;
-        }
-
-        bool timePassed = block.timestamp > d.revealDeadline;
-        bool allRevealed = (d.commitsCount > 0 && d.commitsCount == d.revealsCount);
-
-        require(d.status == DisputeStatus.Reveal, "Wrong phase");
-        require(timePassed || allRevealed, "Cannot execute");
-
-        // Determine Winner (Handle No Jurors)
-        uint256 winningChoice;
-        address winnerAddr;
-
-        if (disputeJurors[_id].length == 0) {
-            // NO JURORS: Default to Defender (Presumption of Innocence)
-            winningChoice = 0;
-            winnerAddr = d.defender;
-        } else {
-            // NORMAL: Count votes
-            winningChoice = _determineWinner(_id);
-            winnerAddr = winningChoice == 1 ? d.claimer : d.defender;
-        }
-
-        d.winner = winnerAddr;
-        d.status = DisputeStatus.Finished;
-
-        // Remove from Court Queue if incomplete
-        // (If it was full, it was already removed in drawDispute)
-        if (disputeJurors[_id].length < d.jurorsRequired) {
-            uint256 idx = idToQueueIndex[_id];
-            uint256[] storage queue = courtQueues[d.category];
-
-            // 1. Ensure queue has elements (length > idx)
-            // 2. Ensure the ID at that index is actually THIS dispute
-            if (queue.length > idx && queue[idx] == _id) {
-                _removeFromCourtQueue(d.category, idx);
-            }
-        }
-        _settleFinances(_id, winningChoice, winnerAddr);
-
-        // Callback (External)
-        if (d.arbitrated != address(0)) {
-            try IArbitrable(d.arbitrated).rule(_id, winningChoice) {
-                emit RulingSent(d.arbitrated, _id, winningChoice);
-            } catch {
-                // Emit event to signal callback failure, but ruling is preserved
-            }
-        }
-
-        emit RulingExecuted(_id, winnerAddr, 0);
-    }
-
-    function _settleFinances(uint256 _id, uint256 _winningChoice, address _winnerAddr) internal {
-        Dispute storage d = disputeStore[_id];
-
-        // Calculate Surplus (Unused Wages)
-        uint256 actualJurors = disputeJurors[_id].length;
-        uint256 budgetPerJuror = d.feePerJuror; // e.g. 5 USDC
-
-        uint256 totalBudgetedFees = budgetPerJuror * d.jurorsRequired;
-        uint256 actualFeesNeeded = budgetPerJuror * actualJurors;
-        uint256 unusedFees = totalBudgetedFees - actualFeesNeeded;
-
-        // Parties Settlement
-        uint256 totalDeposit = (d.feePerJuror * d.jurorsRequired) + d.partyStake;
-        uint256 loserStakeBonus = (d.partyStake * (10000 - d.jurorRewardShare)) / 10000;
-
-        balances[_winnerAddr] += totalDeposit + loserStakeBonus + unusedFees;
-
-        // Juror Pot Calculation
-        uint256 jurorStakeBonus = d.partyStake - loserStakeBonus;
-        uint256 externalPot = actualFeesNeeded + jurorStakeBonus;
-
-        // Distribute to Jurors (with Alpha logic)
-        if (actualJurors > 0) {
-            _distributeJurorRewards(_id, _winningChoice, externalPot);
-        } else {
-            // If 0 jurors, the externalPot goes to winner (no one else to pay)
-            balances[_winnerAddr] += externalPot;
-        }
-    }
-
-    function _distributeJurorRewards(uint256 _id, uint256 winningChoice, uint256 _externalPot) internal {
-        Dispute storage d = disputeStore[_id];
-        address[] memory jurors = disputeJurors[_id];
-
-        uint256 totalWinningJurorStake = 0;
-        uint256 totalPenaltyCollected = 0;
-
-        // Pass 1: Collect Penalties
-        for (uint i = 0; i < jurors.length; i++) {
-            address j = jurors[i];
-            uint256 s = jurorStakes[_id][j];
-
-            bool isCorrect = hasRevealed[_id][j] && revealedVotes[_id][j] == winningChoice;
-
-            if (isCorrect) {
-                totalWinningJurorStake += s;
-            } else {
-                uint256 penalty = (s * d.alpha) / 10000;
-                totalPenaltyCollected += penalty;
-
-                uint256 remainder = s - penalty;
-                if (remainder > 0) {
-                    balances[j] += remainder;
-                }
-            }
-            jurorStats[j].totalDisputes++;
-        }
-
-        if (totalWinningJurorStake > 0) {
-            // Pass 2: Pay Winners
-            for (uint i = 0; i < jurors.length; i++) {
-                address j = jurors[i];
-                bool isCorrect = hasRevealed[_id][j] && revealedVotes[_id][j] == winningChoice;
-
-                if (isCorrect) {
-                    uint256 myStake = jurorStakes[_id][j];
-
-                    balances[j] += myStake; // Return Principal
-
-                    uint256 penaltyShare = (myStake * totalPenaltyCollected) / totalWinningJurorStake;
-                    uint256 externalShare = (myStake * _externalPot) / totalWinningJurorStake;
-
-                    uint256 totalProfit = penaltyShare + externalShare;
-                    balances[j] += totalProfit;
-
-                    jurorStats[j].coherentVotes++;
-                    jurorStats[j].totalEarnings += totalProfit;
-                }
-            }
-        } else {
-            // "Reward Black Hole" Edge Case: All jurors voted incoherently
-            // External pot to winner; penalties to treasury (not to default winner)
-            balances[d.winner] += _externalPot;
-
-            // Penalties collected from incoherent jurors go to governance treasury
-            if (totalPenaltyCollected > 0 && treasury != address(0)) {
-                balances[treasury] += totalPenaltyCollected;
-            }
-            // If no treasury set, penalties remain in contract (effectively burned)
-        }
-    }
-
-    // ============================================
-    // INTERNAL HELPERS
-    // ============================================
-
-    function _determineWinner(uint256 _id) internal view returns (uint256) {
-        uint256 votes0 = 0;
-        uint256 votes1 = 0;
-        address[] memory jurors = disputeJurors[_id];
-        for (uint i = 0; i < jurors.length; i++) {
-            address j = jurors[i];
-            if (hasRevealed[_id][j]) {
-                uint256 w = jurorStakes[_id][j];
-                if (revealedVotes[_id][j] == 0) votes0 += w;
-                else if (revealedVotes[_id][j] == 1) votes1 += w;
-            }
-        }
-        return votes1 > votes0 ? 1 : 0;
-    }
-
-    function _addToCourtQueue(string memory _category, uint256 _id) internal {
-        courtQueues[_category].push(_id);
-        idToQueueIndex[_id] = courtQueues[_category].length - 1;
-    }
-
-    function _removeFromCourtQueue(string memory _category, uint256 _index) internal {
-        uint256[] storage queue = courtQueues[_category];
-        uint256 lastId = queue[queue.length - 1];
-        uint256 idToRemove = queue[_index];
-        if (_index != queue.length - 1) {
-            queue[_index] = lastId;
-            idToQueueIndex[lastId] = _index;
-        }
-        queue.pop();
-        delete idToQueueIndex[idToRemove];
-    }
-
-    function _isJuror(uint256 _id, address _user) internal view returns (bool) {
-        return isJurorInDispute[_id][_user];
-    }
-
-    function withdraw(address _token) external nonReentrant {
-        uint256 amount = balances[msg.sender];
-        require(amount > 0, "No funds");
-        require(_token == address(stakingToken), "Wrong token");
-
-        balances[msg.sender] = 0;
-        stakingToken.safeTransfer(msg.sender, amount);
-        emit FundsWithdrawn(msg.sender, amount);
-    }
-
-    // View Helpers
-    function disputes(uint256 _id) external view returns (Dispute memory) {
-        return disputeStore[_id];
-    }
-
-    function getJurorDisputes(address _user) external view returns (uint256[] memory) {
-        return jurorDisputes[_user];
-    }
-
-    function getUserDisputes(address _user) external view returns (uint256[] memory) {
-        return userDisputes[_user];
-    }
-
-    function disputeCountView() external view returns (uint256) {
-        return disputeCount;
-    }
-}
-````
-
-## File: contracts/hardhat.config.ts
-````typescript
-// import "@fhevm/hardhat-plugin";
-import "@nomicfoundation/hardhat-chai-matchers";
-import "@nomicfoundation/hardhat-ethers";
-import "@nomicfoundation/hardhat-verify";
-import "@typechain/hardhat";
-import "hardhat-deploy";
-import "hardhat-gas-reporter";
-import type { HardhatUserConfig } from "hardhat/config";
-import { vars } from "hardhat/config";
-import "solidity-coverage";
-
-import "./tasks/accounts";
-// import "./tasks/FHECounter";
-
-// Run 'pnpm hardhat vars setup' to see the list of variables that need to be set
-
-const MNEMONIC: string = vars.get("MNEMONIC", "test test test test test test test test test test test junk");
-const INFURA_API_KEY: string = vars.get("INFURA_API_KEY", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
-
-// Base network configuration
-const DEPLOYER_PRIVATE_KEY: string = vars.get("DEPLOYER_PRIVATE_KEY", "");
-const DEFENDER_PRIVATE_KEY: string = vars.get("DEFENDER_PRIVATE_KEY", "");
-const BASE_SEPOLIA_RPC_URL: string = vars.get("BASE_SEPOLIA_RPC_URL", "https://sepolia.base.org");
-const BASE_MAINNET_RPC_URL: string = vars.get("BASE_MAINNET_RPC_URL", "https://mainnet.base.org");
-const BASESCAN_API_KEY: string = vars.get("BASESCAN_API_KEY", "");
-
-const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
-  namedAccounts: {
-    deployer: 0,
-  },
-  etherscan: {
-    apiKey: {
-      sepolia: vars.get("ETHERSCAN_API_KEY", ""),
-      baseSepolia: BASESCAN_API_KEY,
-      base: BASESCAN_API_KEY,
-    },
-    customChains: [
-      {
-        network: "baseSepolia",
-        chainId: 84532,
-        urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia.basescan.org",
-        },
-      },
-      {
-        network: "base",
-        chainId: 8453,
-        urls: {
-          apiURL: "https://api.basescan.org/api",
-          browserURL: "https://basescan.org",
-        },
-      },
-    ],
-  },
-  gasReporter: {
-    currency: "USD",
-    enabled: process.env.REPORT_GAS ? true : false,
-    excludeContracts: [],
-  },
-  networks: {
-    hardhat: {
-      accounts: {
-        mnemonic: MNEMONIC,
-      },
-      chainId: 31337,
-    },
-    anvil: {
-      accounts: {
-        mnemonic: MNEMONIC,
-        path: "m/44'/60'/0'/0/",
-        count: 10,
-      },
-      chainId: 31337,
-      url: "http://localhost:8545",
-    },
-    sepolia: {
-      accounts: {
-        mnemonic: MNEMONIC,
-        path: "m/44'/60'/0'/0/",
-        count: 10,
-      },
-      chainId: 11155111,
-      url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
-    },
-    baseSepolia: {
-      url: BASE_SEPOLIA_RPC_URL,
-      accounts: [DEPLOYER_PRIVATE_KEY, DEFENDER_PRIVATE_KEY].filter(Boolean),
-      chainId: 84532,
-    },
-    base: {
-      url: BASE_MAINNET_RPC_URL,
-      accounts: [DEPLOYER_PRIVATE_KEY, DEFENDER_PRIVATE_KEY].filter(Boolean),
-      chainId: 8453,
-    },
-    zamaDevnet: {
-      url: "https://devnet.zama.ai",
-      chainId: 8009,
-      accounts: [DEPLOYER_PRIVATE_KEY].filter(Boolean),
-    },
-  },
-  paths: {
-    artifacts: "./artifacts",
-    cache: "./cache",
-    sources: "./contracts",
-    tests: "./test",
-  },
-  solidity: {
-    version: "0.8.27",
-    settings: {
-      metadata: {
-        // Not including the metadata hash
-        // https://github.com/paulrberg/hardhat-template/issues/31
-        bytecodeHash: "none",
-      },
-      // Disable the optimizer when debugging
-      // https://hardhat.org/hardhat-network/#solidity-optimizer-support
-      optimizer: {
-        enabled: true,
-        runs: 800,
-      },
-      evmVersion: "cancun",
-    },
-  },
-  typechain: {
-    outDir: "types",
-    target: "ethers-v6",
-  },
-};
-
-export default config;
 ````
 
 ## File: src/app/disputes/[id]/evidence/submit/page.tsx
@@ -6854,90 +8204,49 @@ export default function DisputesExplorerPage() {
 }
 ````
 
-## File: src/app/layout.tsx
+## File: src/config/tenant.ts
 ````typescript
-import type { Metadata } from "next";
-import { headers } from "next/headers";
-import "./globals.css";
-import React from "react";
-import ContextProvider from "./providers";
-import { Geist } from "next/font/google";
-import localFont from "next/font/local";
-import { AppShell } from "@/components/layout/AppShell";
-import { getTenantFromHost, Tenant } from "@/config/tenant";
-import { privyConfig } from "@/config/adapters/privy";
-import { beexoConfig } from "@/config/adapters/beexo";
-import { coinbaseConfig } from "@/config/adapters/coinbase";
-import { cookieToInitialState } from "wagmi";
+export enum Tenant {
+  PRIVY = "privy", // Privy Strategy (Default)
+  FARCASTER = "farcaster", // Farcaster Mini App Strategy
+  COINBASE = "coinbase", // Coinbase Wallet Strategy
+  BEEXO = "beexo", // Beexo Strategy (MiniApp)
+}
 
-export const metadata: Metadata = {
-  title: "Slice",
-  description: "Get paid for doing justice",
-  manifest: "/manifest.json",
-  icons: {
-    icon: "/images/slice-logo-light.svg",
-    apple: "/icons/icon.png",
-  },
-  other: {
-    "base:app_id": "6966f2640c770beef0486121",
-  },
-};
+const PRIVY_SUBDOMAINS = ["frame.", "privy.", "app."];
+const FARCASTER_SUBDOMAINS = ["base."];
+const COINBASE_SUBDOMAINS = ["coinbase.", "web."];
+const BEEXO_SUBDOMAINS = ["beexo.", "mini."];
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+export const getTenantFromHost = (host: string | null): Tenant => {
+  if (!host) return Tenant.PRIVY;
 
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+  const hostname = host.split(":")[0];
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  // 1. Resolve Tenant
-  const headersList = await headers();
-  const host = headersList.get("host");
-  const tenant = getTenantFromHost(host);
-
-  // 2. Select config based on tenant
-  let config;
-  switch (tenant) {
-    case Tenant.PRIVY:
-      config = privyConfig;
-      break;
-    case Tenant.BEEXO:
-      config = beexoConfig;
-      break;
-    case Tenant.BASE:
-      config = coinbaseConfig;
-      break;
-    default:
-      config = privyConfig;
-      break;
+  if (BEEXO_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
+    return Tenant.BEEXO;
   }
 
-  // 3. Hydrate State
-  const cookies = headersList.get("cookie");
-  const initialState = cookieToInitialState(config, cookies);
+  // Use Farcaster Mini App for specific subdomains
+  if (
+    FARCASTER_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))
+  ) {
+    return Tenant.FARCASTER;
+  }
 
-  return (
-    <html lang="en" className="light" style={{ colorScheme: "light" }}>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex justify-center min-h-screen bg-background text-foreground`}
-      >
-        {/* Pass tenant so Client Components know which Strategy to load */}
-        <ContextProvider tenant={tenant} initialState={initialState}>
-          <AppShell>{children}</AppShell>
-        </ContextProvider>
-      </body>
-    </html>
-  );
-}
+  // Use Coinbase Wallet for specific subdomains
+  if (COINBASE_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
+    return Tenant.COINBASE;
+  }
+
+  // Use Privy for specific subdomains
+  if (PRIVY_SUBDOMAINS.some((subdomain) => hostname.startsWith(subdomain))) {
+    return Tenant.PRIVY;
+  }
+
+  // Default is PRIVY
+  return Tenant.PRIVY;
+};
 ````
 
 ## File: src/hooks/core/useNativeBalance.ts
@@ -7510,6 +8819,96 @@ export default function CaseFilePage() {
 }
 ````
 
+## File: src/app/layout.tsx
+````typescript
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import "./globals.css";
+import React from "react";
+import ContextProvider from "./providers";
+import { Geist } from "next/font/google";
+import localFont from "next/font/local";
+import { AppShell } from "@/components/layout/AppShell";
+import { getTenantFromHost, Tenant } from "@/config/tenant";
+import { privyConfig } from "@/config/adapters/privy";
+import { beexoConfig } from "@/config/adapters/beexo";
+import { coinbaseConfig } from "@/config/adapters/coinbase";
+import { farcasterConfig } from "@/config/adapters/farcaster";
+import { cookieToInitialState } from "wagmi";
+
+export const metadata: Metadata = {
+  title: "Slice",
+  description: "Get paid for doing justice",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/images/slice-logo-light.svg",
+    apple: "/icons/icon.png",
+  },
+  other: {
+    "base:app_id": "6966f2640c770beef0486121",
+  },
+};
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+});
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  // 1. Resolve Tenant
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const tenant = getTenantFromHost(host);
+
+  // 2. Select config based on tenant
+  let config;
+  switch (tenant) {
+    case Tenant.PRIVY:
+      config = privyConfig;
+      break;
+    case Tenant.BEEXO:
+      config = beexoConfig;
+      break;
+    case Tenant.FARCASTER:
+      config = farcasterConfig;
+      break;
+    case Tenant.COINBASE:
+      config = coinbaseConfig;
+      break;
+    default:
+      config = privyConfig;
+      break;
+  }
+
+  // 3. Hydrate State
+  const cookies = headersList.get("cookie");
+  const initialState = cookieToInitialState(config, cookies);
+
+  return (
+    <html lang="en" className="light" style={{ colorScheme: "light" }}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex justify-center min-h-screen bg-background text-foreground`}
+      >
+        {/* Pass tenant so Client Components know which Strategy to load */}
+        <ContextProvider tenant={tenant} initialState={initialState}>
+          <AppShell>{children}</AppShell>
+        </ContextProvider>
+      </body>
+    </html>
+  );
+}
+````
+
 ## File: src/app/page.tsx
 ````typescript
 "use client";
@@ -7718,481 +9117,6 @@ export function useAssignDispute() {
     // Only ready when wallet is connected AND staking token metadata is loaded
     isReady: !!address && !isTokenLoading && !!stakingToken,
   };
-}
-````
-
-## File: contracts/contracts/core/SliceEscrowV1.5.sol
-````solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
-
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
-// --- INTERFACES ---
-
-interface ISlice {
-    struct CourtConfig {
-        bool active;
-        uint256 feePerJuror;
-        uint256 partyStake;
-        uint256 jurorRewardShare;
-        uint256 minJurorStake;
-        uint256 maxJurorStake;
-        uint256 minVoteDuration;
-        uint256 maxVoteDuration;
-        uint256 alpha;
-    }
-
-    struct CreateDisputeParams {
-        address claimer;
-        address defender;
-        string category;
-        string ipfsHash;
-        uint256 jurorsRequired;
-        uint256 paySeconds;
-        uint256 evidenceSeconds;
-        uint256 commitSeconds;
-        uint256 revealSeconds;
-    }
-
-    function createDispute(CreateDisputeParams calldata _params) external returns (uint256);
-
-    function payDispute(uint256 _id) external;
-
-    function courtConfigs(string memory _category) external view returns (CourtConfig memory);
-
-    function stakingToken() external view returns (IERC20);
-
-    function getDisputeCost(uint256 _id) external view returns (uint256);
-
-    // Getters
-    function MAX_JURORS() external view returns (uint256);
-}
-
-interface IArbitrable {
-    function rule(uint256 _disputeId, uint256 _ruling) external;
-}
-
-/**
- * @title SliceEscrow (The Arbitrable)
- * @author Slice Coding Expert
- * @notice A Universal Escrow "wrapper" that turns Slice V1.5 into a secure P2P payment system.
- *
- * ======================================================================================
- * 1. ARCHITECTURE: THE "SAFE BOX" PATTERN
- * ======================================================================================
- * Users (Frontends/EOAs) cannot easily receive callbacks from Slice.
- * This contract acts as a programmable "Safe Box" that sits between the User and Slice.
- *
- * - Happy Path (No Dispute):
- * Buyer deposits Money -> Safe Box holds it -> Buyer clicks "Release" -> Seller gets paid.
- * (Slice is never involved, saving gas and fees).
- *
- * - Sad Path (Dispute):
- * Buyer/Seller flags issue -> Safe Box freezes funds -> Calls Slice -> Slice rules -> Safe Box obeys.
- *
- * ======================================================================================
- * 2. ASSET SEPARATION (Principal vs. Fees)
- * ======================================================================================
- * We separate the "Value being moved" from the "Cost of Justice".
- *
- * [A] PRINCIPAL (Held in THIS Contract)
- * --------------------------------------------------------------------------------------
- * This is the transaction value (e.g., 1,000 USDC for a laptop).
- * - It is locked here upon creation.
- * - It NEVER leaves this contract until:
- * a) Buyer releases it manually.
- * b) Slice triggers rule() to force a release.
- *
- * [B] ARBITRATION COST (Sent to SLICE Contract)
- * --------------------------------------------------------------------------------------
- * If a dispute arises, BOTH parties must pay the "Cost of Justice" to proceed.
- * This ensures the loser pays for the arbitration.
- *
- * Cost Per Party = (JurorsRequired × FeePerJuror) + PartyStake
- *
- * - Funds flow: User -> SliceEscrow -> Slice.
- * - FEE TIMEOUT: If one party pays but the other doesn't within the timeout,
- *   the paying party wins by default.
- *
- * ======================================================================================
- * 3. TOKEN SEPARATION (Principal vs. Staking)
- * ======================================================================================
- * The Principal token (e.g., PEPE, ETH, any ERC20) can differ from the Staking token
- * used by Slice (e.g., USDC). This contract handles both independently.
- *
- * ======================================================================================
- * 4. THE "TRIANGLE OF TRUST" FLOW
- * ======================================================================================
- * 1. [Escrow] raiseDispute():
- * - Creates a "Draft" dispute in Slice.
- * - Status: "Created" (Waiting for fees).
- *
- * 2. [Escrow] payArbitrationFee():
- * - Collects Fee+Stake from Buyer & Seller (in Slice's staking token).
- * - Once BOTH pay, calls slice.payDispute().
- * - Status: "Active/Commit" (Jurors can now draft).
- * - FEE TIMEOUT: If opponent doesn't pay within timeout, paying party wins.
- *
- * 3. [Slice] executeRuling():
- * - Jurors vote. Winner is decided.
- * - Slice calls IArbitrable.rule() on THIS contract.
- *
- * 4. [Escrow] rule():
- * - Unlocks the Principal (1,000 USDC) to the Winner.
- */
-contract SliceEscrow is IArbitrable, Ownable, ReentrancyGuard {
-    using SafeERC20 for IERC20; // Usage
-
-    enum Status {
-        Active,
-        Disputed,
-        Resolved
-    }
-
-    enum Side {
-        None,
-        Buyer,
-        Seller
-    }
-
-    struct Transaction {
-        address buyer;
-        address seller;
-        address token; // The currency of the PRINCIPAL payment (e.g. PEPE, WETH)
-        uint256 amount; // The principal payment amount
-        // Dispute Data
-        string category; // Which Slice Court to use (e.g. "Tech")
-        uint256 jurors; // How many jurors needed (e.g. 3)
-        uint256 sliceDisputeId;
-        Status status;
-        // Fee Tracking (Who has paid the arbitration fees?)
-        bool buyerFeePaid;
-        bool sellerFeePaid;
-        uint256 feesCollected;
-        // Fee Timeout Tracking (prevents deadlock if opponent refuses to pay)
-        uint256 firstFeePaymentTime; // When the first party paid their fee
-    }
-
-    ISlice public immutable slice;
-
-    // Fee timeout constant (24 hours)
-    uint256 public constant FEE_TIMEOUT = 1 days;
-
-    // Dispute timeline constants (used when creating disputes in Slice)
-    uint256 public constant PAY_DURATION = 1 days;
-    uint256 public constant EVIDENCE_DURATION = 1 days;
-    uint256 public constant COMMIT_DURATION = 2 days;
-    uint256 public constant REVEAL_DURATION = 1 days;
-
-    // Counter for internal Transaction IDs
-    uint256 public txCount;
-    mapping(uint256 => Transaction) public transactions;
-
-    // Mapping from Slice Dispute ID -> Internal Transaction ID
-    mapping(uint256 => uint256) public disputeToTx;
-
-    // Events
-    event TransactionCreated(uint256 indexed txId, address indexed buyer, address indexed seller, uint256 amount);
-    event FundsReleased(uint256 indexed txId, address to);
-    event DisputeRaised(uint256 indexed txId, address raisedBy);
-    event FeesDeposited(uint256 indexed txId, address party, uint256 amount);
-    event DisputeActivated(uint256 indexed txId, uint256 sliceDisputeId);
-    event FeeTimeoutClaimed(uint256 indexed txId, address winner);
-
-    constructor(address _slice) Ownable(msg.sender) {
-        slice = ISlice(_slice);
-    }
-
-    // ============================================
-    // 1. CREATE TRANSACTION (Happy Path Start)
-    // ============================================
-
-    function createTransaction(
-        address _seller,
-        address _token,
-        uint256 _amount,
-        string calldata _category,
-        uint256 _jurors
-    ) external nonReentrant returns (uint256) {
-        require(_amount > 0, "Amount must be > 0");
-        require(_seller != msg.sender, "Cannot pay self");
-
-        ISlice.CourtConfig memory config = slice.courtConfigs(_category);
-        require(config.active, "Court is not active");
-        require(_jurors > 0 && _jurors <= slice.MAX_JURORS(), "Invalid number of jurors");
-
-        // 1. Pull the Principal (The Payment)
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-
-        txCount++;
-        uint256 txId = txCount;
-
-        transactions[txId] = Transaction({
-            buyer: msg.sender,
-            seller: _seller,
-            token: _token,
-            amount: _amount,
-            category: _category,
-            jurors: _jurors,
-            sliceDisputeId: 0,
-            status: Status.Active,
-            buyerFeePaid: false,
-            sellerFeePaid: false,
-            feesCollected: 0,
-            firstFeePaymentTime: 0
-        });
-
-        emit TransactionCreated(txId, msg.sender, _seller, _amount);
-        return txId;
-    }
-
-    // ============================================
-    // 2. MANUAL RESOLUTION (No Slice needed)
-    // ============================================
-
-    /**
-     * @notice Buyer is happy and releases funds to Seller.
-     */
-    function release(uint256 _txId) external nonReentrant {
-        Transaction storage txn = transactions[_txId];
-        require(msg.sender == txn.buyer, "Only buyer");
-        require(txn.status == Status.Active, "Wrong status");
-
-        txn.status = Status.Resolved;
-        IERC20(txn.token).safeTransfer(txn.seller, txn.amount);
-
-        emit FundsReleased(_txId, txn.seller);
-    }
-
-    /**
-     * @notice Seller refunds the Buyer.
-     */
-    function refund(uint256 _txId) external nonReentrant {
-        Transaction storage txn = transactions[_txId];
-        require(msg.sender == txn.seller, "Only seller");
-        require(txn.status == Status.Active, "Wrong status");
-
-        txn.status = Status.Resolved;
-        IERC20(txn.token).safeTransfer(txn.buyer, txn.amount);
-
-        emit FundsReleased(_txId, txn.buyer);
-    }
-
-    // ============================================
-    // 3. DISPUTE ESCALATION
-    // ============================================
-
-    /**
-     * @notice Either party can flag a dispute.
-     * @dev This freezes the state to 'Disputed' but doesn't call Slice yet.
-     * Both parties must pay fees first.
-     */
-    function raiseDispute(uint256 _txId, string calldata _evidenceIpfs) external nonReentrant {
-        Transaction storage txn = transactions[_txId];
-        require(txn.status == Status.Active, "Not active");
-        require(msg.sender == txn.buyer || msg.sender == txn.seller, "Not party");
-
-        txn.status = Status.Disputed;
-
-        // 1. Create the Dispute in Slice (Status: Created, Waiting for Payment)
-        // We pass THIS contract as the 'Arbitrated', but register the Buyer/Seller addresses
-        ISlice.CreateDisputeParams memory params = ISlice.CreateDisputeParams({
-            claimer: txn.buyer,
-            defender: txn.seller,
-            category: txn.category,
-            ipfsHash: _evidenceIpfs,
-            jurorsRequired: txn.jurors,
-            paySeconds: PAY_DURATION,
-            evidenceSeconds: EVIDENCE_DURATION,
-            commitSeconds: COMMIT_DURATION,
-            revealSeconds: REVEAL_DURATION
-        });
-
-        uint256 sliceId = slice.createDispute(params);
-
-        txn.sliceDisputeId = sliceId;
-        disputeToTx[sliceId] = _txId;
-
-        emit DisputeRaised(_txId, msg.sender);
-    }
-
-    /**
-     * @notice Parties pay the Arbitration Fee + Stake to this contract.
-     * @dev Uses Slice's staking token (not the principal token) for fees.
-     * This allows trades in any token while paying arbitration in USDC.
-     */
-    function payArbitrationFee(uint256 _txId) external nonReentrant {
-        Transaction storage txn = transactions[_txId];
-        require(txn.status == Status.Disputed, "Not disputed");
-        require(txn.sliceDisputeId != 0, "Dispute not initialized");
-
-        // Calculate Cost using court config
-        uint256 cost = slice.getDisputeCost(txn.sliceDisputeId);
-
-        // Get Slice's staking token (e.g., USDC) - separate from principal token
-        IERC20 stakingToken = slice.stakingToken();
-
-        // Determine who is paying
-        if (msg.sender == txn.buyer) {
-            require(!txn.buyerFeePaid, "Already paid");
-            txn.buyerFeePaid = true;
-        } else if (msg.sender == txn.seller) {
-            require(!txn.sellerFeePaid, "Already paid");
-            txn.sellerFeePaid = true;
-        } else {
-            revert("Not party");
-        }
-
-        // Start timeout timer if this is the first fee payment
-        if (txn.firstFeePaymentTime == 0) {
-            txn.firstFeePaymentTime = block.timestamp;
-        }
-
-        // Pull tokens using Slice's staking token (not txn.token)
-        stakingToken.safeTransferFrom(msg.sender, address(this), cost);
-        txn.feesCollected += cost;
-
-        emit FeesDeposited(_txId, msg.sender, cost);
-
-        // If both paid, push funds to Slice
-        if (txn.buyerFeePaid && txn.sellerFeePaid) {
-            _activateSliceDispute(_txId, txn.feesCollected);
-        }
-    }
-
-    function _activateSliceDispute(uint256 _txId, uint256 _totalFees) internal {
-        Transaction storage txn = transactions[_txId];
-
-        // Use Slice's staking token for approval (not txn.token)
-        IERC20 stakingToken = slice.stakingToken();
-
-        // Approve Slice to pull the fees
-        stakingToken.forceApprove(address(slice), _totalFees);
-
-        // Call Slice to change status from Created -> Commit
-        // Slice V1.5 allows 'Arbitrated' (this contract) to pay
-        slice.payDispute(txn.sliceDisputeId);
-
-        emit DisputeActivated(_txId, txn.sliceDisputeId);
-    }
-
-    // ============================================
-    // 3B. FEE TIMEOUT (Prevents Deadlock)
-    // ============================================
-
-    /**
-     * @notice Claim victory if the opponent failed to pay arbitration fees in time.
-     * @dev CRITICAL Prevents the "Fee Standoff" attack where one party refuses
-     * to pay fees, locking funds indefinitely.
-     *
-     * Attack Vector (Before Fix):
-     * 1. Buyer flags dispute and pays fee
-     * 2. Seller refuses to pay fee
-     * 3. Dispute never activates, funds locked forever
-     *
-     * Solution: If one party pays and the other doesn't within FEE_TIMEOUT,
-     * the paying party automatically wins.
-     */
-    function timeoutOpponent(uint256 _txId) external nonReentrant {
-        Transaction storage txn = transactions[_txId];
-        require(txn.status == Status.Disputed, "Not disputed");
-        require(txn.firstFeePaymentTime > 0, "No fees paid yet");
-        require(block.timestamp > txn.firstFeePaymentTime + FEE_TIMEOUT, "Timeout not reached");
-
-        // Exactly one party must have paid (XOR condition)
-        require(txn.buyerFeePaid != txn.sellerFeePaid, "Both paid or neither paid");
-
-        IERC20 stakingToken = slice.stakingToken();
-
-        txn.status = Status.Resolved;
-
-        // Case 1: Buyer paid, Seller didn't -> Buyer wins
-        if (txn.buyerFeePaid && !txn.sellerFeePaid) {
-            // Refund Buyer's arbitration fee (in staking token)
-            stakingToken.safeTransfer(txn.buyer, txn.feesCollected);
-            // Release Principal to Buyer (in principal token)
-            IERC20(txn.token).safeTransfer(txn.buyer, txn.amount);
-
-            emit FeeTimeoutClaimed(_txId, txn.buyer);
-            emit FundsReleased(_txId, txn.buyer);
-        }
-        // Case 2: Seller paid, Buyer didn't -> Seller wins
-        else if (txn.sellerFeePaid && !txn.buyerFeePaid) {
-            // Refund Seller's arbitration fee (in staking token)
-            stakingToken.safeTransfer(txn.seller, txn.feesCollected);
-            // Release Principal to Seller (in principal token)
-            IERC20(txn.token).safeTransfer(txn.seller, txn.amount);
-
-            emit FeeTimeoutClaimed(_txId, txn.seller);
-            emit FundsReleased(_txId, txn.seller);
-        }
-    }
-
-    /**
-     * @notice Check if fee timeout can be claimed for a transaction.
-     * @param _txId The transaction ID.
-     * @return canTimeout Whether timeout can be claimed.
-     * @return timeRemaining Seconds until timeout (0 if already claimable).
-     * @return potentialWinner Address that would win if timeout is claimed.
-     */
-    function getFeeTimeoutStatus(
-        uint256 _txId
-    ) external view returns (bool canTimeout, uint256 timeRemaining, address potentialWinner) {
-        Transaction storage txn = transactions[_txId];
-
-        if (txn.status != Status.Disputed || txn.firstFeePaymentTime == 0) {
-            return (false, 0, address(0));
-        }
-
-        // Both paid or neither paid - no timeout possible
-        if (txn.buyerFeePaid == txn.sellerFeePaid) {
-            return (false, 0, address(0));
-        }
-
-        uint256 timeoutDeadline = txn.firstFeePaymentTime + FEE_TIMEOUT;
-
-        if (block.timestamp > timeoutDeadline) {
-            potentialWinner = txn.buyerFeePaid ? txn.buyer : txn.seller;
-            return (true, 0, potentialWinner);
-        } else {
-            potentialWinner = txn.buyerFeePaid ? txn.buyer : txn.seller;
-            return (false, timeoutDeadline - block.timestamp, potentialWinner);
-        }
-    }
-
-    // ============================================
-    // 4. CALLBACK (The Ruler)
-    // ============================================
-
-    function rule(uint256 _disputeId, uint256 _ruling) external override nonReentrant {
-        require(msg.sender == address(slice), "Only Slice");
-
-        uint256 txId = disputeToTx[_disputeId];
-        Transaction storage txn = transactions[txId];
-        require(txn.status == Status.Disputed, "Not disputed");
-
-        txn.status = Status.Resolved;
-        address winner;
-
-        if (_ruling == 1) {
-            // Ruling 1 = Claimer (Buyer) wins
-            winner = txn.buyer;
-        } else {
-            // Ruling 0 = Defender (Seller) wins
-            winner = txn.seller;
-        }
-
-        // Release the PRINCIPAL amount.
-        // (Note: The Arbitration Fees/Stakes were already handled inside Slice.sol.
-        // Slice sent the winner their deposit + bonus directly. We only manage the Principal here.)
-        IERC20(txn.token).safeTransfer(winner, txn.amount);
-
-        emit FundsReleased(txId, winner);
-    }
 }
 ````
 

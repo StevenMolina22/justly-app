@@ -20,7 +20,6 @@ contracts/tasks/
 contracts/types/
 contracts/fhevmTemp/
 ignition/
-test/
 
 # --- Contracts Config Boilerplate ---
 .eslintignore
@@ -47,6 +46,8 @@ yarn.lock
 minikit.config.ts
 next.config.ts
 opencode.json
+*.gitmodules
+*foundry.lock
 
 # --- Generated / Artifacts ---
 # We keep contracts/contracts/ (Solidity) but ignore the frontend JSON ABIs
@@ -66,6 +67,8 @@ docs/
 CONTRIBUTING.md
 LICENSE
 
+contracts/src/fhe
+
 #
 .agent/
 .agents/
@@ -73,3 +76,5 @@ LICENSE
 .gemini/
 .opencode
 .husky/
+
+/src/

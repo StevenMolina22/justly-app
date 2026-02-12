@@ -66,16 +66,20 @@ Experience the future of decentralized justice on **Base**:
 
 ## 🔌 Integration Guide (For Developers)
 
-Integrating Slice into your protocol is as simple as 1-2-3:
+Integrating Slice V1.5 into your protocol follows an Arbitrable/Arbitrator flow:
 
 ### 1. Create a Dispute
-Call `slice.createDispute(defender, category, ipfsHash, jurorsRequired)` from your contract.
+From your arbitrable contract, call `slice.createDispute(CreateDisputeParams)` and store your local-case to `disputeId` mapping.
 
-### 2. Wait for Ruling
-Slice handles the juror selection, voting, and consensus off-chain and on-chain.
+### 2. Fund and progress the dispute
+Parties pay arbitration costs in `slice.stakingToken()` through `payDispute(disputeId)`. During the dispute, parties can submit evidence through `submitEvidence`.
 
-### 3. Read the Verdict
-Once the dispute status is `Executed`, read the `winner` address from the `disputes` mapping and execute your logic.
+### 3. Settle via callback
+Slice calls `IArbitrable.rule(disputeId, ruling)` on your contract when finalized. In Slice V1.5, `ruling == 1` means claimer wins and `ruling == 0` means defender wins.
+
+Reference implementation:
+- `slice_sc/src/core/P2PTradeEscrow.sol`
+- `slice_sc/test/integration/P2PTradeEscrow.integration.t.sol`
 
 ---
 
@@ -148,15 +152,17 @@ We abstract wallet interactions behind a common interface:
 
 ## 🔧 Smart Contract Development
 
-The `contracts/` directory contains the Solidity smart contracts using **Hardhat** and **Viem**.
+Solidity contracts are in `slice_sc/` and use **Foundry**.
 
 ### Commands
 
 ```bash
-pnpm hardhat compile
-pnpm hardhat test
-pnpm hardhat run scripts/deploy.ts --network baseSepolia
+cd slice_sc
+forge build
+forge test
 ```
+
+For contract deployment and seeding scripts, see `slice_sc/README.md`.
 
 ---
 
