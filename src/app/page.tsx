@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
-import { sdk } from "@farcaster/miniapp-sdk";
 import { BalanceCard } from "@/components/disputes/BalanceCard";
 import { DisputesList } from "@/components/disputes/DisputesList";
 import { Scale, Sparkles } from "lucide-react";
@@ -9,9 +7,6 @@ import { useRouter } from "next/navigation";
 
 export default function DisputesPage() {
   const router = useRouter();
-  useEffect(() => {
-    sdk.actions.ready();
-  }, []);
 
   return (
     <div className="flex flex-col h-full w-full">

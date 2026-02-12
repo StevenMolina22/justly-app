@@ -1,9 +1,9 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TimerProvider } from "@/contexts/TimerContext";
-import { Tenant } from "@/config/tenant";
+import { Tenant, getClientTenant } from "@/config/tenant";
 import * as Privy from "@/config/adapters/privy";
 import * as Beexo from "@/config/adapters/beexo";
 import * as Coinbase from "@/config/adapters/coinbase";
@@ -36,10 +36,51 @@ function SharedProviders({ children }: { children: ReactNode }) {
 
 export default function ContextProvider({
   children,
-  tenant,
+  tenant: initialTenant,
   initialState,
 }: Props) {
-  // Select adapter based on tenant
+  // Client-side tenant resolution with Farcaster runtime detection
+  const [tenant, setTenant] = useState<Tenant>(initialTenant);
+  const [isResolving, setIsResolving] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function resolveTenant() {
+      try {
+        const resolvedTenant = await getClientTenant(initialTenant);
+        if (mounted && resolvedTenant !== initialTenant) {
+          setTenant(resolvedTenant);
+        }
+      } catch (error) {
+        console.error("Failed to resolve tenant:", error);
+      } finally {
+        if (mounted) {
+          setIsResolving(false);
+        }
+      }
+    }
+
+    resolveTenant();
+
+    return () => {
+      mounted = false;
+    };
+  }, [initialTenant]);
+
+  // Show minimal loading state during tenant resolution
+  // This prevents hydration mismatches when Farcaster SDK detects MiniApp context
+  if (isResolving && initialTenant !== tenant) {
+    return (
+      <SharedProviders>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-pulse">Loading...</div>
+        </div>
+      </SharedProviders>
+    );
+  }
+
+  // Select adapter based on resolved tenant
   let tenantProvider: ReactNode;
 
   switch (tenant) {
