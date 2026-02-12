@@ -50,4 +50,6 @@ public/worker-*.js
 artifacts/
 cache/
 
+
 notes.txt
+prompts/

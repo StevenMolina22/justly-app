@@ -5,10 +5,11 @@ import {
   useAccount,
   useChainId,
 } from "wagmi";
-import { erc20Abi, parseUnits, parseEventLogs } from "viem";
+import { erc20Abi, parseUnits, parseEventLogs, encodeFunctionData } from "viem";
 import { SLICE_ABI, getContractsForChain } from "@/config/contracts";
 import { toast } from "sonner";
 import { useStakingToken } from "../core/useStakingToken";
+import { isBatchUnsupportedError, useBatchCalls } from "../core/useBatchCalls";
 
 export function useAssignDispute() {
   const [isDrawing, setIsDrawing] = useState(false);
@@ -24,6 +25,7 @@ export function useAssignDispute() {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const { sliceContract } = getContractsForChain(chainId);
+  const { supportsAtomicBatch, sendAtomicCalls } = useBatchCalls();
 
   // New "Draw" Logic - Replaces findActiveDispute + joinDispute
   const drawDispute = async (amount: string): Promise<number | null> => {
@@ -51,6 +53,47 @@ export function useAssignDispute() {
       let allowance = await getAllowance();
 
       if (allowance < amountToStake) {
+        let attemptedBatch = false;
+
+        try {
+          const canBatch = await supportsAtomicBatch();
+          if (canBatch) {
+            attemptedBatch = true;
+            toast.info("Processing atomic draft transaction...");
+
+            const approveData = encodeFunctionData({
+              abi: erc20Abi,
+              functionName: "approve",
+              args: [sliceContract, amountToStake],
+            });
+
+            const drawData = encodeFunctionData({
+              abi: SLICE_ABI,
+              functionName: "drawDispute",
+              args: [amountToStake],
+            });
+
+            await sendAtomicCalls([
+              {
+                to: stakingToken,
+                data: approveData,
+                value: 0n,
+              },
+              {
+                to: sliceContract,
+                data: drawData,
+                value: 0n,
+              },
+            ]);
+            toast.success("Drafted successfully!");
+            return null;
+          }
+        } catch (batchError) {
+          if (!attemptedBatch || !isBatchUnsupportedError(batchError)) {
+            throw batchError;
+          }
+        }
+
         toast.info("Approving Stake...");
         const approveHash = await writeContractAsync({
           address: stakingToken,
@@ -59,22 +102,16 @@ export function useAssignDispute() {
           args: [sliceContract, amountToStake],
         });
 
-        // Wait for the transaction to be mined
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
-        // --- Race Condition Protection ---
-        // With auto-signing wallets, the next tx simulation happens so fast
-        // that the RPC node might still report the old allowance.
-        // We poll until the node actually confirms the new allowance.
         let retries = 0;
         while (allowance < amountToStake && retries < 10) {
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s
+          await new Promise((resolve) => setTimeout(resolve, 1000));
           allowance = await getAllowance();
           retries++;
         }
 
         if (allowance < amountToStake) {
-          // Safety fallback if RPC is extremely laggy
           toast.warning("Network lagging. Waiting for approval sync...");
           await new Promise((resolve) => setTimeout(resolve, 3000));
         } else {
