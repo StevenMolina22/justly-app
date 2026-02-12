@@ -163,7 +163,7 @@ export function JurorTaskCard({ task, index, onAction }: JurorTaskCardProps) {
               `}
             >
               {state === "VOTE_PENDING" && "Cast Vote"}
-              {state === "REVEAL_PENDING" && "Confirm Vote"}
+              {state === "REVEAL_PENDING" && "Reveal Vote"}
               {state === "READY_TO_EXECUTE" && "Execute Ruling"}
               <ArrowRight className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-1 transition-transform" />
             </button>

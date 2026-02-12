@@ -5,10 +5,11 @@ import {
   useAccount,
   useChainId,
 } from "wagmi";
-import { parseUnits, erc20Abi } from "viem";
+import { parseUnits, erc20Abi, encodeFunctionData } from "viem";
 import { SLICE_ABI, getContractsForChain } from "@/config/contracts";
 import { toast } from "sonner";
 import { useStakingToken } from "../core/useStakingToken";
+import { isBatchUnsupportedError, useBatchCalls } from "../core/useBatchCalls";
 
 export function usePayDispute() {
   const { address } = useAccount();
@@ -17,6 +18,7 @@ export function usePayDispute() {
 
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
+  const { supportsAtomicBatch, sendAtomicCalls } = useBatchCalls();
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"idle" | "approving" | "paying">("idle");
@@ -34,10 +36,6 @@ export function usePayDispute() {
 
       const amountBI = parseUnits(amountStr, decimals);
 
-      // --- STEP 1: APPROVE ---
-      setStep("approving");
-      toast.info("Approving tokens...");
-
       // We check allowance first to avoid redundant approval
       const allowance = await publicClient.readContract({
         address: stakingToken,
@@ -46,7 +44,55 @@ export function usePayDispute() {
         args: [address, sliceContract],
       });
 
-      if (allowance < amountBI) {
+      const needsApproval = allowance < amountBI;
+
+      if (needsApproval) {
+        let attemptedBatch = false;
+
+        try {
+          const canBatch = await supportsAtomicBatch();
+          if (canBatch) {
+            attemptedBatch = true;
+            setStep("paying");
+            toast.info("Processing atomic transaction...");
+
+            const approveData = encodeFunctionData({
+              abi: erc20Abi,
+              functionName: "approve",
+              args: [sliceContract, amountBI],
+            });
+
+            const payData = encodeFunctionData({
+              abi: SLICE_ABI,
+              functionName: "payDispute",
+              args: [BigInt(disputeId)],
+            });
+
+            await sendAtomicCalls([
+              {
+                to: stakingToken,
+                data: approveData,
+                value: 0n,
+              },
+              {
+                to: sliceContract,
+                data: payData,
+                value: 0n,
+              },
+            ]);
+
+            toast.success("Payment successful!");
+            return true;
+          }
+        } catch (batchError) {
+          if (!attemptedBatch || !isBatchUnsupportedError(batchError)) {
+            throw batchError;
+          }
+        }
+
+        setStep("approving");
+        toast.info("Approving tokens...");
+
         const approveHash = await writeContractAsync({
           address: stakingToken,
           abi: erc20Abi,
@@ -54,14 +100,10 @@ export function usePayDispute() {
           args: [sliceContract, amountBI],
         });
 
-        // Wait for approval to be mined
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
         toast.success("Approval confirmed.");
-      } else {
-        console.log("Allowance sufficient, skipping approval.");
       }
 
-      // --- STEP 2: PAY DISPUTE ---
       setStep("paying");
       toast.info("Paying dispute...");
 

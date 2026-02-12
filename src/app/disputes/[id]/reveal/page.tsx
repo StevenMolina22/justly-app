@@ -79,7 +79,7 @@ export default function RevealPage() {
               {/* Title Section */}
               <div className="text-center">
                 <h2 className="text-3xl font-black text-[#1b1c23] leading-tight tracking-tight">
-                  Confirm Vote
+                  Reveal Vote
                 </h2>
                 <p className="text-sm font-semibold text-gray-500 mt-2">
                   Reveal your secret vote to the chain.
