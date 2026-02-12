@@ -20,7 +20,6 @@ contracts/tasks/
 contracts/types/
 contracts/fhevmTemp/
 ignition/
-test/
 
 # --- Contracts Config Boilerplate ---
 .eslintignore
@@ -68,7 +67,7 @@ docs/
 CONTRIBUTING.md
 LICENSE
 
-slice_sc/src/fhe
+contracts/src/fhe
 
 #
 .agent/
@@ -77,3 +76,5 @@ slice_sc/src/fhe
 .gemini/
 .opencode
 .husky/
+
+/src/

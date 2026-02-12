@@ -1,23 +1,24 @@
 # Directory Structure
 
 ```
-slice_sc/
+contracts/
   script/
-    DeploySlice.s.sol (58 lines)
-    SeedSlice.s.sol (165 lines)
+    DeploySlice.s.sol (64 lines)
+    SeedSlice.s.sol (198 lines)
   src/
     core/
-      P2PTradeEscrow.sol (460 lines)
-      Slice.sol (440 lines)
-      SliceEscrowV1.5.sol (505 lines)
+      P2PTradeEscrow.sol (572 lines)
+      Slice.sol (486 lines)
+      SliceEscrowV1.5.sol (506 lines)
       SliceV1.5.sol (719 lines)
+    fhe/
+      SliceFHE.sol (496 lines)
     interfaces/
       IArbitrable.sol (6 lines)
-      ISlice.sol (128 lines)
+      ISlice.sol (193 lines)
     mocks/
       MockUSDC.sol (16 lines)
-  Makefile (18 lines)
-  README.md (59 lines)
+  README.md (57 lines)
 src/
   app/
     .well-known/
