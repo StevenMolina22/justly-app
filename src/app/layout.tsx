@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     apple: "/icons/icon.png",
   },
   other: {
-    "base:app_id": "696694666622bd23811761ec",
+    "base:app_id": "698e3282b3590846b38399c0",
   },
 };
 
