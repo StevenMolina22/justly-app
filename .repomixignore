@@ -76,5 +76,3 @@ contracts/src/fhe
 .gemini/
 .opencode
 .husky/
-
-/src/
