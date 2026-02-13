@@ -5,11 +5,13 @@ import {
   useAccount,
   useChainId,
 } from "wagmi";
-import { parseUnits, erc20Abi, encodeFunctionData } from "viem";
+import { parseUnits, erc20Abi } from "viem";
 import { SLICE_ABI, getContractsForChain } from "@/config/contracts";
+import { appConfig } from "@/config/chains";
 import { toast } from "sonner";
 import { useStakingToken } from "../core/useStakingToken";
 import { isBatchUnsupportedError, useBatchCalls } from "../core/useBatchCalls";
+import { buildApproveCall, buildPayDisputeCall } from "@/util/txCalls";
 
 export function usePayDispute() {
   const { address } = useAccount();
@@ -26,6 +28,11 @@ export function usePayDispute() {
   const payDispute = async (disputeId: string | number, amountStr: string) => {
     if (!address || !publicClient) {
       toast.error("Wallet not connected");
+      return false;
+    }
+
+    if (chainId !== appConfig.chain.id) {
+      toast.error(`Wrong network. Switch to ${appConfig.chain.name}.`);
       return false;
     }
 
@@ -56,29 +63,9 @@ export function usePayDispute() {
             setStep("paying");
             toast.info("Processing atomic transaction...");
 
-            const approveData = encodeFunctionData({
-              abi: erc20Abi,
-              functionName: "approve",
-              args: [sliceContract, amountBI],
-            });
-
-            const payData = encodeFunctionData({
-              abi: SLICE_ABI,
-              functionName: "payDispute",
-              args: [BigInt(disputeId)],
-            });
-
             await sendAtomicCalls([
-              {
-                to: stakingToken,
-                data: approveData,
-                value: 0n,
-              },
-              {
-                to: sliceContract,
-                data: payData,
-                value: 0n,
-              },
+              buildApproveCall(stakingToken, sliceContract, amountBI),
+              buildPayDisputeCall(sliceContract, BigInt(disputeId)),
             ]);
 
             toast.success("Payment successful!");

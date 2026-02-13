@@ -69,13 +69,16 @@ export default function JurorAssignPage() {
         }
 
         // 2. EXECUTE DRAFT: If we passed the check, try to join
-        const disputeId = await drawDispute(amount);
+        const result = await drawDispute(amount);
 
-        if (disputeId) {
+        if (result.success) {
           setHasDrafted(true);
-          router.replace(`/juror/assigned/${disputeId}`);
+          if (result.disputeId !== null) {
+            router.replace(`/juror/assigned/${result.disputeId}`);
+          } else {
+            router.replace("/juror/tasks");
+          }
         } else {
-          // If drawDispute returns null, it failed (user rejection or race condition)
           setDraftFailed(true);
           initialized.current = false; // Allow retry
         }

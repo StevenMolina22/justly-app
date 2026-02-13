@@ -5,11 +5,19 @@ import {
   useAccount,
   useChainId,
 } from "wagmi";
-import { erc20Abi, parseUnits, parseEventLogs, encodeFunctionData } from "viem";
+import { erc20Abi, parseUnits, parseEventLogs } from "viem";
 import { SLICE_ABI, getContractsForChain } from "@/config/contracts";
+import { appConfig } from "@/config/chains";
 import { toast } from "sonner";
 import { useStakingToken } from "../core/useStakingToken";
 import { isBatchUnsupportedError, useBatchCalls } from "../core/useBatchCalls";
+import { buildApproveCall, buildDrawDisputeCall } from "@/util/txCalls";
+
+type DrawDisputeResult = {
+  success: boolean;
+  disputeId: number | null;
+  path: "batch" | "sequential" | null;
+};
 
 export function useAssignDispute() {
   const [isDrawing, setIsDrawing] = useState(false);
@@ -28,10 +36,15 @@ export function useAssignDispute() {
   const { supportsAtomicBatch, sendAtomicCalls } = useBatchCalls();
 
   // New "Draw" Logic - Replaces findActiveDispute + joinDispute
-  const drawDispute = async (amount: string): Promise<number | null> => {
+  const drawDispute = async (amount: string): Promise<DrawDisputeResult> => {
     if (!address || !publicClient || !sliceContract) {
       toast.error("Wallet not connected");
-      return null;
+      return { success: false, disputeId: null, path: null };
+    }
+
+    if (chainId !== appConfig.chain.id) {
+      toast.error(`Wrong network. Switch to ${appConfig.chain.name}.`);
+      return { success: false, disputeId: null, path: null };
     }
 
     try {
@@ -61,32 +74,12 @@ export function useAssignDispute() {
             attemptedBatch = true;
             toast.info("Processing atomic draft transaction...");
 
-            const approveData = encodeFunctionData({
-              abi: erc20Abi,
-              functionName: "approve",
-              args: [sliceContract, amountToStake],
-            });
-
-            const drawData = encodeFunctionData({
-              abi: SLICE_ABI,
-              functionName: "drawDispute",
-              args: [amountToStake],
-            });
-
             await sendAtomicCalls([
-              {
-                to: stakingToken,
-                data: approveData,
-                value: 0n,
-              },
-              {
-                to: sliceContract,
-                data: drawData,
-                value: 0n,
-              },
+              buildApproveCall(stakingToken, sliceContract, amountToStake),
+              buildDrawDisputeCall(sliceContract, amountToStake),
             ]);
             toast.success("Drafted successfully!");
-            return null;
+            return { success: true, disputeId: null, path: "batch" };
           }
         } catch (batchError) {
           if (!attemptedBatch || !isBatchUnsupportedError(batchError)) {
@@ -145,20 +138,20 @@ export function useAssignDispute() {
         // The event args: { id, juror }
         const assignedId = Number(logs[0].args.id);
         toast.success(`Drafted into Dispute #${assignedId}!`);
-        return assignedId;
+        return { success: true, disputeId: assignedId, path: "sequential" };
       } else {
         // Fallback if event isn't found (rare)
         toast.warning(
           "Draft complete, but could not detect ID. Check your profile.",
         );
-        return null;
+        return { success: true, disputeId: null, path: "sequential" };
       }
     } catch (error: unknown) {
       console.error("Draft failed", error);
       const err = error as { shortMessage?: string; message?: string };
       const msg = err.shortMessage || err.message || "Unknown error";
       toast.error(`Draft failed: ${msg}`);
-      return null;
+      return { success: false, disputeId: null, path: null };
     } finally {
       setIsDrawing(false);
     }

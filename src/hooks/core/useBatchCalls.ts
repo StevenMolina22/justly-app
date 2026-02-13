@@ -51,7 +51,7 @@ function hasAtomicCapability(chainCapabilities: unknown): boolean {
 }
 
 export function useBatchCalls() {
-  const { address } = useAccount();
+  const { address, connector } = useAccount();
   const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
   const capabilitiesCache = useRef<Map<string, boolean>>(new Map());
@@ -59,7 +59,7 @@ export function useBatchCalls() {
   const supportsAtomicBatch = useCallback(async (): Promise<boolean> => {
     if (!walletClient || !address) return false;
 
-    const cacheKey = `${address}:${chainId}`;
+    const cacheKey = `${address}:${chainId}:${connector?.id ?? "unknown"}`;
     const cached = capabilitiesCache.current.get(cacheKey);
     if (typeof cached === "boolean") {
       return cached;
@@ -78,7 +78,7 @@ export function useBatchCalls() {
       }
       throw error;
     }
-  }, [address, chainId, walletClient]);
+  }, [address, chainId, connector?.id, walletClient]);
 
   const sendAtomicCalls = useCallback(
     async (calls: BatchCall[]): Promise<SendAtomicCallsResult> => {
@@ -88,8 +88,8 @@ export function useBatchCalls() {
 
       const { id } = await sendCalls(walletClient, {
         account: address,
-        chain: walletClient.chain,
         calls,
+        forceAtomic: true,
       });
 
       const status = await waitForCallsStatus(walletClient, {
