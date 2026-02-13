@@ -4,7 +4,8 @@ const ROOT_URL =
   "http://localhost:3000";
 
 /**
- * MiniApp configuration object. Must follow the mini app manifest specification.
+ * MiniApp configuration object for Slice Protocol.
+ * Must follow the mini app manifest specification.
  *
  * @see {@link https://docs.base.org/mini-apps/features/manifest}
  */
@@ -21,21 +22,22 @@ export const minikitConfig = {
   },
   miniapp: {
     version: "1",
-    name: "base-miniapp",
-    subtitle: "",
-    description: "",
+    name: "Slice",
+    subtitle: "Real-Time Dispute Resolution",
+    description:
+      "Stake tokens, review evidence, and get paid for doing justice as a decentralized juror.",
     screenshotUrls: [],
-    iconUrl: `${ROOT_URL}/icon.png`,
-    splashImageUrl: `${ROOT_URL}/splash.png`,
-    splashBackgroundColor: "#000000",
+    iconUrl: `${ROOT_URL}/images/slice-logo-light.svg`, // Matches your layout.tsx & Farcaster config
+    splashImageUrl: `${ROOT_URL}/images/slice-logo-light.svg`,
+    splashBackgroundColor: "#F8F9FC",
     homeUrl: ROOT_URL,
     webhookUrl: `${ROOT_URL}/api/webhook`,
-    primaryCategory: "utility",
-    tags: ["example"],
+    primaryCategory: "finance",
+    tags: ["escrow", "disputes", "earn", "web3"],
     heroImageUrl: `${ROOT_URL}/hero.png`,
-    tagline: "",
-    ogTitle: "",
-    ogDescription: "",
+    tagline: "Get paid for doing justice",
+    ogTitle: "Slice Protocol",
+    ogDescription: "The decentralized, real-time dispute resolution protocol.",
     ogImageUrl: `${ROOT_URL}/hero.png`,
   },
 } as const;
