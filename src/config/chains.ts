@@ -21,10 +21,16 @@ export const activeChains = isProd
 
 export const defaultChain = appConfig.chain;
 
+export const rpcUrlsByChainId = {
+  [base.id]: process.env.NEXT_PUBLIC_BASE_RPC || "https://mainnet.base.org",
+  [baseSepolia.id]:
+    process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || "https://sepolia.base.org",
+} as const;
+
 // 4. Transport Strategy (NEW)
 // Define connection methods explicitly here. This guarantees type safety
 // because we are using the chain IDs directly as keys.
 export const transports = {
-  [base.id]: http(),
-  [baseSepolia.id]: http(),
+  [base.id]: http(rpcUrlsByChainId[base.id]),
+  [baseSepolia.id]: http(rpcUrlsByChainId[baseSepolia.id]),
 } as const;
