@@ -15,6 +15,10 @@ type SendAtomicCallsResult = {
 
 const UNSUPPORTED_BATCH_ERROR_CODES = new Set([-32601, -32602, 4100, 4200]);
 
+function logBatch(...args: unknown[]) {
+  console.info("[Batch]", ...args);
+}
+
 function extractErrorCode(error: unknown): number | undefined {
   if (!error || typeof error !== "object") return undefined;
 
@@ -50,35 +54,84 @@ function hasAtomicCapability(chainCapabilities: unknown): boolean {
   return caps.atomicBatch?.supported === true;
 }
 
+function getChainCapabilities(
+  capabilities: unknown,
+  chainId: number,
+): unknown | undefined {
+  if (!capabilities || typeof capabilities !== "object") {
+    return undefined;
+  }
+
+  const record = capabilities as Record<string, unknown>;
+  return (
+    record[String(chainId)] ??
+    record[`0x${chainId.toString(16)}`] ??
+    record[`0x${chainId.toString(16).toUpperCase()}`]
+  );
+}
+
 export function useBatchCalls() {
   const { address, connector } = useAccount();
   const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
   const capabilitiesCache = useRef<Map<string, boolean>>(new Map());
+  const connectorId = connector?.id ?? "unknown";
 
   const supportsAtomicBatch = useCallback(async (): Promise<boolean> => {
     if (!walletClient || !address) return false;
 
-    const cacheKey = `${address}:${chainId}:${connector?.id ?? "unknown"}`;
+    const cacheKey = `${address}:${chainId}:${connectorId}`;
     const cached = capabilitiesCache.current.get(cacheKey);
     if (typeof cached === "boolean") {
       return cached;
     }
 
     try {
-      const capabilities = await getCapabilities(walletClient, { account: address });
-      const chainCapabilities = (capabilities as Record<number, unknown>)[chainId];
-      const supported = hasAtomicCapability(chainCapabilities);
-      capabilitiesCache.current.set(cacheKey, supported);
-      return supported;
-    } catch (error) {
-      if (isBatchUnsupportedError(error)) {
-        capabilitiesCache.current.set(cacheKey, false);
-        return false;
+      logBatch("Checking capabilities", {
+        connectorId,
+        chainId,
+        address,
+      });
+
+      const probes: Array<() => Promise<unknown>> = [
+        () => getCapabilities(walletClient, { account: address }),
+        () => getCapabilities(walletClient),
+        () => walletClient.request({ method: "wallet_getCapabilities", params: [address] }),
+        () => walletClient.request({ method: "wallet_getCapabilities", params: [] }),
+      ];
+
+      for (const probe of probes) {
+        try {
+          const capabilities = await probe();
+          const chainCapabilities = getChainCapabilities(capabilities, chainId);
+          const supported = hasAtomicCapability(chainCapabilities);
+
+          logBatch("Capability probe result", {
+            connectorId,
+            chainId,
+            supported,
+            chainCapabilities,
+          });
+
+          if (supported) {
+            capabilitiesCache.current.set(cacheKey, true);
+            return true;
+          }
+        } catch (probeError) {
+          if (!isBatchUnsupportedError(probeError)) {
+            logBatch("Capability probe error", probeError);
+          }
+        }
       }
-      throw error;
+
+      capabilitiesCache.current.set(cacheKey, false);
+      return false;
+    } catch (error) {
+      logBatch("Capability detection failed", error);
+      capabilitiesCache.current.set(cacheKey, false);
+      return false;
     }
-  }, [address, chainId, connector?.id, walletClient]);
+  }, [address, chainId, connectorId, walletClient]);
 
   const sendAtomicCalls = useCallback(
     async (calls: BatchCall[]): Promise<SendAtomicCallsResult> => {
@@ -92,6 +145,12 @@ export function useBatchCalls() {
         forceAtomic: true,
       });
 
+      logBatch("Batch submitted", {
+        connectorId,
+        chainId,
+        id,
+      });
+
       const status = await waitForCallsStatus(walletClient, {
         id,
         timeout: 120_000,
@@ -100,7 +159,7 @@ export function useBatchCalls() {
 
       return { id, status };
     },
-    [address, walletClient],
+    [address, chainId, connectorId, walletClient],
   );
 
   return {

@@ -52,12 +52,18 @@ export function usePayDispute() {
       });
 
       const needsApproval = allowance < amountBI;
+      console.info("[Batch][Pay] allowance check", {
+        allowance: allowance.toString(),
+        amount: amountBI.toString(),
+        needsApproval,
+      });
 
       if (needsApproval) {
         let attemptedBatch = false;
 
         try {
           const canBatch = await supportsAtomicBatch();
+          console.info("[Batch][Pay] capability", { canBatch });
           if (canBatch) {
             attemptedBatch = true;
             setStep("paying");
@@ -75,6 +81,7 @@ export function usePayDispute() {
           if (!attemptedBatch || !isBatchUnsupportedError(batchError)) {
             throw batchError;
           }
+          console.info("[Batch][Pay] falling back to sequential flow", batchError);
         }
 
         setStep("approving");

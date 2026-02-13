@@ -19,11 +19,11 @@ export const farcasterConfig = createConfig({
   chains: activeChains,
   transports,
   connectors: [
-    farcasterMiniApp(),
     baseAccount({
       appName: "Slice",
       appLogoUrl: "/images/slice-logo-light.svg",
     }),
+    farcasterMiniApp(),
   ],
   storage: createStorage({ storage: cookieStorage }),
   ssr: true,
@@ -54,13 +54,13 @@ export function FarcasterAuthAdapter({ children }: { children: ReactNode }) {
         isAuthenticated: isConnected,
         connect: async () => {
           const connector =
+            connectors.find((x) => x.type === "baseAccount") ||
             connectors.find(
               (x) =>
                 x.type === "farcasterMiniApp" ||
                 x.id === "farcasterMiniApp" ||
                 x.id.toLowerCase().includes("farcaster"),
             ) ||
-            connectors.find((x) => x.type === "baseAccount") ||
             connectors[0];
 
           if (connector) {

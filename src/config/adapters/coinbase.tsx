@@ -2,6 +2,7 @@
 
 import { cookieStorage, createConfig, createStorage } from "wagmi";
 import { coinbaseWallet } from "wagmi/connectors";
+import { baseAccount } from "wagmi/connectors";
 import { activeChains, transports } from "@/config/chains";
 import { WagmiProvider, useConnect, useDisconnect, useAccount } from "wagmi";
 import { AuthStrategyProvider } from "@/contexts/AuthStrategyContext";
@@ -10,7 +11,13 @@ import { ReactNode } from "react";
 // --- Export Config ---
 export const coinbaseConfig = createConfig({
   chains: activeChains,
-  connectors: [coinbaseWallet({ appName: "Slice", preference: "all" })],
+  connectors: [
+    baseAccount({
+      appName: "Slice",
+      appLogoUrl: "/images/slice-logo-light.svg",
+    }),
+    coinbaseWallet({ appName: "Slice", preference: "all" }),
+  ],
   storage: createStorage({ storage: cookieStorage }),
   ssr: true,
   transports: transports,
@@ -43,6 +50,7 @@ export function CoinbaseAuthAdapter({ children }: { children: ReactNode }) {
         isAuthenticated: isConnected,
         connect: async () => {
           const connector =
+            connectors.find((x) => x.type === "baseAccount") ||
             connectors.find((x) => x.id === "coinbaseWalletSDK") ||
             connectors[0];
           await connectAsync({ connector });
