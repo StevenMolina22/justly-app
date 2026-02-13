@@ -22,7 +22,7 @@ export const minikitConfig = {
   },
   miniapp: {
     version: "1",
-    name: "Slice",
+    name: "Slicehub",
     subtitle: "Real-Time Dispute Resolution",
     description:
       "Stake tokens, review evidence, and get paid for doing justice as a decentralized juror.",
