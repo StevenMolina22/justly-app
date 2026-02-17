@@ -10,13 +10,11 @@ import { SLICE_ABI, getContractsForChain } from "@/config/contracts";
 import { appConfig } from "@/config/chains";
 import { toast } from "sonner";
 import { useStakingToken } from "../core/useStakingToken";
-import { isBatchUnsupportedError, useBatchCalls } from "../core/useBatchCalls";
-import { buildApproveCall, buildDrawDisputeCall } from "@/util/txCalls";
 
 type DrawDisputeResult = {
   success: boolean;
   disputeId: number | null;
-  path: "batch" | "sequential" | null;
+  path: "sequential" | null;
 };
 
 export function useAssignDispute() {
@@ -33,7 +31,6 @@ export function useAssignDispute() {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const { sliceContract } = getContractsForChain(chainId);
-  const { supportsAtomicBatch, sendAtomicCalls } = useBatchCalls();
   // New "Draw" Logic - Replaces findActiveDispute + joinDispute
   const drawDispute = async (amount: string): Promise<DrawDisputeResult> => {
     if (!address || !publicClient || !sliceContract) {
@@ -63,39 +60,13 @@ export function useAssignDispute() {
       };
 
       let allowance = await getAllowance();
-      console.info("[Batch][Assign] allowance check", {
+      console.info("[Assign] allowance check", {
         allowance: allowance.toString(),
         amountToStake: amountToStake.toString(),
         needsApproval: allowance < amountToStake,
       });
 
       if (allowance < amountToStake) {
-        let attemptedBatch = false;
-
-        try {
-          const canBatch = await supportsAtomicBatch();
-          console.info("[Batch][Assign] capability", { canBatch });
-          if (canBatch) {
-            attemptedBatch = true;
-            toast.info("Processing atomic draft transaction...");
-
-            await sendAtomicCalls([
-              buildApproveCall(stakingToken, sliceContract, amountToStake),
-              buildDrawDisputeCall(sliceContract, amountToStake),
-            ]);
-            toast.success("Drafted successfully!");
-            return { success: true, disputeId: null, path: "batch" };
-          }
-        } catch (batchError) {
-          if (!attemptedBatch || !isBatchUnsupportedError(batchError)) {
-            throw batchError;
-          }
-          console.info(
-            "[Batch][Assign] falling back to sequential flow",
-            batchError,
-          );
-        }
-
         toast.info("Approving Stake...");
         const approveHash = await writeContractAsync({
           address: stakingToken,

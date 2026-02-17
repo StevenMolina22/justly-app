@@ -10,8 +10,6 @@ import { SLICE_ABI, getContractsForChain } from "@/config/contracts";
 import { appConfig } from "@/config/chains";
 import { toast } from "sonner";
 import { useStakingToken } from "../core/useStakingToken";
-import { isBatchUnsupportedError, useBatchCalls } from "../core/useBatchCalls";
-import { buildApproveCall, buildPayDisputeCall } from "@/util/txCalls";
 
 export function usePayDispute() {
   const { address } = useAccount();
@@ -20,7 +18,6 @@ export function usePayDispute() {
 
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
-  const { supportsAtomicBatch, sendAtomicCalls } = useBatchCalls();
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"idle" | "approving" | "paying">("idle");
@@ -52,38 +49,13 @@ export function usePayDispute() {
       });
 
       const needsApproval = allowance < amountBI;
-      console.info("[Batch][Pay] allowance check", {
+      console.info("[Pay] allowance check", {
         allowance: allowance.toString(),
         amount: amountBI.toString(),
         needsApproval,
       });
 
       if (needsApproval) {
-        let attemptedBatch = false;
-
-        try {
-          const canBatch = await supportsAtomicBatch();
-          console.info("[Batch][Pay] capability", { canBatch });
-          if (canBatch) {
-            attemptedBatch = true;
-            setStep("paying");
-            toast.info("Processing atomic transaction...");
-
-            await sendAtomicCalls([
-              buildApproveCall(stakingToken, sliceContract, amountBI),
-              buildPayDisputeCall(sliceContract, BigInt(disputeId)),
-            ]);
-
-            toast.success("Payment successful!");
-            return true;
-          }
-        } catch (batchError) {
-          if (!attemptedBatch || !isBatchUnsupportedError(batchError)) {
-            throw batchError;
-          }
-          console.info("[Batch][Pay] falling back to sequential flow", batchError);
-        }
-
         setStep("approving");
         toast.info("Approving tokens...");
 

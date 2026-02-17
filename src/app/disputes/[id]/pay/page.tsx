@@ -15,7 +15,7 @@ export default function PayDisputePage() {
   const params = useParams();
   const disputeId = (params?.id as string) || "1";
 
-  const { payDispute, isPaying } = usePayDispute();
+  const { payDispute, isPaying, step } = usePayDispute();
   const { dispute, refetch } = useGetDispute(disputeId);
   const { address } = useAccount();
 
@@ -117,7 +117,7 @@ export default function PayDisputePage() {
           {isPaying ? (
             <div className="w-[192px] h-10 bg-[#1b1c23] text-white rounded-[14px] font-bold text-xs flex items-center justify-center gap-2 shadow-lg animate-pulse">
               <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Processing...
+              {step === "approving" ? "Approving stake..." : "Paying dispute..."}
             </div>
           ) : (
             <SwipeButton onSwipeComplete={() => void handleSwipeComplete()}>
@@ -125,6 +125,13 @@ export default function PayDisputePage() {
             </SwipeButton>
           )}
         </div>
+        {isPaying && (
+          <p className="text-xs text-gray-500">
+            {step === "approving"
+              ? "Approve this transaction first. You will be asked to confirm payment next."
+              : "Approval confirmed. Confirm the dispute payment in your wallet."}
+          </p>
+        )}
       </div>
     </div>
   );
