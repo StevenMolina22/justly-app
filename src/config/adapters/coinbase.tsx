@@ -13,10 +13,10 @@ export const coinbaseConfig = createConfig({
   chains: activeChains,
   connectors: [
     baseAccount({
-      appName: "Slice",
-      appLogoUrl: "/images/slice-logo-light.svg",
+      appName: "Justly",
+      appLogoUrl: "/logos/justly-white.svg",
     }),
-    coinbaseWallet({ appName: "Slice", preference: "all" }),
+    coinbaseWallet({ appName: "Justly", preference: "all" }),
   ],
   storage: createStorage({ storage: cookieStorage }),
   ssr: true,

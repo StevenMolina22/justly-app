@@ -35,7 +35,7 @@ export function PrivyProviderTree({
         appearance: {
           theme: "light",
           accentColor: "#1b1c23",
-          logo: "/images/slice-logo-light.svg",
+          logo: "/logos/justly-white.svg",
         },
         embeddedWallets: {
           ethereum: { createOnLogin: "users-without-wallets" },

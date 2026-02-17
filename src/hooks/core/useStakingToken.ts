@@ -6,7 +6,7 @@ import { useContracts } from "./useContracts";
 export function useStakingToken() {
   const { sliceContract } = useContracts();
 
-  // Fetch the address from the Slice contract
+  // Fetch the staking token address from the protocol contract
   const { data: tokenAddress } = useReadContract({
     address: sliceContract,
     abi: SLICE_ABI,

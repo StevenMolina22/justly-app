@@ -27,9 +27,9 @@ type Step = {
 const STEPS: Step[] = [
   {
     id: "welcome",
-    title: "Welcome to Slice",
+    title: "Welcome to Justly",
     description:
-      "Slice is a neutral system where real people review disputes and decide the outcome fairly.",
+      "Justly is a neutral system where real people review disputes and decide the outcome fairly.",
     icon: Scale,
     iconClassName: "bg-sky-100 text-sky-700",
   },

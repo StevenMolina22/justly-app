@@ -83,7 +83,7 @@ export const SettingsView = () => {
       {/* About Section */}
       <div className="flex flex-col gap-3">
         <h3 className="font-manrope font-extrabold text-gray-800 uppercase tracking-wide ml-1 text-sm">
-          About Slice
+          About Justly
         </h3>
 
         <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
@@ -95,7 +95,7 @@ export const SettingsView = () => {
               </div>
               <div>
                 <div className="text-base font-extrabold text-[#1b1c23]">
-                  Slice Protocol
+                  Justly Protocol
                 </div>
                 <div className="text-[11px] font-mono text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md inline-block mt-0.5">
                   v0.0.1-beta
@@ -103,7 +103,7 @@ export const SettingsView = () => {
               </div>
             </div>
             <p className="text-sm text-gray-500 leading-relaxed font-medium">
-              Slice is the <strong>neutral resolution layer</strong> for the
+              Justly is the <strong>neutral resolution layer</strong> for the
               internet. We leverage random juror selection and crypto-economic
               stakes to ensure fair, trustless, and verifiable rulings for any
               platform.
@@ -112,7 +112,7 @@ export const SettingsView = () => {
 
           {/* Docs Link */}
           <a
-            href="https://docs.slicehub.xyz"
+            href="https://docs.justly.one"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left group cursor-pointer border-b border-gray-100"
@@ -152,7 +152,7 @@ export const SettingsView = () => {
 
       <div className="text-center mt-4">
         <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">
-          Slice - New standard for justice
+          Justly - New standard for justice
         </span>
       </div>
     </div>

@@ -1,6 +1,6 @@
-# Slice Protocol – Developer & Agent Guidelines
+# Justly Protocol – Developer & Agent Guidelines
 
-This document defines the architectural rules, development standards, and technical constraints for the Slice Protocol frontend and smart contract system.
+This document defines the architectural rules, development standards, and technical constraints for the Justly Protocol frontend and smart contract system.
 
 ---
 

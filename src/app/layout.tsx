@@ -14,11 +14,11 @@ import { farcasterConfig } from "@/config/adapters/farcaster";
 import { cookieToInitialState } from "wagmi";
 
 export const metadata: Metadata = {
-  title: "Slice",
+  title: "Justly",
   description: "Get paid for doing justice",
   manifest: "/manifest.json",
   icons: {
-    icon: "/images/slice-logo-light.svg",
+    icon: "/logos/justly-white.svg",
     apple: "/icons/icon.png",
   },
   other: {

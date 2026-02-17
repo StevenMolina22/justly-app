@@ -22,7 +22,7 @@ export const uploadJSONToIPFS = async (content: any) => {
       pinataMetadata: {
         name: content.title
           ? `Dispute - ${content.title}`
-          : "Slice Dispute Data",
+          : "Justly Dispute Data",
         keyvalues: {
           type: "dispute_metadata",
           // You can add more custom key-values here for filtering in Pinata

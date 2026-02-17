@@ -68,7 +68,7 @@ export const BottomNavigation = () => {
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 min-w-[3.5rem]",
-                // CHANGE: Use Slice Purple (#8c8fff) when active
+                // Use brand purple (#8c8fff) when active
                 isActive
                   ? "text-[#8c8fff]"
                   : "text-gray-600 hover:text-gray-800",

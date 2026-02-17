@@ -19,7 +19,7 @@ export function generateIdentitySecret(): bigint {
  * The message must be identical on every device to produce the same signature/salt.
  */
 export function getSaltGenerationMessage(disputeId: string | number): string {
-  return `Slice Protocol: Generate secure voting secret for Dispute #${disputeId}. \n\nSign this message to derive your voting salt. This does not cast a vote or cost gas.`;
+  return `Justly Protocol: Generate secure voting secret for Dispute #${disputeId}. \n\nSign this message to derive your voting salt. This does not cast a vote or cost gas.`;
 }
 
 /**

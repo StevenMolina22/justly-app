@@ -1,14 +1,14 @@
-# ⚖️ Slice Protocol Application
+# ⚖️ Justly Protocol Application
 
-This project is the frontend implementation for **Slice**, a **Real-Time Dispute Resolution Protocol** built on Next.js. It features a **multi-tenant architecture** capable of running as a standalone PWA or as an embedded MiniApp across various wallet ecosystems (Base, Beexo).
+This project is the frontend implementation for **Justly**, a **Real-Time Dispute Resolution Protocol** built on Next.js. It features a **multi-tenant architecture** capable of running as a standalone PWA or as an embedded MiniApp across various wallet ecosystems (Base, Beexo).
 
-**🔗 Live Demo**: [Testnet](https://dev.slicehub.xyz) | [Mainnet](https://app.slicehub.xyz)
+**🔗 Live Demo**: [Landing](https://justly.one) | [App](https://app.justly.one)
 
 ---
 
-## ⚡ What is Slice?
+## ⚡ What is Justly?
 
-**Slice** is a **decentralized, real-time dispute resolution protocol**. It acts as a **neutral truth oracle** that resolves disputes quickly and trustlessly through **randomly selected jurors** and **economic incentives**.
+**Justly** is a **decentralized, real-time dispute resolution protocol**. It acts as a **neutral truth oracle** that resolves disputes quickly and trustlessly through **randomly selected jurors** and **economic incentives**.
 
 We are building the **"Uber for Justice"**:
 * **Decentralized & Trustless:** No central authority controls the outcome.
@@ -45,18 +45,18 @@ The application behaves differently depending on the access point (Subdomain) an
 
 ---
 
-## 🚀 Try Slice Now
+## 🚀 Try Justly Now
 
 Experience the future of decentralized justice on **Base**:
 
-* **Testnet Demo**: [dev.slicehub.xyz](https://dev.slicehub.xyz) – (Base Sepolia)
-* **Mainnet App**: [app.slicehub.xyz](https://app.slicehub.xyz) – (Base)
+* **Landing**: [justly.one](https://justly.one)
+* **App**: [app.justly.one](https://app.justly.one)
 
 ---
 
 ## ⚖️ How It Works (The Juror Flow)
 
-1. **Enter the Market:** Users open the Slice App or MiniApp and **stake USDC** to join the juror pool.
+1. **Enter the Market:** Users open the Justly App or MiniApp and **stake USDC** to join the juror pool.
 2. **Get Drafted:** When a dispute arises, jurors are randomly selected (Drafted) to review the case.
 3. **Review & Vote:** Jurors analyze the evidence provided by both parties and vote privately on the outcome.
 4. **Earn Rewards:** If their vote aligns with the majority consensus, they **earn fees** from the losing party.
@@ -66,7 +66,7 @@ Experience the future of decentralized justice on **Base**:
 
 ## 🔌 Integration Guide (For Developers)
 
-Integrating Slice V1.5 into your protocol follows an Arbitrable/Arbitrator flow:
+Integrating Justly V1.5 into your protocol follows an Arbitrable/Arbitrator flow:
 
 ### 1. Create a Dispute
 From your arbitrable contract, call `slice.createDispute(CreateDisputeParams)` and store your local-case to `disputeId` mapping.
@@ -75,7 +75,7 @@ From your arbitrable contract, call `slice.createDispute(CreateDisputeParams)` a
 Parties pay arbitration costs in `slice.stakingToken()` through `payDispute(disputeId)`. During the dispute, parties can submit evidence through `submitEvidence`.
 
 ### 3. Settle via callback
-Slice calls `IArbitrable.rule(disputeId, ruling)` on your contract when finalized. In Slice V1.5, `ruling == 1` means claimer wins and `ruling == 0` means defender wins.
+The protocol contract calls `IArbitrable.rule(disputeId, ruling)` on your contract when finalized. In the current `SliceV1.5` contract, `ruling == 1` means claimer wins and `ruling == 0` means defender wins.
 
 Reference implementation:
 - `slice_sc/src/core/P2PTradeEscrow.sol`
@@ -85,7 +85,7 @@ Reference implementation:
 
 ## 📍 Deployed Contracts
 
-| Network | Slice Core | USDC Token |
+| Network | Justly Core | USDC Token |
 |---------|------------|------------|
 | **Base Sepolia** | `0xD8A10bD25e0E5dAD717372fA0C66d3a59a425e4D` | `0x5dEaC602762362FE5f135FA5904351916053cF70` |
 | **Base Mainnet** | `0xD8A10bD25e0E5dAD717372fA0C66d3a59a425e4D` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
@@ -171,5 +171,5 @@ For contract deployment and seeding scripts, see `slice_sc/README.md`.
 * [x] Phase 1 – Foundation (Core Protocol, Web UI)
 * [x] Phase 2 – Architecture Overhaul (Strategy Pattern, Multi-Tenant SDKs)
 * [ ] Phase 3 – MiniApp Expansion (Live integration with Lemon, Beexo)
-* [ ] Phase 4 – Slice V1.5 Migration (Passive Global Staking)
+* [ ] Phase 4 – Justly V1.5 Migration (Passive Global Staking)
 * [ ] Phase 5 – Specialized Courts & DAO Governance

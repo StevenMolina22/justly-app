@@ -38,7 +38,7 @@ export function MyQRModal({ address, isOpen, onClose }: MyQRModalProps) {
         </button>
 
         <div className="text-center mb-6 mt-2">
-          <h3 className="text-xl font-extrabold text-[#1b1c23]">My Slice Code</h3>
+          <h3 className="text-xl font-extrabold text-[#1b1c23]">My Justly Code</h3>
           <p className="text-gray-400 font-medium mt-1 text-sm">
             Scan to add <span className="text-[#1b1c23] font-mono font-bold">{shortenAddress(address)}</span>
           </p>

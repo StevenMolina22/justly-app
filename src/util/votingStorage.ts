@@ -44,7 +44,7 @@ export const saveVoteData = (
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
-    console.error("Slice: Failed to save vote data to LocalStorage", e);
+    console.error("Justly: Failed to save vote data to LocalStorage", e);
   }
 };
 
@@ -66,7 +66,7 @@ export const getVoteData = (
   try {
     return JSON.parse(item) as VoteData;
   } catch (e) {
-    console.error("Slice: Error parsing vote data from storage", e);
+    console.error("Justly: Error parsing vote data from storage", e);
     return null;
   }
 };

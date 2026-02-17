@@ -49,10 +49,10 @@ export default function DisputesPage() {
           </div>
 
           {/* Icon - Switched to Brand Purple or Money Green based on preference */}
-          <Sparkles className="w-4 h-4 text-white fill-white/20" />
+          <Sparkles className="w-4 h-4 font-bold text-[#1b1c23] " />
 
           {/* Text - Single Line, Bold, Clean */}
-          <span className="text-white font-manrope font-semibold tracking-wide pr-1">
+          <span className="text-[#1b1c23] font-manrope font-bold tracking-wide pr-1">
             Start Earning
           </span>
         </div>

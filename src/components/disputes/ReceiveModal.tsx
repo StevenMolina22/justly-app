@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSliceAccount } from "@/hooks/core/useSliceAccount";
 import { defaultChain } from "@/config/chains";
 import { toast } from "sonner";
@@ -17,15 +17,23 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({
 }) => {
   const { address } = useSliceAccount();
   const [copied, setCopied] = useState(false);
-
-  if (!isOpen || !address) return null;
+  const [qrLoaded, setQrLoaded] = useState(false);
+  const [qrError, setQrError] = useState(false);
 
   // Append the Chain ID (e.g., @8453).
   // This tells the wallet specifically to look at Base, not Ethereum Mainnet.
   const chainId = defaultChain.id;
-  const paymentUri = `ethereum:${address}@${chainId}`;
+  const paymentUri = address ? `ethereum:${address}@${chainId}` : "";
 
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentUri)}&bgcolor=ffffff`;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setQrLoaded(false);
+    setQrError(false);
+  }, [isOpen, qrCodeUrl]);
+
+  if (!isOpen || !address) return null;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(address);
@@ -35,7 +43,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-xl relative animate-in zoom-in-95 duration-200 flex flex-col items-center">
         {/* Header */}
         <div className="w-full flex justify-between items-center mb-6">
@@ -52,12 +60,31 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({
 
         {/* QR Code Card */}
         <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 mb-6">
-          <div className="w-48 h-48 bg-[#f5f6f9] rounded-2xl overflow-hidden">
-            <img
-              src={qrCodeUrl}
-              alt="Wallet QR Code"
-              className="w-full h-full object-cover mix-blend-multiply"
-            />
+          <div className="relative w-48 h-48 bg-[#f5f6f9] rounded-2xl overflow-hidden">
+            {!qrLoaded && !qrError ? (
+              <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-100 via-gray-200 to-gray-100" />
+            ) : null}
+
+            {qrError ? (
+              <div className="absolute inset-0 flex items-center justify-center px-4 text-center">
+                <p className="text-xs font-semibold text-gray-500 leading-snug">
+                  QR unavailable right now
+                </p>
+              </div>
+            ) : (
+              <img
+                src={qrCodeUrl}
+                alt="Wallet QR Code"
+                className={`w-full h-full object-cover mix-blend-multiply transition-opacity duration-200 ${
+                  qrLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                onLoad={() => setQrLoaded(true)}
+                onError={() => {
+                  setQrError(true);
+                  setQrLoaded(true);
+                }}
+              />
+            )}
           </div>
         </div>
 

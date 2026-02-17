@@ -158,7 +158,7 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
       }
 
       // 5. Determine Winner
-      // Slice.sol logic: return votesFor1 > votesFor0 ? 1 : 0;
+      // Core contract logic: return votesFor1 > votesFor0 ? 1 : 0;
       const winningChoice = votesFor1 > votesFor0 ? 1 : 0;
       const isWinner = myHasRevealed && (myVote === winningChoice);
 
@@ -166,7 +166,7 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
       let calculatedReward = 0n;
       
       if (isWinner) {
-          // Calculate pools exactly as in Slice.sol lines 406-415
+          // Calculate pools exactly as in the core contract
           let totalWinningStake = 0n;
           let totalLosingStake = 0n;
 
@@ -180,7 +180,7 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
               }
           }
           
-          // Slice.sol: Reward = Stake + (Stake * LosingPool / WinningPool)
+          // Reward = Stake + (Stake * LosingPool / WinningPool)
           // We only want the "Profit" part for the UI display
           if (totalWinningStake > 0n) {
               calculatedReward = (myStake * totalLosingStake) / totalWinningStake;

@@ -20,8 +20,8 @@ export const farcasterConfig = createConfig({
   transports,
   connectors: [
     baseAccount({
-      appName: "Slice",
-      appLogoUrl: "/images/slice-logo-light.svg",
+      appName: "Justly",
+      appLogoUrl: "/logos/justly-white.svg",
     }),
     farcasterMiniApp(),
   ],

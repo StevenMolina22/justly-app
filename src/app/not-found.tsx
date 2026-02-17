@@ -58,7 +58,7 @@ export default function NotFound() {
 
       {/* Footer Branding */}
       <div className="absolute bottom-8 text-[10px] font-bold text-gray-300 uppercase tracking-widest">
-        Slice Protocol
+        Justly Protocol
       </div>
     </div>
   );

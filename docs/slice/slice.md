@@ -1,7 +1,7 @@
 
-# Introduction to Slice
+# Introduction to Justly
 
-Slice is a dispute resolution layer built for digital businesses.
+Justly is a dispute resolution layer built for digital businesses.
 
 As platforms grow, payments accelerate, and users become global, one challenge inevitably appears: **disputes**.
 
@@ -18,17 +18,17 @@ And platforms are forced to act as judge in disputes they didn’t create.
 
 ***
 
-### Why Slice Exists
+### Why Justly Exists
 
-Slice exists to remove that burden.
+Justly exists to remove that burden.
 
-Instead of building custom dispute processes from scratch, platforms can integrate Slice as a **neutral resolution layer**, handling conflicts externally, fairly, and consistently.
+Instead of building custom dispute processes from scratch, platforms can integrate Justly as a **neutral resolution layer**, handling conflicts externally, fairly, and consistently.
 
 ***
 
 ### Value for Businesses
 
-Slice helps businesses:
+Justly helps businesses:
 
 * Resolve disputes without internal arbitration
 * Reduce operational and legal overhead
@@ -39,7 +39,7 @@ Slice helps businesses:
 
 ### Value for Users
 
-For users, Slice creates a system where:
+For users, Justly creates a system where:
 
 * Disputes are reviewed by independent participants
 * Evidence matters more than influence
@@ -49,26 +49,26 @@ For users, Slice creates a system where:
 
 ### Built for Both Sides
 
-Slice is designed to serve both sides naturally.
+Justly is designed to serve both sides naturally.
 
 Platforms integrate it to protect their ecosystem.\
 Users engage with it knowing that fairness and accountability are part of the process.
 
-Behind the scenes, Slice relies on **economic incentives and carefully designed coordination mechanisms**. Participants are rewarded for honest decisions, discouraged from bad behavior, and selected independently — ensuring the system remains reliable over time without requiring trust in a single authority.
+Behind the scenes, Justly relies on **economic incentives and carefully designed coordination mechanisms**. Participants are rewarded for honest decisions, discouraged from bad behavior, and selected independently — ensuring the system remains reliable over time without requiring trust in a single authority.
 
 ***
 
 #### Scope at a Conceptual Level
 
-Slice is designed to resolve adversarial disputes arising from digital agreements and payments, where:
+Justly is designed to resolve adversarial disputes arising from digital agreements and payments, where:
 
 * There are clear parties in conflict.
 * Value is at stake.
 * Outcomes must be enforced automatically.
 
-Resolution, Not Mediation Slice focuses on definitive resolution, not mediation. It is not a general-purpose legal system, a customer support replacement, or a broad governance framework. Its goal is to provide a neutral, enforceable decision layer for digital economies — independent from platforms, jurisdictions, or internal policies.
+Resolution, Not Mediation Justly focuses on definitive resolution, not mediation. It is not a general-purpose legal system, a customer support replacement, or a broad governance framework. Its goal is to provide a neutral, enforceable decision layer for digital economies — independent from platforms, jurisdictions, or internal policies.
 
-Transactional Focus & Scale Unlike universal arbitration models, Slice is optimized for high-velocity digital transactions. It focuses on micro to mid-sized disputes where technical efficiency is paramount. It is not intended for:
+Transactional Focus & Scale Unlike universal arbitration models, Justly is optimized for high-velocity digital transactions. It focuses on micro to mid-sized disputes where technical efficiency is paramount. It is not intended for:
 
 * High-stakes litigation: Cases of massive financial scale that require traditional legal discovery.
 * Complex Human Rights or Ethics: Subjective social or political debates that fall outside the scope of transactional evidence.
@@ -81,16 +81,16 @@ The Foundational Model Different dispute types, escalation paths, and specializa
 
 This documentation will help you understand:
 
-* When and why Slice makes sense for your product
+* When and why Justly makes sense for your product
 * How it fits into different business models
 * How it can be integrated into existing platforms
 * How disputes are handled in a clear, predictable way
 
 ***
 
-### Who Slice Is For
+### Who Justly Is For
 
-If you are building a marketplace, a fintech product, a service platform, or any digital system where agreements and payments matter, Slice is designed to make dispute resolution **simple, fair, and scalable** — without adding friction to your core business.
+If you are building a marketplace, a fintech product, a service platform, or any digital system where agreements and payments matter, Justly is designed to make dispute resolution **simple, fair, and scalable** — without adding friction to your core business.
 
 
 # Dispute Resolution Matters
@@ -169,12 +169,12 @@ At scale, the absence of fair dispute resolution forces systems to choose betwee
 
 ***
 
-### Slice’s Perspective
+### Justly’s Perspective
 
-Slice is built on a simple idea:\
+Justly is built on a simple idea:\
 **trust emerges when outcomes are predictable, fair, and verifiable.**
 
-By providing a neutral, transparent, and fast dispute resolution layer, Slice allows digital systems to:
+By providing a neutral, transparent, and fast dispute resolution layer, Justly allows digital systems to:
 
 * handle conflict without central authority,
 * scale transactions without increasing friction,
@@ -186,7 +186,7 @@ It breaks when there is no reliable way to resolve that disagreement.
 
 # AI optimized docs
 
-Slice documentation isn’t just written for humans. It’s **structured for agents, copilots, and AI models** to understand, remix, and build on top of.
+Justly documentation isn’t just written for humans. It’s **structured for agents, copilots, and AI models** to understand, remix, and build on top of.
 
 ***
 
@@ -231,7 +231,7 @@ Try prompts like:
 
 ```
 create a dispute flow for a peer-to-peer USDC payment
-explain how jurors are selected in a Slice dispute
+explain how jurors are selected in a Justly dispute
 open a dispute for a wallet payment and submit evidence
 ```
 
@@ -240,9 +240,9 @@ open a dispute for a wallet payment and submit evidence
 
 # Live Demo: Juror Experience
 
-This page walks through a real dispute resolved on Slice, using the mobile app and real wallets. The goal is simple: show how dispute resolution works in practice, from a juror’s point of view.
+This page walks through a real dispute resolved on Justly, using the mobile app and real wallets. The goal is simple: show how dispute resolution works in practice, from a juror’s point of view.
 
-### This is a real dispute resolved on Slice, step by step, from a juror’s perspective
+### This is a real dispute resolved on Justly, step by step, from a juror’s perspective
 
 {% embed url="<https://www.youtube.com/watch?v=2IuphbBqYQ4>" %}
 
@@ -262,7 +262,7 @@ Two parties are involved:
 * **Julio Banegas** (claimant), who states that freelance work was completed but not paid.
 * **Micaela Descotte** (defendant), who disputes the claim.
 
-Both sides submitted evidence directly through Slice.\
+Both sides submitted evidence directly through Justly.\
 As a juror, you see the same information any independent reviewer would see: descriptions, attachments, and context.
 
 ***
@@ -323,14 +323,14 @@ After the dispute is resolved:
 
 This mechanism is intentional.
 
-Slice does not reward being loud or early —\
+Justly does not reward being loud or early —\
 it rewards being **right, relative to the collective judgment**.
 
 ***
 
 #### **Why this matters**
 
-This demo highlights the core principles behind Slice:
+This demo highlights the core principles behind Justly:
 
 * Jurors are real participants, not automated rules.
 * Decisions are driven by evidence, not authority.
@@ -341,19 +341,19 @@ For platforms, this means disputes can be resolved without internal arbitration.
 For users, it means fairness is not just promised — it is enforced by design.
 
 
-# What is Slice?
+# What is Justly?
 
-Slice is a **decentralized, on-demand dispute resolution system**, designed for digital platforms that process user-to-user payments and need a fast, impartial, and transparent way to resolve conflicts.
+Justly is a **decentralized, on-demand dispute resolution system**, designed for digital platforms that process user-to-user payments and need a fast, impartial, and transparent way to resolve conflicts.
 
-Unlike traditional systems—slow, manual, and centralized—Slice enables disputes to be resolved in **hours**, and often in minutes when jurors are highly available, through distributed jurors, clear economic incentives, and automatic execution of outcomes.
+Unlike traditional systems—slow, manual, and centralized—Justly enables disputes to be resolved in **hours**, and often in minutes when jurors are highly available, through distributed jurors, clear economic incentives, and automatic execution of outcomes.
 
-Slice functions as a **universal trust module** that can be integrated into fintechs, marketplaces, wallets, exchanges, service platforms, and Web3 applications, without forcing these platforms to act as judge and jury.
+Justly functions as a **universal trust module** that can be integrated into fintechs, marketplaces, wallets, exchanges, service platforms, and Web3 applications, without forcing these platforms to act as judge and jury.
 
 ***
 
 ### A new way to resolve digital disputes
 
-In Slice, every dispute follows a simple and predictable flow:
+In Justly, every dispute follows a simple and predictable flow:
 
 1. **One party initiates a dispute** and locks the disputed funds.
 2. **A group of impartial jurors is selected** randomly.
@@ -366,20 +366,20 @@ The entire process is designed to minimize friction, remove intermediaries, and 
 
 ### Real-time resolution, not endless processes
 
-Slice introduces a **real-time resolution model**:
+Justly introduces a **real-time resolution model**:
 
 * Disputes are designed to resolve in hours, and can resolve in minutes when jurors respond quickly.
 * Time windows are intentionally conservative safety buffers to protect liveness under lower activity.
 * Resolution timing becomes more predictable as juror liquidity deepens in each court/category.
 * Appeals are central to the protocol design and are one of the most urgent roadmap priorities.
 
-This approach makes Slice viable even for **microtransactions**, where legal systems or traditional customer support processes are economically unfeasible.
+This approach makes Justly viable even for **microtransactions**, where legal systems or traditional customer support processes are economically unfeasible.
 
 ***
 
 ### Distributed jurors and aligned incentives
 
-Decisions in Slice do not depend on a company, moderator, or centralized authority.
+Decisions in Justly do not depend on a company, moderator, or centralized authority.
 
 Jurors:
 
@@ -394,7 +394,7 @@ This design incentivizes honest behavior and reduces malicious actions, without 
 
 ### Designed for real users
 
-Slice is not built only for blockchain experts.
+Justly is not built only for blockchain experts.
 
 The system prioritizes:
 
@@ -403,13 +403,13 @@ The system prioritizes:
 * Clear interfaces for submitting evidence and understanding verdicts
 * **Light gamification elements** that make the juror experience intuitive
 
-The goal is for any user of a digital platform to use Slice without needing to understand smart contracts.
+The goal is for any user of a digital platform to use Justly without needing to understand smart contracts.
 
 ***
 
 ### A protocol, not a closed platform
 
-Slice does not compete with existing platforms—it **empowers them**.
+Justly does not compete with existing platforms—it **empowers them**.
 
 It acts as a neutral dispute resolution layer that can:
 
@@ -418,13 +418,13 @@ It acts as a neutral dispute resolution layer that can:
 * Execute decisions programmatically
 * Maintain public traceability and transparency
 
-In this way, Slice positions itself as core infrastructure for the digital economy, where trust is enforced by clear, verifiable rules rather than intermediaries.
+In this way, Justly positions itself as core infrastructure for the digital economy, where trust is enforced by clear, verifiable rules rather than intermediaries.
 
 ***
 
 ### In summary
 
-Slice is a lightweight digital justice system that resolves disputes in a way that is:
+Justly is a lightweight digital justice system that resolves disputes in a way that is:
 
 * ⚡ Fast (typically hours, sometimes minutes)
 * ⚖️ Impartial (distributed jurors)
@@ -433,20 +433,20 @@ Slice is a lightweight digital justice system that resolves disputes in a way th
 
 It represents a new approach to resolving conflicts on the internet—aligned with the speed and scale of the modern digital economy.
 
-> **While Slice is primarily designed for real-time dispute resolution, its incentive and coordination model can be extended to other forms of subjective evaluation—such as contribution assessment and reward allocation in open-source and digital ecosystems.**
+> **While Justly is primarily designed for real-time dispute resolution, its incentive and coordination model can be extended to other forms of subjective evaluation—such as contribution assessment and reward allocation in open-source and digital ecosystems.**
 
 
-# Why Slice?
+# Why Justly?
 
 **Digital economies move fast, but dispute resolution hasn’t kept up.**
 
 Most platforms today rely on centralized, opaque, and expensive processes to resolve conflicts. This creates friction, erodes trust, and doesn’t scale — especially for low and mid-value disputes where traditional legal systems are impractical.
 
-**Slice exists to fix that.**
+**Justly exists to fix that.**
 
 ### A neutral layer for digital disputes
 
-Slice is designed as a **neutral, programmable dispute resolution layer** that can be embedded into any digital platform where value is exchanged.
+Justly is designed as a **neutral, programmable dispute resolution layer** that can be embedded into any digital platform where value is exchanged.
 
 Instead of acting as judge and jury, platforms can delegate dispute resolution to an independent system that is:
 
@@ -457,19 +457,19 @@ Instead of acting as judge and jury, platforms can delegate dispute resolution t
 
 ### Built for stablecoins and real-world payments
 
-Slice is optimized for **stablecoin-based economies**, where users expect:
+Justly is optimized for **stablecoin-based economies**, where users expect:
 
 * predictable outcomes,
 * fast resolutions,
 * and minimal volatility.
 
-By using assets like USDC, Slice enables dispute resolution that feels familiar to users while remaining fully on-chain and automated.
+By using assets like USDC, Justly enables dispute resolution that feels familiar to users while remaining fully on-chain and automated.
 
 ### Human judgment, cryptographic guarantees
 
 Not all disputes can be solved by code alone.
 
-Slice introduces **human judgment where it matters**, but enforces outcomes with smart contracts. Jurors are economically incentivized to act honestly, and rulings are executed automatically—without intermediaries.
+Justly introduces **human judgment where it matters**, but enforces outcomes with smart contracts. Jurors are economically incentivized to act honestly, and rulings are executed automatically—without intermediaries.
 
 This creates a system that combines:
 
@@ -479,7 +479,7 @@ This creates a system that combines:
 
 ### Infrastructure, not a vertical product
 
-Slice is not built for a single use case.
+Justly is not built for a single use case.
 
 It is **infrastructure**:
 
@@ -491,16 +491,16 @@ Marketplaces, fintechs, Web3 protocols, insurance platforms, and OSS ecosystems 
 
 ### Designed to scale beyond disputes
 
-While disputes are the starting point, Slice’s core primitives—staking, voting, quality evaluation, and incentive alignment—can power other coordination problems, from governance to contribution assessment.
+While disputes are the starting point, Justly’s core primitives—staking, voting, quality evaluation, and incentive alignment—can power other coordination problems, from governance to contribution assessment.
 
-Slice is about trust at scale.
+Justly is about trust at scale.
 
 
 # Security & Game Theory
 
-Slice is secure not because it trusts people, but because it **aligns incentives**.
+Justly is secure not because it trusts people, but because it **aligns incentives**.
 
-Instead of relying on centralized authorities, internal support teams, or subjective moderation, Slice uses **game theory** to make honest behavior the most economically rational strategy for all participants.
+Instead of relying on centralized authorities, internal support teams, or subjective moderation, Justly uses **game theory** to make honest behavior the most economically rational strategy for all participants.
 
 This is the same principle that powers:
 
@@ -529,13 +529,13 @@ As platforms grow:
 * decisions become inconsistent,
 * users lose trust.
 
-Slice replaces trust in institutions with **trust in economic incentives**.
+Justly replaces trust in institutions with **trust in economic incentives**.
 
 ***
 
-### How Slice uses game theory
+### How Justly uses game theory
 
-Slice is designed so that **dishonest behavior is economically irrational**.
+Justly is designed so that **dishonest behavior is economically irrational**.
 
 Jurors are not expected to be altruistic.\
 They are expected to be rational.
@@ -579,9 +579,9 @@ At scale, **honesty becomes the dominant strategy**.
 
 ***
 
-### Slice works like a market for truth
+### Justly works like a market for truth
 
-Slice follows the same logic used by prediction markets such as **Polymarket**.
+Justly follows the same logic used by prediction markets such as **Polymarket**.
 
 Polymarket does not verify outcomes manually.\
 It relies on participants risking capital on what they believe is correct.
@@ -591,7 +591,7 @@ Those who don’t, lose.
 
 Over time, the system converges toward accurate outcomes because **being wrong is costly**.
 
-Slice applies this logic to dispute resolution.
+Justly applies this logic to dispute resolution.
 
 Instead of betting on future events, jurors stake value on:
 
@@ -605,7 +605,7 @@ This turns dispute resolution into a **market-driven process for discovering tru
 
 ### Why this is safe for companies
 
-From a company’s perspective, Slice provides strong security guarantees:
+From a company’s perspective, Justly provides strong security guarantees:
 
 #### Incentive-aligned decisions
 
@@ -630,15 +630,15 @@ Dispute resolution scales without growing internal support or arbitration teams.
 
 ***
 
-### What Slice does *not* promise
+### What Justly does *not* promise
 
-Slice does not claim to:
+Justly does not claim to:
 
 * eliminate disputes,
 * guarantee perfect decisions,
 * remove all bad actors.
 
-Instead, Slice guarantees that:
+Instead, Justly guarantees that:
 
 * dishonest behavior is penalized,
 * honest behavior is rewarded,
@@ -650,9 +650,9 @@ This is the same guarantee provided by markets, insurance systems, and decentral
 
 ### The key idea
 
-> **Slice is secure for the same reason markets are reliable: incentives beat trust.**
+> **Justly is secure for the same reason markets are reliable: incentives beat trust.**
 
-By aligning economic incentives with honest decision-making, Slice enables fast, scalable, and fair dispute resolution — without relying on centralized authority.
+By aligning economic incentives with honest decision-making, Justly enables fast, scalable, and fair dispute resolution — without relying on centralized authority.
 
 ***
 
@@ -660,15 +660,15 @@ By aligning economic incentives with honest decision-making, Slice enables fast,
 
 As digital platforms scale globally, disputes become inevitable.
 
-Slice doesn’t try to prevent conflict.\
+Justly doesn’t try to prevent conflict.\
 It ensures that conflict **doesn’t break the system**.
 
-By embedding game-theoretic security at the core, Slice becomes a reliable foundation for payments, platforms, governance, and coordination in the digital economy.
+By embedding game-theoretic security at the core, Justly becomes a reliable foundation for payments, platforms, governance, and coordination in the digital economy.
 
 
 # Security Model
 
-Slice is designed as a **cryptoeconomic dispute resolution protocol**, where security emerges from incentive alignment, economic cost, and transparent execution — not from authority or legal enforcement.
+Justly is designed as a **cryptoeconomic dispute resolution protocol**, where security emerges from incentive alignment, economic cost, and transparent execution — not from authority or legal enforcement.
 
 This section describes the **security assumptions, guarantees, and limits** of the protocol.
 
@@ -676,7 +676,7 @@ This section describes the **security assumptions, guarantees, and limits** of t
 
 ### Security Philosophy
 
-Slice does not attempt to determine absolute truth or legal correctness.
+Justly does not attempt to determine absolute truth or legal correctness.
 
 Instead, it is designed to ensure that:
 
@@ -684,13 +684,13 @@ Instead, it is designed to ensure that:
 * coordinated manipulation is difficult and expensive,
 * and honest participation is the most rational strategy over time.
 
-Security in Slice is achieved through **game theory, staking mechanics, and protocol-enforced execution**, not through trust in any centralized actor.
+Security in Justly is achieved through **game theory, staking mechanics, and protocol-enforced execution**, not through trust in any centralized actor.
 
 ***
 
-### Threats Slice Is Designed to Mitigate
+### Threats Justly Is Designed to Mitigate
 
-Slice is explicitly designed to mitigate the following classes of attacks:
+Justly is explicitly designed to mitigate the following classes of attacks:
 
 #### Sybil Attacks
 
@@ -743,7 +743,7 @@ Jurors who do not evaluate evidence are economically penalized over time.
 
 ### Incentive Alignment as the Primary Defense
 
-Slice’s primary security mechanism is **incentive alignment**, not identity or reputation alone.
+Justly’s primary security mechanism is **incentive alignment**, not identity or reputation alone.
 
 Key properties:
 
@@ -757,7 +757,7 @@ This structure discourages whales, favors independent judgment, and aligns ratio
 
 ### Tier-Based Security Escalation
 
-Slice supports multiple security levels to match guarantees with dispute risk.
+Justly supports multiple security levels to match guarantees with dispute risk.
 
 Higher security levels provide:
 
@@ -771,7 +771,7 @@ This allows users and integrators to choose a security level proportional to the
 
 ### Appeals as a Security Amplifier
 
-Appeals are a **core security layer** in the Slice design, increasing the cost of incorrect or adversarial outcomes.
+Appeals are a **core security layer** in the Justly design, increasing the cost of incorrect or adversarial outcomes.
 
 In the live contracts today, disputes finalize in a single round once executed.
 Appeals are one of the most urgent roadmap priorities and are designed to be introduced as structured escalation rounds.
@@ -788,25 +788,25 @@ Appeals are designed to converge outcomes toward coherent judgments without gran
 
 ### Limits of the System
 
-Slice makes the following guarantees:
+Justly makes the following guarantees:
 
 * outcomes are enforced exactly as defined,
 * rules are transparent and immutable,
 * execution is on-chain and verifiable.
 
-Slice does **not** guarantee:
+Justly does **not** guarantee:
 
 * legal correctness,
 * absolute truth,
 * or immunity from all forms of coordination under extreme conditions.
 
-Human judgment is inherently probabilistic. Slice guarantees that **dishonesty is costly**, not impossible.
+Human judgment is inherently probabilistic. Justly guarantees that **dishonesty is costly**, not impossible.
 
 ***
 
 ### Progressive Security
 
-Security in Slice increases through:
+Security in Justly increases through:
 
 * higher security levels,
 * appeals,
@@ -818,9 +818,9 @@ The protocol is designed to remain secure under realistic conditions and to stre
 
 # Use Cases
 
-Slice is designed as a **reusable dispute resolution infrastructure**, adaptable to multiple industries where digital payments exist and low-to-medium value conflicts are frequent.
+Justly is designed as a **reusable dispute resolution infrastructure**, adaptable to multiple industries where digital payments exist and low-to-medium value conflicts are frequent.
 
-Instead of building custom dispute logic for every product or protocol, Slice provides a **neutral, fast, and programmable layer** that can be embedded wherever trust breaks down.
+Instead of building custom dispute logic for every product or protocol, Justly provides a **neutral, fast, and programmable layer** that can be embedded wherever trust breaks down.
 
 Below is a high-level overview of the main use cases.\
 Each one is explored in depth in its own section.
@@ -830,7 +830,7 @@ Each one is explored in depth in its own section.
 ### 1. Marketplaces (E-commerce, P2P, Services)
 
 Marketplaces constantly deal with disputes between buyers and sellers over delivery, quality, or terms.\
-Slice enables platforms to resolve these conflicts quickly and transparently without acting as judge and party.
+Justly enables platforms to resolve these conflicts quickly and transparently without acting as judge and party.
 
 **Core value:** faster resolutions, lower support costs, increased trust between participants.
 
@@ -839,7 +839,7 @@ Slice enables platforms to resolve these conflicts quickly and transparently wit
 ### 2. Freelancer and Contractor Platforms
 
 Disputes over scope, quality, and payments are common in freelance work, especially for small or medium amounts.\
-Slice allows these conflicts to be resolved fairly in hours, and often in minutes under strong juror liquidity, without legal friction or centralized arbitration.
+Justly allows these conflicts to be resolved fairly in hours, and often in minutes under strong juror liquidity, without legal friction or centralized arbitration.
 
 **Core value:** reduced friction, faster payouts, higher user retention.
 
@@ -848,7 +848,7 @@ Slice allows these conflicts to be resolved fairly in hours, and often in minute
 ### 3. Fintechs, Wallets, and Payment Platforms
 
 Payment platforms face frequent disputes related to chargebacks, incorrect transfers, or peer-to-peer disagreements.\
-Slice acts as a neutral dispute layer on top of payment flows, with verifiable and auditable outcomes.
+Justly acts as a neutral dispute layer on top of payment flows, with verifiable and auditable outcomes.
 
 **Core value:** fewer chargebacks, reduced fraud, stronger perception of fairness.
 
@@ -857,7 +857,7 @@ Slice acts as a neutral dispute layer on top of payment flows, with verifiable a
 ### 4. Web3 Platforms and On-chain Protocols
 
 Even in decentralized systems, human disagreements still exist.\
-Slice provides a human arbitration fallback that can trigger on-chain logic when smart contracts alone are not enough.
+Justly provides a human arbitration fallback that can trigger on-chain logic when smart contracts alone are not enough.
 
 **Core value:** increased social security for protocols and better UX for non-technical users.
 
@@ -866,7 +866,7 @@ Slice provides a human arbitration fallback that can trigger on-chain logic when
 ### 5. Micro-insurance and Micro-claims
 
 Traditional insurance systems cannot profitably handle small claims.\
-Slice makes real-time, low-cost evaluation possible through distributed juries and automated execution.
+Justly makes real-time, low-cost evaluation possible through distributed juries and automated execution.
 
 **Core value:** viable micro-insurance models with transparent outcomes.
 
@@ -875,7 +875,7 @@ Slice makes real-time, low-cost evaluation possible through distributed juries a
 ### 6. Content Moderation and Platform Disputes
 
 Centralized moderation often leads to distrust and backlash.\
-Slice enables distributed, rule-based evaluation of moderation decisions with social legitimacy.
+Justly enables distributed, rule-based evaluation of moderation decisions with social legitimacy.
 
 **Core value:** verifiable moderation and reduced perception of censorship.
 
@@ -884,7 +884,7 @@ Slice enables distributed, rule-based evaluation of moderation decisions with so
 ### 7. Code Quality Evaluation and OSS Reward Distribution
 
 Measuring the real value of code contributions is hard, and traditional metrics fail.\
-Slice enables collective evaluation of code quality and impact, aligning rewards, merges, and funding with real contribution value.
+Justly enables collective evaluation of code quality and impact, aligning rewards, merges, and funding with real contribution value.
 
 **Core value:** merit-based rewards, better incentive alignment, healthier OSS ecosystems.
 
@@ -894,7 +894,7 @@ Slice enables collective evaluation of code quality and impact, aligning rewards
 
 Governance systems often fail when rules are ambiguous, execution is contested, or outcomes are socially disputed.
 
-Slice acts as a **post-vote and edge-case resolution layer** for DAOs, protocols, and digital communities, providing structured human judgment with enforceable outcomes.
+Justly acts as a **post-vote and edge-case resolution layer** for DAOs, protocols, and digital communities, providing structured human judgment with enforceable outcomes.
 
 **Core value:** legitimate, scalable governance without central authorities.
 
@@ -902,13 +902,13 @@ Slice acts as a **post-vote and edge-case resolution layer** for DAOs, protocols
 
 ### Summary
 
-Slice can be integrated into any system where:
+Justly can be integrated into any system where:
 
 * digital payments exist,
 * low or mid-value disputes are common,
 * speed, fairness, and trust are critical.
 
-Slice is not a vertical product.\
+Justly is not a vertical product.\
 It is **dispute resolution infrastructure for the digital economy**, extensible beyond disputes into broader coordination and quality assessment problems.
 
 
@@ -990,20 +990,20 @@ Without a clear answer:
 
 👉 **Arbitration is what makes escrow work.**
 
-This is exactly the insight Kleros addressed — and what Slice applies in a more modern, fast, and UX-friendly way.
+This is exactly the insight Kleros addressed — and what Justly applies in a more modern, fast, and UX-friendly way.
 
 ***
 
-#### How Slice solves this for marketplaces
+#### How Justly solves this for marketplaces
 
-Slice integrates as an **external dispute resolution layer**.
+Justly integrates as an **external dispute resolution layer**.
 
 A simple flow:
 
 1. The buyer pays → funds are locked in escrow.
 2. The transaction proceeds normally.
 3. If a conflict arises:
-   * either party can open a dispute via Slice.
+   * either party can open a dispute via Justly.
 4. Evidence is submitted:
    * product description,
    * messages,
@@ -1031,7 +1031,7 @@ All of this happens:
 * The client claims: *“the design doesn’t meet the agreed scope”*
 * The designer claims: *“I delivered exactly what was requested”*
 
-With Slice:
+With Justly:
 
 * Both parties submit:
   * the original brief,
@@ -1076,7 +1076,7 @@ Without fair dispute resolution:
 * prices increase to cover risk,
 * or users leave the platform.
 
-With Slice:
+With Justly:
 
 * conflict stops being an existential threat,
 * and becomes a normal, solvable part of the system.
@@ -1085,7 +1085,7 @@ With Slice:
 
 *Most marketplace disputes are typically resolved using **Tier 1 or Tier 2**, depending on transaction value and platform risk tolerance.*
 
-→See how disputes are categorized in [dispute-tiers](https://docs.slicehub.xyz/how-it-works/what-is-a-tier/dispute-tiers "mention")
+→See how disputes are categorized in [dispute-tiers](https://docs.justly.one/how-it-works/what-is-a-tier/dispute-tiers "mention")
 
 
 # Freelancer and Contractor Platforms
@@ -1162,13 +1162,13 @@ Without a clear, fair way to answer this:
 * disputes escalate emotionally.
 
 👉 **Human judgment is unavoidable in creative and knowledge work.**\
-Slice provides a structured way to apply it.
+Justly provides a structured way to apply it.
 
 ***
 
-#### How Slice resolves disputes for freelancer platforms
+#### How Justly resolves disputes for freelancer platforms
 
-Slice integrates as a **neutral, external arbitration layer**.
+Justly integrates as a **neutral, external arbitration layer**.
 
 A typical flow:
 
@@ -1199,7 +1199,7 @@ The platform:
 * Client claims: *“the feature doesn’t meet requirements”*
 * Developer claims: *“the requirements changed after delivery”*
 
-With Slice:
+With Justly:
 
 * Both submit:
   * the original specification,
@@ -1244,7 +1244,7 @@ Without fair dispute resolution:
 * clients hesitate to prepay,
 * the platform’s reputation suffers.
 
-With Slice:
+With Justly:
 
 * disputes stop being platform-breaking events,
 * and become a manageable, trust-preserving process.
@@ -1253,7 +1253,7 @@ With Slice:
 
 *Disputes between freelancers and clients are commonly handled through **Tier 2 or Tier 3**, balancing cost efficiency with stronger economic guarantees.*
 
-→See how disputes are categorized in [dispute-tiers](https://docs.slicehub.xyz/how-it-works/what-is-a-tier/dispute-tiers "mention")
+→See how disputes are categorized in [dispute-tiers](https://docs.justly.one/how-it-works/what-is-a-tier/dispute-tiers "mention")
 
 
 # Fintechs, Wallets, and Payment Platforms
@@ -1326,9 +1326,9 @@ Traditional chargeback systems:
 
 ***
 
-#### How Slice fits into fintech and payment flows
+#### How Justly fits into fintech and payment flows
 
-Slice integrates as a **neutral dispute resolution layer on top of payment rails**.
+Justly integrates as a **neutral dispute resolution layer on top of payment rails**.
 
 A typical flow:
 
@@ -1342,7 +1342,7 @@ A typical flow:
 5. A ruling is reached based on predefined criteria.
 6. Funds are released, refunded, or reassigned automatically.
 
-Slice operates:
+Justly operates:
 
 * independently from the platform,
 * transparently and on-chain,
@@ -1358,7 +1358,7 @@ Slice operates:
 * Sender claims: *“I paid for a service that was never delivered”*
 * Receiver claims: *“The service was provided as agreed”*
 
-With Slice:
+With Justly:
 
 * Both parties submit:
   * payment proof,
@@ -1403,7 +1403,7 @@ Without effective dispute resolution:
 * user trust declines,
 * platforms become bottlenecks.
 
-With Slice:
+With Justly:
 
 * disputes become structured and manageable,
 * trust scales with transaction volume,
@@ -1413,7 +1413,7 @@ With Slice:
 
 *Payment-related disputes are usually resolved using **Tier 1 or Tier 2**, prioritizing speed and predictable resolution times.*
 
-→See how disputes are categorized in [dispute-tiers](https://docs.slicehub.xyz/how-it-works/what-is-a-tier/dispute-tiers "mention")
+→See how disputes are categorized in [dispute-tiers](https://docs.justly.one/how-it-works/what-is-a-tier/dispute-tiers "mention")
 
 
 # Web3 Platforms and On-chain Protocols
@@ -1494,9 +1494,9 @@ Dispute resolution is the missing primitive:
 
 ***
 
-#### How Slice integrates with Web3 protocols
+#### How Justly integrates with Web3 protocols
 
-Slice functions as a **protocol-agnostic dispute resolution layer**.
+Justly functions as a **protocol-agnostic dispute resolution layer**.
 
 It can be plugged into:
 
@@ -1509,7 +1509,7 @@ It can be plugged into:
 A typical on-chain flow:
 
 1. A smart contract flags a transaction or state as disputed.
-2. The dispute is registered on Slice.
+2. The dispute is registered on Justly.
 3. Parties submit evidence (on-chain + off-chain references).
 4. Independent jurors are selected.
 5. Jurors evaluate according to protocol-defined rules.
@@ -1525,7 +1525,7 @@ No admins. No emergency keys. No social enforcement.
 * A DAO allocates 50,000 USDC to a contributor.
 * Community members dispute that milestones were not met.
 * Funds are escrowed in a smart contract.
-* Slice is triggered as the dispute resolver.
+* Justly is triggered as the dispute resolver.
 
 Jurors evaluate:
 
@@ -1589,7 +1589,7 @@ Protocols with it:
 Web3 doesn’t fail because smart contracts are weak.\
 It fails when **human disputes have nowhere to go**.
 
-Slice provides:
+Justly provides:
 
 * neutral judgment,
 * on-chain enforceability,
@@ -1599,7 +1599,7 @@ Slice provides:
 
 *Protocol-level disputes often leverage **Tier 2 or Tier 3**, depending on the value locked and the social impact of the decision.*
 
-→See how disputes are categorized in [dispute-tiers](https://docs.slicehub.xyz/how-it-works/what-is-a-tier/dispute-tiers "mention")
+→See how disputes are categorized in [dispute-tiers](https://docs.justly.one/how-it-works/what-is-a-tier/dispute-tiers "mention")
 
 
 # Micro-insurance and Micro-claims
@@ -1673,7 +1673,7 @@ This creates a toxic loop:
 Micro-insurance doesn’t need **perfect accuracy**.\
 It needs **fair, explainable decisions at low cost**.
 
-Slice introduces a middle layer between:
+Justly introduces a middle layer between:
 
 * fully automated payouts, and
 * expensive human adjusters.
@@ -1686,15 +1686,15 @@ A layer where:
 
 ***
 
-#### How Slice fits into micro-insurance systems
+#### How Justly fits into micro-insurance systems
 
-Slice acts as an **on-demand dispute resolver**.
+Justly acts as an **on-demand dispute resolver**.
 
 Typical flow:
 
 1. A claim is submitted.
 2. The system auto-processes it.
-3. If the claim is disputed, it is escalated to Slice.
+3. If the claim is disputed, it is escalated to Justly.
 4. Evidence is submitted (photos, receipts, timestamps, sensor data).
 5. Independent jurors review the case.
 6. A ruling is issued.
@@ -1714,7 +1714,7 @@ No black-box decisions.
 
 Instead of rejecting it:
 
-* The dispute is sent to Slice.
+* The dispute is sent to Justly.
 * The user submits photos and delivery timestamps.
 * Jurors evaluate whether the damage matches transit issues.
 * The ruling:
@@ -1732,7 +1732,7 @@ The result is enforced automatically.
 * Sensors report borderline data.
 * The claim is disputed due to conflicting sources.
 
-Slice allows:
+Justly allows:
 
 * evidence from multiple oracles,
 * local context evaluation,
@@ -1777,7 +1777,7 @@ Big insurance can afford:
 
 Micro-insurance can’t.
 
-Slice enables:
+Justly enables:
 
 * **low-cost justice for low-value claims**,
 * without sacrificing fairness or decentralization.
@@ -1789,7 +1789,7 @@ Slice enables:
 Micro-insurance fails when disputes are ignored.\
 It scales when disputes are **cheap, fair, and enforceable**.
 
-Slice makes micro-claims:
+Justly makes micro-claims:
 
 * economically viable,
 * socially fair,
@@ -1799,7 +1799,7 @@ Slice makes micro-claims:
 
 *Micro-claims are typically resolved using **Tier 1**, enabling fast and cost-effective evaluations that would be impractical in traditional insurance systems.*
 
-→See how disputes are categorized in [dispute-tiers](https://docs.slicehub.xyz/how-it-works/what-is-a-tier/dispute-tiers "mention")
+→See how disputes are categorized in [dispute-tiers](https://docs.justly.one/how-it-works/what-is-a-tier/dispute-tiers "mention")
 
 
 # Content Moderation and Platform Disputes
@@ -1903,27 +1903,27 @@ Platforms need a **third layer**.
 
 #### The missing layer: neutral, scalable adjudication
 
-This is where Slice fits naturally.
+This is where Justly fits naturally.
 
-Slice provides:
+Justly provides:
 
 * independent dispute resolution,
 * transparent decision-making,
 * human judgment without centralized power,
 * enforceable outcomes.
 
-Not every moderation decision goes to Slice —\
+Not every moderation decision goes to Justly —\
 only **contested or high-impact cases**.
 
 ***
 
-#### How Slice integrates with moderation systems
+#### How Justly integrates with moderation systems
 
 Typical flow:
 
 1. Content is flagged or moderated.
 2. A user disputes the decision.
-3. The case is escalated to Slice.
+3. The case is escalated to Justly.
 4. Evidence is submitted:
    * platform rules,
    * content context,
@@ -1943,7 +1943,7 @@ The platform no longer acts as the final authority.
 * The creator claims fair use and educational intent.
 * The platform’s automated system rejects the appeal.
 
-With Slice:
+With Justly:
 
 * the creator submits context and references,
 * jurors evaluate intent, rules, and proportionality,
@@ -1961,7 +1961,7 @@ The decision is transparent and auditable.
 * A proposal is removed for being “spam” or “off-topic”.
 * The proposer disputes political or personal bias.
 
-Slice enables:
+Justly enables:
 
 * neutral evaluation by jurors,
 * rule-based judgments,
@@ -1997,7 +1997,7 @@ This is especially critical for:
 Rules alone don’t create trust.\
 **Legitimate enforcement does.**
 
-Slice transforms moderation from:
+Justly transforms moderation from:
 
 * opaque authority → transparent process,
 * centralized power → distributed judgment.
@@ -2012,7 +2012,7 @@ Content moderation fails when:
 * decisions feel arbitrary,
 * appeals go nowhere.
 
-Slice ensures that:
+Justly ensures that:
 
 * moderation remains scalable,
 * disputes remain resolvable,
@@ -2022,7 +2022,7 @@ Slice ensures that:
 
 *Moderation-related disputes are commonly suited for **Tier 1 or Tier 2**, where rapid resolution and consistent enforcement are critical.*
 
-→See how disputes are categorized in [dispute-tiers](https://docs.slicehub.xyz/how-it-works/what-is-a-tier/dispute-tiers "mention")
+→See how disputes are categorized in [dispute-tiers](https://docs.justly.one/how-it-works/what-is-a-tier/dispute-tiers "mention")
 
 
 # Code Quality Evaluation and OSS Reward Distribution
@@ -2127,7 +2127,7 @@ But centralized human judgment does not scale either.
 
 #### The missing layer: decentralized, incentivized code evaluation
 
-Slice introduces a new primitive:\
+Justly introduces a new primitive:\
 **distributed human evaluation with economic incentives**.
 
 Instead of:
@@ -2135,7 +2135,7 @@ Instead of:
 * one maintainer deciding,
 * or a black-box AI scoring,
 
-Slice uses:
+Justly uses:
 
 * multiple independent reviewers,
 * clear evaluation criteria,
@@ -2143,7 +2143,7 @@ Slice uses:
 
 ***
 
-#### How Slice works for code evaluation
+#### How Justly works for code evaluation
 
 Typical flow:
 
@@ -2176,7 +2176,7 @@ Poor or dishonest evaluations are economically penalized.
 * An AI reviewer gives it a high score.
 * Maintainers feel unsure about edge cases and security assumptions.
 
-With Slice:
+With Justly:
 
 * Jurors with relevant expertise review the contract.
 * They evaluate:
@@ -2200,13 +2200,13 @@ This avoids:
 An OSS platform has a fixed monthly reward pool.\
 Multiple contributors submit PRs of varying quality.
 
-Without Slice:
+Without Justly:
 
 * rewards are distributed arbitrarily,
 * maintainers decide behind closed doors,
 * contributors feel underpaid or ignored.
 
-With Slice:
+With Justly:
 
 * each merged PR is scored by jurors,
 * rewards scale with contribution quality,
@@ -2277,7 +2277,7 @@ Open-source fails when:
 * evaluation is opaque,
 * incentives are misaligned.
 
-Slice transforms code evaluation into:
+Justly transforms code evaluation into:
 
 * a transparent process,
 * backed by economic accountability,
@@ -2287,7 +2287,7 @@ Slice transforms code evaluation into:
 
 *Code quality evaluation is expected to leverage **rating-based disputes** and may utilize **Tier 2 or higher** to ensure sufficient diversity of judgment.*
 
-→See how disputes are categorized in [dispute-tiers](https://docs.slicehub.xyz/how-it-works/what-is-a-tier/dispute-tiers "mention")
+→See how disputes are categorized in [dispute-tiers](https://docs.justly.one/how-it-works/what-is-a-tier/dispute-tiers "mention")
 
 
 # Governance and Collective Decision-Making
@@ -2296,12 +2296,12 @@ Slice transforms code evaluation into:
 Status: Planned (*Decision disputes with enforceable outcomes*)
 {% endhint %}
 
-Slice is not only useful when disputes arise over payments or services.\
+Justly is not only useful when disputes arise over payments or services.\
 It also applies when **collective decisions break down**.
 
 Governance systems — whether in DAOs, protocols, platforms, or digital communities — are built on rules, votes, and incentives. But real-world governance is messy: not every situation can be resolved by a simple on-chain vote or predefined logic.
 
-Slice acts as a **human arbitration and coordination layer** for governance systems when rules alone are not enough.
+Justly acts as a **human arbitration and coordination layer** for governance systems when rules alone are not enough.
 
 ***
 
@@ -2366,9 +2366,9 @@ Governance systems need a **dispute resolution layer**, just like escrows need a
 
 ***
 
-### How Slice fits into governance systems
+### How Justly fits into governance systems
 
-Slice integrates as a **post-vote and edge-case resolution layer**.
+Justly integrates as a **post-vote and edge-case resolution layer**.
 
 It does not replace:
 
@@ -2386,7 +2386,7 @@ It activates **when those systems fail to produce a clear or accepted outcome**.
    * execution,
    * fairness,
    * or impact.
-3. A dispute is opened in Slice.
+3. A dispute is opened in Justly.
 4. Evidence is submitted:
    * proposal text,
    * voting results,
@@ -2409,7 +2409,7 @@ It activates **when those systems fail to produce a clear or accepted outcome**.
 A DAO approves a proposal to fund a project.\
 After execution, part of the community claims the implementation deviates from what was voted.
 
-Slice allows jurors to evaluate:
+Justly allows jurors to evaluate:
 
 * the original proposal,
 * what was delivered,
@@ -2427,7 +2427,7 @@ Many DAOs struggle with:
 * favoritism,
 * low-quality outcomes.
 
-With Slice:
+With Justly:
 
 * grant recipients can be evaluated post-delivery,
 * jurors assess whether milestones were met,
@@ -2443,7 +2443,7 @@ Changes to fees, limits, or economic parameters often create winners and losers.
 
 When disputes arise:
 
-* Slice can be used to evaluate whether changes violate prior commitments,
+* Justly can be used to evaluate whether changes violate prior commitments,
 * or whether emergency rollbacks are justified.
 
 This reduces emotional governance fights and adds structured resolution.
@@ -2460,14 +2460,14 @@ Disputes may involve:
 * moderation decisions,
 * abuse of governance processes.
 
-Slice provides:
+Justly provides:
 
 * rule-based, auditable evaluation,
 * legitimacy beyond “admin decisions”.
 
 ***
 
-### Why Slice works for governance
+### Why Justly works for governance
 
 * **Neutrality**\
   Jurors are external and economically incentivized to be fair.
@@ -2487,7 +2487,7 @@ Slice provides:
 Governance systems fail not because rules are bad,\
 but because **rules cannot anticipate every situation**.
 
-Slice provides the missing layer:
+Justly provides the missing layer:
 
 > A structured way for humans to resolve disagreements\
 > without central authority\
@@ -2499,19 +2499,19 @@ This makes governance systems **resilient**, not just decentralized.
 
 *Governance disputes may rely on **Tier 3 or Tier 4** to provide stronger legitimacy and resistance to manipulation.*
 
-→See how disputes are categorized in [dispute-tiers](https://docs.slicehub.xyz/how-it-works/what-is-a-tier/dispute-tiers "mention")
+→See how disputes are categorized in [dispute-tiers](https://docs.justly.one/how-it-works/what-is-a-tier/dispute-tiers "mention")
 
 
 # Protocol Guarantees
 
-Slice is designed to provide enforceable, predictable outcomes in environments where trust breaks down.
+Justly is designed to provide enforceable, predictable outcomes in environments where trust breaks down.
 
-Regardless of the dispute type or implementation phase, Slice guarantees:
+Regardless of the dispute type or implementation phase, Justly guarantees:
 
 **1. Neutrality**
 
-* Slice does not interpret evidence.
-* Slice does not influence jurors.
+* Justly does not interpret evidence.
+* Justly does not influence jurors.
 * Outcomes are determined exclusively by independent human judgment.
 
 **2. Incentive Alignment**
@@ -2541,20 +2541,20 @@ Regardless of the dispute type or implementation phase, Slice guarantees:
 
 # Legal & Compliance Considerations
 
-Slice is a neutral dispute resolution infrastructure designed to facilitate human judgment and on-chain execution.\
+Justly is a neutral dispute resolution infrastructure designed to facilitate human judgment and on-chain execution.\
 It is not a court, not a legal arbitrator, and does not provide legal advice.
 
 ***
 
 ### 1. Role of the Protocol
 
-Slice:
+Justly:
 
 * provides tools for human dispute resolution,
 * enforces outcomes programmatically,
 * and operates as neutral infrastructure.
 
-Slice does not:
+Justly does not:
 
 * interpret laws,
 * determine legal liability,
@@ -2564,19 +2564,19 @@ Slice does not:
 
 ### 2. Arbitration vs. Legal Proceedings
 
-Disputes resolved through Slice:
+Disputes resolved through Justly:
 
 * are not court rulings,
 * do not constitute legal judgments,
 * and do not replace formal arbitration unless explicitly agreed by the parties.
 
-Slice enables **contractual dispute resolution**, not statutory enforcement.
+Justly enables **contractual dispute resolution**, not statutory enforcement.
 
 ***
 
 ### 3. Jurisdiction and Governing Rules
 
-Slice operates as a decentralized protocol.
+Justly operates as a decentralized protocol.
 
 Disputes are governed by **protocol-defined rules and smart contract logic**, which act as the primary source of authority for resolution and execution.
 
@@ -2590,9 +2590,9 @@ Jurors:
 
 * act as independent participants,
 * express personal judgment based on provided evidence,
-* and are not agents, employees, or representatives of Slice.
+* and are not agents, employees, or representatives of Justly.
 
-Slice does not endorse, validate, or assume responsibility for individual juror decisions.
+Justly does not endorse, validate, or assume responsibility for individual juror decisions.
 
 ***
 
@@ -2604,7 +2604,7 @@ Compliance requirements:
 * the applicable jurisdiction,
 * and the nature of the underlying transaction.
 
-Slice is designed to integrate with:
+Justly is designed to integrate with:
 
 * identity and verification solutions,
 * KYC/AML providers,
@@ -2616,7 +2616,7 @@ when required by integrators or ecosystem rules.
 
 ### 6. Regulatory Scope
 
-Slice does not:
+Justly does not:
 
 * custody user funds beyond protocol execution,
 * provide financial or legal advice,
@@ -2624,14 +2624,14 @@ Slice does not:
 
 Responsibility for regulatory compliance remains with:
 
-* platforms integrating Slice,
+* platforms integrating Justly,
 * or users deploying it in regulated environments.
 
 ***
 
 ### 7. User Responsibility and “As-Is” Disclaimer
 
-Slice is provided on an **“as-is”** basis.
+Justly is provided on an **“as-is”** basis.
 
 Outcomes result from:
 
@@ -2640,7 +2640,7 @@ Outcomes result from:
 
 Users and integrators are responsible for:
 
-* assessing whether Slice is appropriate for their use case,
+* assessing whether Justly is appropriate for their use case,
 * understanding the economic and operational risks involved,
 * and determining how dispute outcomes should be interpreted within their own legal or business context.
 
@@ -2663,11 +2663,11 @@ This transparency supports:
 
 # Current Implementation
 
-The following section describes the scope of the current MVP implementation. Other sections of the documentation describe the full Slice protocol design beyond the current implementation.
+The following section describes the scope of the current MVP implementation. Other sections of the documentation describe the full Justly protocol design beyond the current implementation.
 
 #### Scope
 
-The current implementation focuses on validating the core mechanics of Slice:
+The current implementation focuses on validating the core mechanics of Justly:
 
 * Human juries
 * Economic incentives based on game theory
@@ -2733,7 +2733,7 @@ Roadmap priority: add appeal rounds as a first-class escalation mechanism.
 
 #### Matchmaking
 
-Slice uses coordination mechanisms to improve liveness and operational reliability. This coordination is designed to:
+Justly uses coordination mechanisms to improve liveness and operational reliability. This coordination is designed to:
 
 * reduce stalled or abandoned disputes,
 * improve timing predictability for platforms and users,
@@ -2757,7 +2757,7 @@ Longer windows remain in place as safety buffers for periods of lower participat
 
 #### Tiers
 
-Roadmap: Slice introduces standardized dispute tiers.
+Roadmap: Justly introduces standardized dispute tiers.
 
 Current implementation: disputes are configured through courts/categories and dispute parameters.
 
@@ -2793,7 +2793,7 @@ The following features are **not included** in the current implementation:
 * Rating or decision-based disputes
 * Automatic reveal via Shutter API integration
 
-These features are part of the Slice protocol design and will be introduced in future phases.
+These features are part of the Justly protocol design and will be introduced in future phases.
 
 ***
 
@@ -2805,12 +2805,12 @@ The current implementation prioritizes:
 * reliability
 * and enforceable outcomes over subjective mediation.
 
-This approach allows Slice to validate its core assumptions while preserving a clear path toward progressive decentralization and additional dispute types.
+This approach allows Justly to validate its core assumptions while preserving a clear path toward progressive decentralization and additional dispute types.
 
 
 # What is a Tier
 
-A **tier** defines the **security level, cost, and robustness** of a dispute in Slice.
+A **tier** defines the **security level, cost, and robustness** of a dispute in Justly.
 
 In the current implementation, the same goals are achieved through configurable courts/categories.
 Standardized tier profiles are part of the protocol roadmap.
@@ -2883,7 +2883,7 @@ In the current implementation:
 * all disputes within the same tier follow exactly the same rules,
 * and outcomes are executed automatically and verifiably on-chain.
 
-This design ensures predictable behavior for both individual users and platforms integrating Slice.
+This design ensures predictable behavior for both individual users and platforms integrating Justly.
 
 
 # Dispute Tiers
@@ -2924,7 +2924,7 @@ Each tier defines a fixed set of parameters that determine the **security level*
 
 # Dispute Lifecycle
 
-Every dispute in Slice follows a deterministic, transparent lifecycle designed to ensure fairness, incentive alignment, and automatic execution.
+Every dispute in Justly follows a deterministic, transparent lifecycle designed to ensure fairness, incentive alignment, and automatic execution.
 
 While specific parameters may vary depending on the tier or dispute type, the overall structure of the process remains consistent across the protocol.
 
@@ -3033,13 +3033,13 @@ This includes:
 
 In the current implementation, dispute outcomes are final once executed.
 
-Appeals are central to Slice's long-term security model and are one of the most urgent roadmap priorities.
+Appeals are central to Justly's long-term security model and are one of the most urgent roadmap priorities.
 Future iterations will introduce structured appeal rounds and additional resolution layers.
 
 
 # Jurors
 
-Jurors are independent human participants responsible for resolving disputes in Slice.
+Jurors are independent human participants responsible for resolving disputes in Justly.
 
 They act as neutral decision-makers, evaluating evidence and casting votes according to their honest judgment.\
 The protocol is designed so that jurors are economically incentivized to vote coherently and independently.
@@ -3116,7 +3116,7 @@ Jurors do not have discretionary power beyond their individual vote.
 
 #### Jurors in the Ecosystem
 
-Jurors are a core component of the Slice ecosystem.
+Jurors are a core component of the Justly ecosystem.
 
 By participating in disputes, jurors:
 
@@ -3130,11 +3130,11 @@ The protocol is designed to scale the juror pool over time while preserving neut
 # Voting and Incentives
 
 {% hint style="info" %}
-This section describes how voting and economic incentives operate in practice within Slice.\
+This section describes how voting and economic incentives operate in practice within Justly.\
 For the theoretical rationale behind these mechanisms, see Security & Game Theory.
 {% endhint %}
 
-Slice uses an incentive-driven voting system designed to align honest human judgment with economic outcomes.
+Justly uses an incentive-driven voting system designed to align honest human judgment with economic outcomes.
 
 The protocol does not attempt to determine truth algorithmically.\
 Instead, it relies on structured human voting combined with economic incentives to converge toward fair and reliable decisions.
@@ -3151,7 +3151,7 @@ Staking aligns incentives by creating meaningful upside for coherent decisions a
 
 #### Commit–Reveal Voting
 
-Slice uses a **commit–reveal** voting scheme to protect the integrity of the voting process.
+Justly uses a **commit–reveal** voting scheme to protect the integrity of the voting process.
 
 Roadmap: integrate Shutter's API for encrypted commit–reveal with automatic reveal to reduce juror UX friction and improve liveness.
 
@@ -3249,7 +3249,7 @@ This ensures:
 
 # Dispute Types
 
-Slice supports multiple types of human judgment, depending on the nature of the conflict or evaluation being performed.
+Justly supports multiple types of human judgment, depending on the nature of the conflict or evaluation being performed.
 
 Each dispute type defines:
 
@@ -3328,7 +3328,7 @@ Some dispute types may support additional evaluation rounds under stricter condi
 
 ### Extensibility
 
-Slice is designed as a modular protocol.
+Justly is designed as a modular protocol.
 
 Additional dispute types and variations can be introduced over time without changing the core execution or incentive model.
 
@@ -3339,7 +3339,7 @@ Not all conflicts require the same kind of resolution.
 
 Some involve two opposing parties, competing claims, and a need for a clear, enforceable outcome.
 
-**Adversarial disputes** are Slice’s core dispute primitive, designed to resolve these situations through neutral human judgment and on-chain execution.
+**Adversarial disputes** are Justly’s core dispute primitive, designed to resolve these situations through neutral human judgment and on-chain execution.
 
 ***
 
@@ -3439,7 +3439,7 @@ Current live contracts finalize in a single executed round. The next phase intro
 
 An appeal represents a request for a new evaluation under stricter conditions.
 
-Slice uses a **funding-based appeal model**:
+Justly uses a **funding-based appeal model**:
 
 * Only the appealing party is required to pay the cost to open a new round.
 * The non-appealing party may choose to match the stake in order to participate in the appeal round.
@@ -3459,14 +3459,14 @@ Appeal rounds may involve:
 
 ### Guarantees
 
-Adversarial disputes in Slice provide:
+Adversarial disputes in Justly provide:
 
 * **Neutrality**: jurors are independent and randomly assigned.
 * **Economic alignment**: incentives reward coherent voting.
 * **Deterministic execution**: outcomes are enforced by smart contracts.
 * **Predictable structure**: all rules are defined upfront by the protocol.
 
-Slice does not interpret evidence, influence jurors, or intervene in outcomes.
+Justly does not interpret evidence, influence jurors, or intervene in outcomes.
 
 ***
 
@@ -3474,7 +3474,7 @@ Slice does not interpret evidence, influence jurors, or intervene in outcomes.
 
 **Live (Current Implementation)**
 
-Adversarial disputes are the primary dispute type supported in the current version of Slice.
+Adversarial disputes are the primary dispute type supported in the current version of Justly.
 
 
 # Decision Dispute
@@ -3610,14 +3610,14 @@ All steps follow predefined rules enforced by smart contracts.
 
 ### Guarantees
 
-Decision disputes in Slice provide:
+Decision disputes in Justly provide:
 
 * **Impartial evaluation**: proposers do not influence voting.
 * **Economic discipline**: bonds discourage malformed proposals.
 * **Transparent execution**: outcomes are enforced on-chain.
 * **Predictable structure**: decision rules are defined upfront.
 
-Slice does not interpret proposals or intervene in decisions.
+Justly does not interpret proposals or intervene in decisions.
 
 ***
 
@@ -3634,7 +3634,7 @@ Not all judgments are about determining a winner.
 
 Some problems require **measuring quality, performance, or contribution** rather than resolving a conflict.
 
-**Rating Evaluation** is Slice’s primitive for these cases: a structured, incentive-aligned system for collective human evaluation.
+**Rating Evaluation** is Justly’s primitive for these cases: a structured, incentive-aligned system for collective human evaluation.
 
 ***
 
@@ -3759,14 +3759,14 @@ All steps follow predefined rules enforced by smart contracts.
 
 ### Guarantees
 
-Rating Evaluation in Slice provides:
+Rating Evaluation in Justly provides:
 
 * **Robust aggregation**: resistance to outliers through median-based methods.
 * **Incentive alignment**: partial slashing discourages manipulation.
 * **Flexibility**: applicable across multiple evaluation domains.
 * **Deterministic execution**: results enforced or recorded on-chain.
 
-Slice does not define what “quality” means; it enforces how collective judgment is aggregated and incentivized.
+Justly does not define what “quality” means; it enforces how collective judgment is aggregated and incentivized.
 
 Here is the translation of that section into English, maintaining the technical and formal tone of the original documentation.
 
@@ -3774,7 +3774,7 @@ Here is the translation of that section into English, maintaining the technical 
 
 #### Reward Calculation
 
-To ensure the system is both fair and resistant to manipulation, Slice utilizes a linear loss function based on distance. Each juror's reward multiplier is determined by comparing their individual rating to the final aggregated result (the median).
+To ensure the system is both fair and resistant to manipulation, Justly utilizes a linear loss function based on distance. Each juror's reward multiplier is determined by comparing their individual rating to the final aggregated result (the median).
 
 The applied formula is:
 
@@ -3810,9 +3810,9 @@ Rating Evaluation is part of the core protocol design and will be introduced in 
 
 # Frequently Asked Questions
 
-This page answers common questions about Slice, how it works, and what guarantees it provides.
+This page answers common questions about Justly, how it works, and what guarantees it provides.
 
-Everything you need to know about Slice. If you happen to have any other questions, feel free to join our Slice Community Telegram group to talk directly you our team. Please check out [Official links](https://docs.idos.network/idos-token-launch/official-links).
+Everything you need to know about Justly. If you happen to have any other questions, feel free to join our Justly Community Telegram group to talk directly you our team. Please check out [Official links](https://docs.idos.network/idos-token-launch/official-links).
 
 ### General
 
@@ -3820,7 +3820,7 @@ Everything you need to know about Slice. If you happen to have any other questio
 
 <summary>Can you really trust a decision made by anonymous jurors?</summary>
 
-Slice extends the same incentive logic used in cryptoeconomic systems to human judgment.
+Justly extends the same incentive logic used in cryptoeconomic systems to human judgment.
 
 Jurors are:
 
@@ -3834,9 +3834,9 @@ Because outcomes affect real value, the system is designed so that **dishonest o
 
 <details>
 
-<summary>Is Slice a court or a legal arbitrator?</summary>
+<summary>Is Justly a court or a legal arbitrator?</summary>
 
-No. Slice is **neutral dispute resolution infrastructure**.
+No. Justly is **neutral dispute resolution infrastructure**.
 
 It is not a court and does not provide legal advice. It enforces outcomes based on protocol rules and smart contract execution.
 
@@ -3846,9 +3846,9 @@ It is not a court and does not provide legal advice. It enforces outcomes based 
 
 <details>
 
-<summary>What kinds of disputes is Slice built for?</summary>
+<summary>What kinds of disputes is Justly built for?</summary>
 
-Slice is optimized for **micro-to-medium disputes** in digital platforms, where:
+Justly is optimized for **micro-to-medium disputes** in digital platforms, where:
 
 * disputes are frequent,
 * amounts are not large enough for traditional legal processes,
@@ -3862,13 +3862,13 @@ Examples include marketplaces, freelance platforms, fintech/payment conflicts, g
 
 <details>
 
-<summary>Is Slice only for Stellar?</summary>
+<summary>Is Justly only for Stellar?</summary>
 
-No. Slice is designed to be **chain-agnostic**, although it may prioritize specific ecosystems depending on adoption and integration demand.
+No. Justly is designed to be **chain-agnostic**, although it may prioritize specific ecosystems depending on adoption and integration demand.
 
 </details>
 
-### How Slice Works
+### How Justly Works
 
 <details>
 
@@ -3896,7 +3896,7 @@ Resolution time depends on:
 * evidence/voting windows,
 * and juror availability.
 
-Slice is designed to keep dispute resolution **predictable and reliable**, prioritizing liveness and completion.
+Justly is designed to keep dispute resolution **predictable and reliable**, prioritizing liveness and completion.
 
 (See: *Dispute Lifecycle*)
 
@@ -3920,7 +3920,7 @@ Once the dispute is resolved, the outcome is **executed automatically on-chain**
 
 <summary>Are jurors anonymous?</summary>
 
-Jurors are pseudonymous participants, but Slice can require **Proof-of-Humanity (PoH)** to prevent sybil attacks.
+Jurors are pseudonymous participants, but Justly can require **Proof-of-Humanity (PoH)** to prevent sybil attacks.
 
 This means jurors can remain private while still proving they are unique humans.
 
@@ -3966,7 +3966,7 @@ Non-participation can result in:
 
 <details>
 
-<summary>Can someone “whale” attack Slice by staking a lot?</summary>
+<summary>Can someone “whale” attack Justly by staking a lot?</summary>
 
 Stakes affect:
 
@@ -3999,7 +3999,7 @@ Because jurors are not known in advance, targeted bribery becomes harder, and di
 
 <summary>What prevents sybil attacks?</summary>
 
-Slice mitigates sybil attacks through:
+Justly mitigates sybil attacks through:
 
 * **Proof-of-Humanity (PoH)** eligibility,
 * randomized juror assignment,
@@ -4011,9 +4011,9 @@ Slice mitigates sybil attacks through:
 
 <details>
 
-<summary>Can Slice be fully trustless if matchmaking uses a backend?</summary>
+<summary>Can Justly be fully trustless if matchmaking uses a backend?</summary>
 
-Slice can use **backend-assisted matchmaking** to ensure disputes reach the required number of jurors and resolve reliably.
+Justly can use **backend-assisted matchmaking** to ensure disputes reach the required number of jurors and resolve reliably.
 
 The backend:
 
@@ -4022,7 +4022,7 @@ The backend:
 
 All rulings and transfers are enforced by smart contracts.
 
-In the long-term, Slice can support multiple modes such as “Turbo” (assisted) and “Pure Randomness” (fully on-chain randomness).
+In the long-term, Justly can support multiple modes such as “Turbo” (assisted) and “Pure Randomness” (fully on-chain randomness).
 
 (See: *Security Model)*
 
@@ -4032,9 +4032,9 @@ In the long-term, Slice can support multiple modes such as “Turbo” (assisted
 
 <details>
 
-<summary>Does Slice support appeals?</summary>
+<summary>Does Justly support appeals?</summary>
 
-Appeals are part of Slice’s protocol design and may be enabled depending on dispute type and implementation phase.
+Appeals are part of Justly’s protocol design and may be enabled depending on dispute type and implementation phase.
 
 In adversarial disputes, appeal rounds can be opened under stricter conditions to increase robustness and security.
 
@@ -4044,7 +4044,7 @@ In adversarial disputes, appeal rounds can be opened under stricter conditions t
 
 <summary>How are appeals funded?</summary>
 
-In adversarial disputes, Slice follows a funding model where:
+In adversarial disputes, Justly follows a funding model where:
 
 * the appellant pays the cost to open a new round,
 * while the non-appellant may optionally “match” to preserve upside.
@@ -4059,19 +4059,19 @@ This discourages frivolous appeals while keeping escalation possible when needed
 
 <details>
 
-<summary>Do users need to hold a specific token to use Slice?</summary>
+<summary>Do users need to hold a specific token to use Justly?</summary>
 
 No. Regular users (claimer/defender) do not need to hold a protocol token.
 
-Slice is designed to work with **standard assets (e.g., stablecoins)** used for stakes and payouts.
+Justly is designed to work with **standard assets (e.g., stablecoins)** used for stakes and payouts.
 
 </details>
 
 <details>
 
-<summary>Do I need the SDK to integrate Slice?</summary>
+<summary>Do I need the SDK to integrate Justly?</summary>
 
-Not necessarily. Slice can be integrated through direct contract interaction and integration guidelines.
+Not necessarily. Justly can be integrated through direct contract interaction and integration guidelines.
 
 The SDK is planned to simplify and standardize integrations over time.
 
@@ -4081,11 +4081,11 @@ The SDK is planned to simplify and standardize integrations over time.
 
 <details>
 
-<summary>Who is responsible for compliance when integrating Slice?</summary>
+<summary>Who is responsible for compliance when integrating Justly?</summary>
 
 Compliance depends on the integrating platform, jurisdiction, and transaction type.
 
-Slice is neutral infrastructure and can be combined with identity/KYC/AML solutions when required.
+Justly is neutral infrastructure and can be combined with identity/KYC/AML solutions when required.
 
 (See: *Legal & Compliance Considerations*)
 
@@ -4097,14 +4097,14 @@ Slice is neutral infrastructure and can be combined with identity/KYC/AML soluti
 
 <summary>Who is responsible if a verdict causes economic loss?</summary>
 
-Slice is provided “as-is”.
+Justly is provided “as-is”.
 
 Outcomes result from:
 
 * independent human judgment,
 * and protocol-defined rules executed on-chain.
 
-Users and integrators are responsible for determining whether Slice is appropriate for their use case and risk tolerance.
+Users and integrators are responsible for determining whether Justly is appropriate for their use case and risk tolerance.
 
 (See: *Legal & Compliance Considerations*)
 
@@ -4112,9 +4112,9 @@ Users and integrators are responsible for determining whether Slice is appropria
 
 <details>
 
-<summary>Are Slice rulings legally binding?</summary>
+<summary>Are Justly rulings legally binding?</summary>
 
-Slice outcomes are **programmatically binding** because parties opt into on-chain enforcement.
+Justly outcomes are **programmatically binding** because parties opt into on-chain enforcement.
 
 They are not court rulings and do not automatically constitute legal judgments unless an integrator explicitly frames them within a legal agreement at the application layer.
 

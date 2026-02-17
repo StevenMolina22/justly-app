@@ -136,7 +136,7 @@ export default function JurorAssignedPage() {
 
           {/* Trust Footer */}
           <p className="mt-8 text-[10px] font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
-            <ShieldCheck className="w-3 h-3" /> Secured by Slice Protocol
+            <ShieldCheck className="w-3 h-3" /> Secured by Justly Protocol
           </p>
         </div>
       </div>

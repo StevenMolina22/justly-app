@@ -75,7 +75,7 @@ const ConnectButton = () => {
             {/* Dot removed per request */}
 
             <span className="font-manrope font-bold tracking-tight text-sm">
-              My Profile
+              Account
             </span>
             <User size={16} className="text-gray-600" />
           </Button>

@@ -118,7 +118,7 @@ export default function DebugPage() {
         const jurorsData = (await publicClient.readContract({
           address: sliceContract,
           abi: SLICE_ABI,
-          functionName: "getJurors", // Standard Slice getter
+          functionName: "getJurors", // Standard protocol getter
           args: [BigInt(targetId)],
         })) as string[];
         jurors = jurorsData;
