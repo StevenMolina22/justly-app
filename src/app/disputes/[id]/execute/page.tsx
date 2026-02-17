@@ -42,6 +42,10 @@ export default function ExecuteRulingPage() {
     isLoading: isFinanceLoading,
   } = useDisputeFinancials(disputeId, isReadyForExecution || isFinished);
 
+  const hasWinnerResult = isWinner !== null;
+  const didWin = isWinner === true;
+  const didLose = isWinner === false;
+
   const [showSuccess, setShowSuccess] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -105,11 +109,15 @@ export default function ExecuteRulingPage() {
                   isFinanceLoading
                     ? "bg-gray-100"
                     : isReadyForExecution
-                      ? isWinner
+                      ? !hasWinnerResult
+                        ? "bg-gray-100"
+                        : didWin
                         ? "bg-[#8c8fff]/10"
                         : "bg-orange-50"
                       : isFinished
-                        ? isWinner
+                        ? !hasWinnerResult
+                          ? "bg-gray-100"
+                          : didWin
                           ? "bg-[#8c8fff]/10"
                           : "bg-red-50"
                         : "bg-gray-100"
@@ -118,7 +126,9 @@ export default function ExecuteRulingPage() {
                 {isFinanceLoading ? (
                   <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
                 ) : isReadyForExecution || isFinished ? (
-                  isWinner ? (
+                  !hasWinnerResult ? (
+                    <Gavel className="w-10 h-10 text-gray-400" />
+                  ) : didWin ? (
                     <Wallet className="w-10 h-10 text-[#8c8fff]" />
                   ) : (
                     <AlertCircle className="w-10 h-10 text-orange-400" />
@@ -139,11 +149,15 @@ export default function ExecuteRulingPage() {
               {isFinanceLoading
                 ? "Calculating results..."
                 : isFinished
-                  ? isWinner
+                  ? !hasWinnerResult
+                    ? "Finalizing your result..."
+                    : didWin
                     ? "You voted with the majority. Your rewards have been added to your profile."
                     : "The majority voted differently. You will not receive a reward for this dispute."
                   : isReadyForExecution
-                    ? isWinner
+                    ? !hasWinnerResult
+                      ? "Finalizing your result..."
+                      : didWin
                       ? "You voted with the majority! Execute to claim your rewards."
                       : "You voted with the minority. Execute to finalize the dispute."
                     : "Execute the ruling to finalize the dispute and see your results."}
@@ -180,19 +194,19 @@ export default function ExecuteRulingPage() {
                   value={`${principal} ${currency}`}
                   icon={
                     <div
-                      className={`w-1.5 h-1.5 rounded-full ${isWinner ? "bg-gray-300" : "bg-red-300"}`}
+                      className={`w-1.5 h-1.5 rounded-full ${didWin ? "bg-gray-300" : didLose ? "bg-red-300" : "bg-gray-200"}`}
                     />
                   }
-                  strikethrough={!isWinner}
+                  strikethrough={didLose}
                 />
 
                 <RewardRow
                   label="Arbitration Reward"
-                  value={`${isWinner ? "+" : ""}${reward} ${currency}`}
-                  isHighlight={isWinner}
+                  value={`${didWin ? "+" : ""}${reward} ${currency}`}
+                  isHighlight={didWin}
                   icon={
                     <div
-                      className={`w-1.5 h-1.5 rounded-full ${isWinner ? "bg-[#8c8fff]" : "bg-gray-200"}`}
+                      className={`w-1.5 h-1.5 rounded-full ${didWin ? "bg-[#8c8fff]" : "bg-gray-200"}`}
                     />
                   }
                 />
@@ -214,7 +228,7 @@ export default function ExecuteRulingPage() {
                 </span>
               </div>
               <span
-                className={`text-xl font-extrabold ${isFinanceLoading ? "text-gray-300" : isReadyForExecution || isFinished ? (isWinner ? "text-[#1b1c23]" : "text-gray-300") : "text-gray-300"}`}
+                className={`text-xl font-extrabold ${isFinanceLoading ? "text-gray-300" : isReadyForExecution || isFinished ? (didWin ? "text-[#1b1c23]" : "text-gray-300") : "text-gray-300"}`}
               >
                 {isFinanceLoading
                   ? "..."

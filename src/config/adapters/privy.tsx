@@ -8,7 +8,9 @@ import { activeChains, transports, defaultChain } from "@/config/chains";
 import { injected } from "wagmi/connectors";
 import { AuthStrategyProvider } from "@/contexts/AuthStrategyContext";
 import { PRIVY_APP_ID, PRIVY_CLIENT_ID } from "@/config/app";
-import { ReactNode } from "react";
+import { ReactNode, useCallback, useEffect } from "react";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { toast } from "sonner";
 
 export const privyConfig = createConfig({
   chains: activeChains,
@@ -53,12 +55,39 @@ export function PrivyProviderTree({
 // Export Auth Adapter
 export function PrivyAuthAdapter({ children }: { children: ReactNode }) {
   const { login, logout, authenticated } = usePrivy();
+  const { isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
+
+  const ensureDefaultChain = useCallback(async () => {
+    if (!isConnected || chainId === defaultChain.id) {
+      return;
+    }
+
+    try {
+      await switchChainAsync({ chainId: defaultChain.id });
+    } catch (error) {
+      console.error("Failed to switch chain", error);
+      toast.error(`Wrong network. Switch to ${defaultChain.name}.`);
+    }
+  }, [chainId, isConnected, switchChainAsync]);
+
+  useEffect(() => {
+    if (!authenticated) {
+      return;
+    }
+
+    void ensureDefaultChain();
+  }, [authenticated, ensureDefaultChain]);
 
   return (
     <AuthStrategyProvider
       value={{
         isAuthenticated: authenticated,
-        connect: async () => login(),
+        connect: async () => {
+          await login();
+          await ensureDefaultChain();
+        },
         disconnect: async () => logout(),
       }}
     >

@@ -10,7 +10,7 @@ interface FinancialData {
   reward: string;        // The calculated profit
   total: string;         // Principal + Reward
   currency: string;      // USDC
-  isWinner: boolean;     // Did the user vote with the majority?
+  isWinner: boolean | null; // null until winner state is resolved
   isLoading: boolean;
 }
 
@@ -33,7 +33,7 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
     reward: "0",
     total: "0",
     currency: symbol || "USDC",
-    isWinner: false,
+    isWinner: null,
     isLoading: true,
   });
 
@@ -41,16 +41,21 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
     // 1. Handle the "enabled" check (from develop)
     if (!enabled) {
       if (isMountedRef.current) {
-        setData(prev => ({ ...prev, isLoading: false }));
+        setData((prev) => ({ ...prev, isLoading: false, isWinner: null }));
       }
       return;
     }
 
     if (isMountedRef.current) {
-      setData((prev) => ({ ...prev, isLoading: true }));
+      setData((prev) => ({ ...prev, isLoading: true, isWinner: null }));
     }
 
-    if (!publicClient || !address || !disputeId || !sliceContract) return;
+    if (!publicClient || !address || !disputeId || !sliceContract) {
+      if (isMountedRef.current) {
+        setData((prev) => ({ ...prev, isLoading: false, isWinner: null }));
+      }
+      return;
+    }
 
     try {
       const dId = BigInt(disputeId);
@@ -67,7 +72,7 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
 
       if (myStake === 0n) {
         if (isMountedRef.current) {
-          setData((prev) => ({ ...prev, isLoading: false }));
+          setData((prev) => ({ ...prev, isLoading: false, isWinner: null }));
         }
         return;
       }
@@ -207,7 +212,7 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
     } catch (e) {
       console.error("Failed to calc financials", e);
       if (isMountedRef.current) {
-        setData(prev => ({...prev, isLoading: false}));
+        setData((prev) => ({ ...prev, isLoading: false, isWinner: null }));
       }
     }
   }, [enabled, publicClient, address, disputeId, sliceContract, decimals, symbol]);
