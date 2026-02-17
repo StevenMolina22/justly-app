@@ -46,6 +46,10 @@ export function useDisputeFinancials(disputeId: string, enabled = true) {
       return;
     }
 
+    if (isMountedRef.current) {
+      setData((prev) => ({ ...prev, isLoading: true }));
+    }
+
     if (!publicClient || !address || !disputeId || !sliceContract) return;
 
     try {
