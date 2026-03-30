@@ -1,8 +1,39 @@
-# ⚖️ Slice Protocol Application
+<div align="center">
+  <img src="assets/Slice-logo.png" alt="Slice Protocol" width="120" />
+  <h1>⚖️ Slice Protocol</h1>
+  <p><strong>Real-Time Decentralized Dispute Resolution — Built on Base</strong></p>
+
+  <p>
+    <a href="https://dev.slicehub.xyz"><img src="https://img.shields.io/badge/Testnet-dev.slicehub.xyz-orange?style=for-the-badge&logo=ethereum" alt="Testnet" /></a>
+    <a href="https://app.slicehub.xyz"><img src="https://img.shields.io/badge/Mainnet-app.slicehub.xyz-blue?style=for-the-badge&logo=ethereum" alt="Mainnet" /></a>
+  </p>
+
+  <!-- Tech Stack -->
+  <p>
+    <img src="https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js" />
+    <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React" />
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+    <img src="https://img.shields.io/badge/Wagmi-1C1C1C?style=flat-square&logo=ethereum&logoColor=white" alt="Wagmi" />
+    <img src="https://img.shields.io/badge/Viem-7C3AED?style=flat-square&logo=ethereum&logoColor=white" alt="Viem" />
+    <img src="https://img.shields.io/badge/Privy-FF6B35?style=flat-square&logoColor=white" alt="Privy" />
+    <img src="https://img.shields.io/badge/Base-0052FF?style=flat-square&logo=coinbase&logoColor=white" alt="Base" />
+    <img src="https://img.shields.io/badge/Hardhat-FFF100?style=flat-square&logo=hardhat&logoColor=black" alt="Hardhat" />
+    <img src="https://img.shields.io/badge/IPFS-65C2CB?style=flat-square&logo=ipfs&logoColor=white" alt="IPFS" />
+  </p>
+</div>
+
+---
+
+## 🎬 Demo
+
+<div align="center">
+  <video src="assets/JustlyAnimation.mp4" autoplay loop muted playsinline width="100%"></video>
+</div>
+
+---
 
 This project is the frontend implementation for **Slice**, a **Real-Time Dispute Resolution Protocol** built on Next.js. It features a **multi-tenant architecture** capable of running as a standalone PWA or as an embedded MiniApp across various wallet ecosystems (Base, Beexo).
-
-**🔗 Live Demo**: [Testnet](https://dev.slicehub.xyz) | [Mainnet](https://app.slicehub.xyz)
 
 ---
 
