@@ -25,14 +25,6 @@
 
 ---
 
-## 🎬 Demo
-
-<div align="center">
-  <video src="assets/JustlyAnimation.mp4" autoplay loop muted playsinline width="100%"></video>
-</div>
-
----
-
 This project is the frontend implementation for **Slice**, a **Real-Time Dispute Resolution Protocol** built on Next.js. It features a **multi-tenant architecture** capable of running as a standalone PWA or as an embedded MiniApp across various wallet ecosystems (Base, Beexo).
 
 ---
